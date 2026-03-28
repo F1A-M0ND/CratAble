@@ -1,0 +1,111 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/RoomList.gd" id="1_room"]
+
+[node name="RoomList" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_room")
+
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
+
+[node name="BackBtn" type="Button" parent="Header"]
+layout_mode = 2
+text = "< Back"
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room List"
+horizontal_alignment = 1
+
+[node name="CreateBtn" type="Button" parent="Header"]
+layout_mode = 2
+text = "+ Create Room"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DummyRoom" type="Button" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+text = "Room: Test Room    Players: 1/4    [Join]"
+
+[node name="RoomCreatorPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="RoomCreatorPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+text = "Room Creator"
+horizontal_alignment = 1
+
+[node name="RoomName" type="LineEdit" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Name:"
+
+[node name="Password" type="LineEdit" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Password (Optional)"
+
+[node name="Desc" type="TextEdit" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Describe..."
+
+[node name="AssetBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+text = "Asset: [Select/Import]"
+
+[node name="FieldBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+text = "Field: [Select]"
+
+[node name="ConfirmBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+text = "Create!"
+
+[node name="CancelBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
+layout_mode = 2
+text = "Cancel"
