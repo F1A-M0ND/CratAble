@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://clst741iuhm1f"]
+
+[ext_resource type="Texture2D" uid="uid://bwwerrtrafm13" path="res://picture/card deck.png" id="1_34lhb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_aw7fc"]
+size = Vector2(142, 198)
+
+[node name="Deck" type="Node2D" unique_id=187881821]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=284680403]
+position = Vector2(-1.9073486e-06, 2.861023e-06)
+scale = Vector2(0.12724014, 0.12724018)
+texture = ExtResource("1_34lhb")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=527967873]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=704611961]
+shape = SubResource("RectangleShape2D_aw7fc")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="." unique_id=390823607]
+modulate = Color(0, 0, 0, 1)
+z_index = 2
+offset_left = -9.0
+offset_top = 9.0
+offset_right = 31.0
+offset_bottom = 49.0
+scale = Vector2(2, 2)
+text = "0"
