@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://sg742xrcydm"]
+
+[ext_resource type="Texture2D" uid="uid://drxivlquyypnc" path="res://picture/card plate.png" id="1_hyp6g"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gcxqu"]
+size = Vector2(1116.0001, 1556.1123)
+
+[node name="CardSlot" type="Node2D" unique_id=1771542860]
+
+[node name="CardSlotImage" type="Sprite2D" parent="." unique_id=202807458]
+scale = Vector2(0.12724014, 0.12724018)
+texture = ExtResource("1_hyp6g")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=858395743]
+scale = Vector2(0.12724014, 0.12724018)
+collision_layer = 2
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1410788425]
+position = Vector2(-1.499015e-05, -1.873768e-06)
+shape = SubResource("RectangleShape2D_gcxqu")

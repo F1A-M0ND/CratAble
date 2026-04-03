@@ -10,10 +10,22 @@ config_version=5
 
 [application]
 
-config/name="Card Game Prototype Workspace"
-run/main_scene="res://scenes/MainMenu.tscn"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/name="card game (game play)"
+run/main_scene="uid://blviyrsji2l81"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://picture/icon.svg"
 
-[autoload]
+[display]
 
-Global="*res://scripts/Global.gd"
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

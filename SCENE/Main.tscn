@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://blviyrsji2l81"]
+
+[ext_resource type="Script" uid="uid://bhr5kgvg1q3rg" path="res://SCRIPS/CardManager.gd" id="1_6y71g"]
+[ext_resource type="PackedScene" uid="uid://sg742xrcydm" path="res://SCENE/CardSlot.tscn" id="3_yes2a"]
+[ext_resource type="Script" uid="uid://bxl1hi5aq0qyc" path="res://SCRIPS/CardSlot.gd" id="4_aw7fc"]
+[ext_resource type="PackedScene" uid="uid://clst741iuhm1f" path="res://SCENE/Deck.tscn" id="5_7plmq"]
+[ext_resource type="Script" uid="uid://6hfbonk0kur7" path="res://SCRIPS/PlayerHand.gd" id="5_tt5b6"]
+[ext_resource type="Script" uid="uid://mo8fmj6raycb" path="res://SCRIPS/Deck.gd" id="6_ajt44"]
+[ext_resource type="Script" uid="uid://brfd170hx3vxc" path="res://SCRIPS/InputManager.gd" id="7_2dsg0"]
+
+[node name="Main" type="Node2D" unique_id=2063222668]
+
+[node name="CardManager" type="Node2D" parent="." unique_id=1338770811]
+script = ExtResource("1_6y71g")
+
+[node name="CardSlot" parent="." unique_id=1771542860 instance=ExtResource("3_yes2a")]
+position = Vector2(603, 580)
+script = ExtResource("4_aw7fc")
+
+[node name="CardSlot2" parent="." unique_id=1666689525 instance=ExtResource("3_yes2a")]
+position = Vector2(764, 580)
+script = ExtResource("4_aw7fc")
+
+[node name="CardSlot3" parent="." unique_id=1295827228 instance=ExtResource("3_yes2a")]
+position = Vector2(925, 580)
+script = ExtResource("4_aw7fc")
+
+[node name="CardSlot4" parent="." unique_id=1779981412 instance=ExtResource("3_yes2a")]
+position = Vector2(1085, 580)
+script = ExtResource("4_aw7fc")
+
+[node name="CardSlot5" parent="." unique_id=1201858307 instance=ExtResource("3_yes2a")]
+position = Vector2(1243, 580)
+script = ExtResource("4_aw7fc")
+
+[node name="PlayerHand" type="Node2D" parent="." unique_id=2064873761]
+script = ExtResource("5_tt5b6")
+
+[node name="Deck" parent="." unique_id=187881821 instance=ExtResource("5_7plmq")]
+position = Vector2(150, 890)
+script = ExtResource("6_ajt44")
+
+[node name="InputManager" type="Node2D" parent="." unique_id=1943496682]
+script = ExtResource("7_2dsg0")
