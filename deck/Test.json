@@ -1,0 +1,30 @@
+{
+	"deck_name": "Test",
+	"groups": [
+		{
+			"cards": {
+				"res://cards/Blade_Fairy.json": 6,
+				"res://cards/Gunner_Fairy.json": 6,
+				"res://cards/Launcher_Fairy.json": 6,
+				"res://cards/Maid_Fairy.json": 4,
+				"res://cards/Meiling_Hong.json": 4,
+				"res://cards/Mini_Fairy.json": 4,
+				"res://cards/Patchouli_Knowledge.json": 4,
+				"res://cards/Tank_Fairies.json": 6
+			},
+			"max": 60,
+			"min": 40,
+			"name": "Main Deck",
+			"shuffle_at_start": true
+		},
+		{
+			"cards": {
+				"res://cards/Remilia_Scarlet.json": 1
+			},
+			"max": 10,
+			"min": 0,
+			"name": "Hight Rank",
+			"shuffle_at_start": false
+		}
+	]
+}

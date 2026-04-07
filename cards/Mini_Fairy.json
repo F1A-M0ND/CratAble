@@ -1,0 +1,18 @@
+{
+	"atk": 0.0,
+	"custom_stats": {
+
+	},
+	"def": 1.0,
+	"image_path": "C:/Users/ASUS/OneDrive/Documents/MyProject/CardRes/Scarlet deck/สไลด์6.PNG",
+	"image_size": {
+		"x": 1116.0,
+		"y": 1559.0
+	},
+	"name": "Mini Fairy",
+	"tags": [
+		"Maid",
+		"Fairy",
+		"Youkai"
+	]
+}

@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://bemmw65xdn1ta"]
 
-[ext_resource type="Script" path="res://scripts/CardEditor.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://yvjq3tstcpd3" path="res://scripts/CardEditor.gd" id="1_card"]
 
 [node name="CardEditor" type="Control"]
 layout_mode = 3
@@ -49,45 +49,71 @@ placeholder_text = "Name: ________________"
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="ATKLabel" type="Label" parent="VBoxContainer/StatRow"]
+[node name="ATKCheck" type="CheckBox" parent="VBoxContainer/StatRow"]
 layout_mode = 2
-text = "[ ] ATK:"
+text = "ATK:"
 
 [node name="ATKSpin" type="SpinBox" parent="VBoxContainer/StatRow"]
 layout_mode = 2
+editable = false
 
-[node name="DEFLabel" type="Label" parent="VBoxContainer/StatRow"]
+[node name="DEFCheck" type="CheckBox" parent="VBoxContainer/StatRow"]
 layout_mode = 2
-text = "[ ] DEF:"
+text = "DEF:"
 
 [node name="DEFSpin" type="SpinBox" parent="VBoxContainer/StatRow"]
 layout_mode = 2
+editable = false
+
+[node name="StatAddBtn" type="Button" parent="VBoxContainer/StatRow"]
+layout_mode = 2
+text = "+"
+
+[node name="CustomStatsContainer" type="HFlowContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 
 [node name="TagsRow" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
 [node name="TagLabel" type="Label" parent="VBoxContainer/TagsRow"]
 layout_mode = 2
-text = "(Tag Name):"
+text = "Tag:"
 
 [node name="TagAddBtn" type="Button" parent="VBoxContainer/TagsRow"]
 layout_mode = 2
 text = "+"
 
-[node name="BottomRow" type="HBoxContainer" parent="VBoxContainer"]
+[node name="CustomTagsContainer" type="HFlowContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 5
+
+[node name="BottomSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="CardPictureBtn" type="Button" parent="VBoxContainer/BottomSection"]
+layout_mode = 2
+text = "Upload Picture (.png / .jpg)"
+
+[node name="ExamplePanel" type="Panel" parent="VBoxContainer/BottomSection"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardPictureBtn" type="Button" parent="VBoxContainer/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Card Picture\n.png upload"
+[node name="PreviewImage" type="TextureRect" parent="VBoxContainer/BottomSection/ExamplePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
 
-[node name="ExamplePanel" type="Panel" parent="VBoxContainer/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="VBoxContainer/BottomRow/ExamplePanel"]
+[node name="Label" type="Label" parent="VBoxContainer/BottomSection/ExamplePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -98,6 +124,34 @@ text = "EXAMPLE"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SaveBtn" type="Button" parent="VBoxContainer/BottomRow"]
+[node name="ActionHBox" type="HBoxContainer" parent="VBoxContainer/BottomSection"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 2
+
+[node name="DeleteBtn" type="Button" parent="VBoxContainer/BottomSection/ActionHBox"]
+modulate = Color(1, 0.35, 0.35, 1)
+custom_minimum_size = Vector2(100, 35)
+layout_mode = 2
+text = "Delete"
+
+[node name="SaveBtn" type="Button" parent="VBoxContainer/BottomSection/ActionHBox"]
+modulate = Color(0.4, 1, 0.4, 1)
+custom_minimum_size = Vector2(120, 35)
 layout_mode = 2
 text = "Save Card"
+
+[node name="SaveConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "Confirm Save"
+dialog_text = "Are you sure you want to save this card?"
+
+[node name="OverwriteDialog" type="ConfirmationDialog" parent="."]
+title = "Warning: Overwrite"
+dialog_text = "A card with this name already exists. Overwrite?"
+
+[node name="DeleteConfirmDialog" type="ConfirmationDialog" parent="."]
+title = "Confirm Delete"
+dialog_text = "Are you sure you want to delete this card? This cannot be undone."
+
+[node name="ErrorDialog" type="AcceptDialog" parent="."]
+title = "Error"

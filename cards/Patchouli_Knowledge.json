@@ -1,0 +1,18 @@
+{
+	"atk": 2.0,
+	"custom_stats": {
+
+	},
+	"def": 5.0,
+	"image_path": "C:/Users/ASUS/OneDrive/Documents/MyProject/CardRes/Scarlet deck/สไลด์16.PNG",
+	"image_size": {
+		"x": 1116.0,
+		"y": 1559.0
+	},
+	"name": "Patchouli Knowledge",
+	"tags": [
+		"St2",
+		"Witch",
+		"Youkai"
+	]
+}

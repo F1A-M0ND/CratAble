@@ -4,6 +4,7 @@ extends Node
 var card_library = []
 var saved_decks = []
 var custom_fields = []
+var current_card_path = ""
 
 # ข้อมูลสำหรับ Tabletop System (Field Creator)
 var tabletop_assets = {

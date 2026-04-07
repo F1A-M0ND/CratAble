@@ -1,0 +1,18 @@
+{
+	"atk": 2.0,
+	"custom_stats": {
+
+	},
+	"def": 2.0,
+	"image_path": "C:/Users/ASUS/OneDrive/Documents/MyProject/CardRes/Scarlet deck/สไลด์5.PNG",
+	"image_size": {
+		"x": 1116.0,
+		"y": 1559.0
+	},
+	"name": "Blade Fairy",
+	"tags": [
+		"Maid",
+		"Fairy",
+		"Youkai"
+	]
+}

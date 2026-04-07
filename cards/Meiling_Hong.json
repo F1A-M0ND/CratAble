@@ -1,0 +1,17 @@
+{
+	"atk": 2.0,
+	"custom_stats": {
+
+	},
+	"def": 4.0,
+	"image_path": "C:/Users/ASUS/OneDrive/Documents/MyProject/CardRes/Scarlet deck/สไลด์17.PNG",
+	"image_size": {
+		"x": 1116.0,
+		"y": 1559.0
+	},
+	"name": "Meiling Hong",
+	"tags": [
+		"St1",
+		"Human"
+	]
+}
