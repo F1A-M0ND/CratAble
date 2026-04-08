@@ -1,0 +1,142 @@
+[gd_scene format=3 uid="uid://h07cwbbifmjd"]
+
+[ext_resource type="Script" path="res://Card.gd" id="1_21rx5"]
+[ext_resource type="Texture2D" uid="uid://drxivlquyypnc" path="res://picture/card plate.png" id="2_3ujke"]
+[ext_resource type="Texture2D" uid="uid://dp6kh536a6x2g" path="res://picture/tohoCard.PNG" id="3_wi8ie"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lquar"]
+size = Vector2(144, 200)
+
+[sub_resource type="Animation" id="Animation_biir0"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardBackImage:z_index")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardBackImage:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.128, 0.128)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Card_image:scale")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.12813622, 0.12813622)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Card_image:z_index")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [-1]
+}
+
+[sub_resource type="Animation" id="Animation_jeldj"]
+resource_name = "card_flip"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardBackImage:z_index")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [0, -1]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardBackImage:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(0.128, 0.128), Vector2(0.013, 0.128)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Card_image:z_index")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [-1, 0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Card_image:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(0.12813622, 0.12813622), Vector2(0.013, 0.128), Vector2(0.128, 0.128)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_hi0kq"]
+_data = {
+&"RESET": SubResource("Animation_biir0"),
+&"card_flip": SubResource("Animation_jeldj")
+}
+
+[node name="card" type="Node2D" unique_id=1952102809]
+z_index = -2
+position = Vector2(150, 890)
+script = ExtResource("1_21rx5")
+
+[node name="CardBackImage" type="Sprite2D" parent="." unique_id=886778252]
+scale = Vector2(0.128, 0.128)
+texture = ExtResource("2_3ujke")
+
+[node name="Card_image" type="Sprite2D" parent="." unique_id=1411221860]
+z_index = -1
+position = Vector2(-2.3841858e-07, 1.1920929e-07)
+scale = Vector2(0.12813622, 0.12813622)
+texture = ExtResource("3_wi8ie")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=201524054]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=80612757]
+shape = SubResource("RectangleShape2D_lquar")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=278247838]
+libraries/ = SubResource("AnimationLibrary_hi0kq")
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

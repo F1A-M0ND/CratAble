@@ -8,11 +8,15 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
-config/name="Card Game Prototype Workspace"
-run/main_scene="res://scenes/MainMenu.tscn"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/name="Card Game Prototype Workspace(MAIN)"
+run/main_scene="res://scenes/MainShell.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
 
 [autoload]
 
@@ -21,7 +25,12 @@ CardInspector="*res://scenes/CardInspector.tscn"
 
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/size/mode=2
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
 window/vsync/vsync_mode=2
+
+[gui]
+
+theme/default_font_size=28
