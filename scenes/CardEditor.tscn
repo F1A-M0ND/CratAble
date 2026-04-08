@@ -155,3 +155,54 @@ dialog_text = "Are you sure you want to delete this card? This cannot be undone.
 
 [node name="ErrorDialog" type="AcceptDialog" parent="."]
 title = "Error"
+
+[node name="FullscreenViewer" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DarkBg" type="ColorRect" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.95)
+
+[node name="ZoomContainer" type="Control" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+clip_contents = true
+
+[node name="ZoomImage" type="TextureRect" parent="FullscreenViewer/ZoomContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ViewerCloseBtn" type="Button" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = 70.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 24
+text = "Back"

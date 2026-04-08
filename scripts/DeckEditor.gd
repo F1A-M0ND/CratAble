@@ -177,6 +177,7 @@ func _create_library_thumbnail(file_path: String, file_name: String):
 			if time_held < 0.5:
 				_add_card_copies(file_path, 1)
 	)
+	Global.make_card_inspectable(btn, file_path)
 	
 	var panel = Panel.new()
 	
@@ -393,6 +394,7 @@ func _create_deck_card_ui(path: String, count: int, group_idx: int) -> Control:
 	var btn = Button.new()
 	btn.modulate = Color(1, 1, 1, 0)
 	btn.pressed.connect(_on_deck_card_pressed.bind(path, group_idx))
+	Global.make_card_inspectable(btn, path)
 	
 	var overlay_vbox = VBoxContainer.new()
 	overlay_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE

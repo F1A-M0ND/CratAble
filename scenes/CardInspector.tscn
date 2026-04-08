@@ -1,0 +1,141 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8inspector2026"]
+
+[ext_resource type="Script" path="res://scripts/CardInspector.gd" id="1_scr"]
+
+[node name="CardInspector" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_scr")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="MainLayout" type="HBoxContainer" parent="."]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_top = 80.0
+offset_right = -80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 40
+
+[node name="CardImage" type="TextureRect" parent="MainLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DetailsPanel" type="PanelContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="MainLayout/DetailsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 30
+theme_override_constants/margin_bottom = 30
+
+[node name="Scroll" type="ScrollContainer" parent="MainLayout/DetailsPanel/Margin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="DetailsVBox" type="VBoxContainer" parent="MainLayout/DetailsPanel/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="NameLabel" type="Label" parent="MainLayout/DetailsPanel/Margin/Scroll/DetailsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="MainLayout/DetailsPanel/Margin/Scroll/DetailsVBox"]
+layout_mode = 2
+
+[node name="StatsGrid" type="GridContainer" parent="MainLayout/DetailsPanel/Margin/Scroll/DetailsVBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 15
+
+[node name="TagsFlow" type="HFlowContainer" parent="MainLayout/DetailsPanel/Margin/Scroll/DetailsVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+
+[node name="CloseBtn" type="Button" parent="."]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -70.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = 70.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 28
+text = "X"
+
+[node name="FullscreenViewer" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DarkBg" type="ColorRect" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.95)
+
+[node name="ZoomContainer" type="Control" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+clip_contents = true
+
+[node name="ZoomImage" type="TextureRect" parent="FullscreenViewer/ZoomContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ViewerCloseBtn" type="Button" parent="FullscreenViewer"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = 70.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 24
+text = "Back"

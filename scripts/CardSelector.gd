@@ -84,6 +84,7 @@ func _create_card_thumbnail(file_path: String, file_name: String):
 	var btn = Button.new()
 	btn.modulate = Color(1, 1, 1, 0)
 	btn.pressed.connect(_on_existing_card_pressed.bind(file_path))
+	Global.make_card_inspectable(btn, file_path)
 	
 	var panel = Panel.new()
 	
