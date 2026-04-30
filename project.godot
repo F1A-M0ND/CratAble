@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Card Game Prototype Workspace(MAIN)"
-run/main_scene="res://scenes/MainShell.tscn"
+run/main_scene="uid://b3u6ajtt6jxub"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
 [autoload]

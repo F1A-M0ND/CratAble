@@ -75,7 +75,7 @@ func _create_card_thumbnail(file_path: String, file_name: String):
 	var lbl = Label.new()
 	lbl.text = card_name_str
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.custom_minimum_size = Vector2(10, 0)
 	
 	vbox.add_child(tex)
@@ -169,4 +169,5 @@ func _on_existing_card_pressed(path: String):
 	Global.switch_scene("res://scenes/CardEditor.tscn")
 
 func _on_back_pressed():
-	Global.switch_scene("res://scenes/CustomMenu.tscn")
+	Global.main_menu_tab = "CUSTOM"
+	Global.switch_scene("res://scenes/MainMenu.tscn")

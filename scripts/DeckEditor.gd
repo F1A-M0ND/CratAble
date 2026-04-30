@@ -77,7 +77,14 @@ func _ready():
 	popup_vbox.add_child(amount_spin)
 	
 	amount_popup.add_child(popup_vbox)
+	amount_popup.get_ok_button().text = "Set"
+	amount_popup.add_button("Add", true, "add_copies")
 	amount_popup.confirmed.connect(_on_amount_confirmed)
+	amount_popup.custom_action.connect(func(action):
+		if action == "add_copies" and target_path_for_amount != "":
+			_add_card_copies(target_path_for_amount, int(amount_spin.value))
+			amount_popup.hide()
+	)
 	add_child(amount_popup)
 	
 	_load_library_cards()
@@ -97,7 +104,21 @@ func _show_amount_popup(path: String):
 
 func _on_amount_confirmed():
 	if target_path_for_amount != "":
-		_add_card_copies(target_path_for_amount, int(amount_spin.value))
+		_set_card_copies(target_path_for_amount, int(amount_spin.value))
+
+func _set_card_copies(path: String, amount: int):
+	if deck_data["groups"].size() == 0:
+		return
+	if active_group_idx < 0 or active_group_idx >= deck_data["groups"].size():
+		active_group_idx = 0
+	
+	var group = deck_data["groups"][active_group_idx]
+	if amount <= 0:
+		group["cards"].erase(path)
+	else:
+		group["cards"][path] = amount
+	
+	_refresh_deck_ui()
 
 # --- Library Area ---
 func _load_library_cards():
@@ -161,7 +182,7 @@ func _create_library_thumbnail(file_path: String, file_name: String):
 	var lbl = Label.new()
 	lbl.text = card_name_str
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lbl.custom_minimum_size = Vector2(10, 0)
 	
 	vbox.add_child(tex)
@@ -327,6 +348,36 @@ func _refresh_deck_ui():
 			count_lbl.add_theme_color_override("font_color", Color(1, 1, 0.4))
 		
 		header_hbox.add_child(count_lbl)
+		
+		var up_btn = Button.new()
+		up_btn.text = "↑"
+		up_btn.disabled = (i == 0)
+		up_btn.pressed.connect(func():
+			var temp = deck_data["groups"][i]
+			deck_data["groups"][i] = deck_data["groups"][i - 1]
+			deck_data["groups"][i - 1] = temp
+			if active_group_idx == i:
+				active_group_idx = i - 1
+			elif active_group_idx == i - 1:
+				active_group_idx = i
+			_refresh_deck_ui()
+		)
+		header_hbox.add_child(up_btn)
+		
+		var down_btn = Button.new()
+		down_btn.text = "↓"
+		down_btn.disabled = (i == deck_data["groups"].size() - 1)
+		down_btn.pressed.connect(func():
+			var temp = deck_data["groups"][i]
+			deck_data["groups"][i] = deck_data["groups"][i + 1]
+			deck_data["groups"][i + 1] = temp
+			if active_group_idx == i:
+				active_group_idx = i + 1
+			elif active_group_idx == i + 1:
+				active_group_idx = i
+			_refresh_deck_ui()
+		)
+		header_hbox.add_child(down_btn)
 		
 		var edit_btn = Button.new()
 		edit_btn.text = "Edit"
@@ -511,4 +562,5 @@ func _load_deck_from_file(path: String):
 			error_dialog.popup_centered()
 
 func _on_back_pressed():
-	Global.switch_scene("res://scenes/CustomMenu.tscn")
+	Global.main_menu_tab = "CUSTOM"
+	Global.switch_scene("res://scenes/MainMenu.tscn")
