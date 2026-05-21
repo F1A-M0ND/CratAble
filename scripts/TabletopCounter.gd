@@ -1,7 +1,10 @@
 extends Control
 
+signal right_clicked
+
 var dragging = false
 var is_dragging_really = false
+var locked: bool = false
 var start_click_pos = Vector2()
 var drag_offset = Vector2()
 var drag_threshold = 5.0
@@ -103,14 +106,16 @@ func _gui_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				dragging = true
+				if not locked:
+					dragging = true
+					drag_offset = global_position - get_global_mouse_position()
+					move_to_front()
+				
 				is_pressing = true
 				hold_time = 0.0
 				press_timer = 0.0
 				start_click_pos = event.position
 				is_dragging_really = false
-				drag_offset = global_position - get_global_mouse_position()
-				move_to_front()
 				
 				var center = size / 2
 				if is_vertical:
@@ -132,11 +137,14 @@ func _gui_input(event):
 					update_label()
 				is_dragging_really = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			if event.pressed:
-				is_right_pressing = true
-				right_hold_time = 0.0
-			else:
-				is_right_pressing = false
+			if not locked:
+				if event.pressed:
+					is_right_pressing = true
+					right_hold_time = 0.0
+				else:
+					if is_right_pressing and right_hold_time < 0.5:
+						right_clicked.emit()
+					is_right_pressing = false
 	
 	if event is InputEventMouseMotion and dragging:
 		if not is_dragging_really and event.position.distance_to(start_click_pos) > drag_threshold:
