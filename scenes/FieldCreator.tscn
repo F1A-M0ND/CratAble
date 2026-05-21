@@ -71,6 +71,10 @@ text = "Import Asset + Spawn"
 layout_mode = 2
 text = "Add Card Zone"
 
+[node name="AddDeckZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Deck Zone"
+
 [node name="AddDiceBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
 text = "Add Dice (D6)"
