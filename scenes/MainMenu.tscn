@@ -27,11 +27,11 @@ theme_override_constants/separation = -2
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
-[node name="Title" type="Label" parent="HBoxContainer/SidebarContainer/VBoxContainer" unique_id=127161250]
+[node name="Title" type="Button" parent="HBoxContainer/SidebarContainer/VBoxContainer" unique_id=127161250]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "CratAble"
-horizontal_alignment = 1
+flat = true
 
 [node name="SpacerMid" type="Control" parent="HBoxContainer/SidebarContainer/VBoxContainer" unique_id=1732071624]
 custom_minimum_size = Vector2(0, 20)

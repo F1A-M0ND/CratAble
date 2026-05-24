@@ -4,22 +4,27 @@ extends Control
 @onready var play_btn = $HBoxContainer/SidebarContainer/VBoxContainer/PlayBtn
 @onready var custom_btn = $HBoxContainer/SidebarContainer/VBoxContainer/CustomBtn
 @onready var credit_btn = $HBoxContainer/SidebarContainer/VBoxContainer/CreditBtn
+@onready var title_btn = $HBoxContainer/SidebarContainer/VBoxContainer/Title
 
 var room_list_scene = preload("res://scenes/RoomList.tscn")
 var custom_menu_scene = preload("res://scenes/CustomMenu.tscn")
+var lobby_home_scene = preload("res://scenes/LobbyHome.tscn")
 var current_page = null
 
 func _ready():
 	play_btn.pressed.connect(_on_play_pressed)
 	custom_btn.pressed.connect(_on_custom_pressed)
 	credit_btn.pressed.connect(_on_credit_pressed)
+	title_btn.pressed.connect(_on_home_pressed)
 	
 	if Global.main_menu_tab == "CUSTOM":
 		call_deferred("_on_custom_pressed")
 	elif Global.main_menu_tab == "CREDIT":
 		call_deferred("_on_credit_pressed")
-	else:
+	elif Global.main_menu_tab == "PLAY":
 		call_deferred("_on_play_pressed")
+	else:
+		call_deferred("_on_home_pressed")
 
 func _load_page(scene_resource):
 	if current_page != null:
@@ -31,6 +36,13 @@ func _load_page(scene_resource):
 		current_page = instance
 	else:
 		current_page = null
+
+func _on_home_pressed():
+	Global.main_menu_tab = "HOME"
+	_load_page(lobby_home_scene)
+	if current_page and current_page.has_signal("play_clicked"):
+		current_page.play_clicked.connect(_on_play_pressed)
+	_update_tab_visuals()
 
 func _on_play_pressed():
 	Global.main_menu_tab = "PLAY"

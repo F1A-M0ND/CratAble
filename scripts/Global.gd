@@ -13,7 +13,7 @@ var tabletop_assets = {
 	"boards": []
 }
 
-var main_menu_tab = "PLAY"
+var main_menu_tab = "HOME"
 
 var inspect_timer: Timer
 var target_inspect_card_path: String = ""
