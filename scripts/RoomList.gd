@@ -15,3 +15,4 @@ func _on_close_creator_pressed():
 func _on_confirm_create_pressed():
 	print("Room Created!")
 	creator_panel.hide()
+	Global.switch_scene("res://SCENE/Main.tscn")

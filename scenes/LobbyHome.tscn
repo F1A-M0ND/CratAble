@@ -1,0 +1,76 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/LobbyHome.gd" id="1_home"]
+[ext_resource type="Texture2D" path="res://picture/game_cover_art.jpg" id="2_art"]
+
+[node name="LobbyHome" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_home")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 60
+alignment = 1
+
+[node name="CoverContainer" type="AspectRatioContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.2
+ratio = 1.0
+
+[node name="CoverImage" type="TextureRect" parent="MarginContainer/HBoxContainer/CoverContainer"]
+layout_mode = 2
+texture = ExtResource("2_art")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InfoContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 25
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 54
+text = "Play Tabletop Card Games
+on the #1 Prototyping Platform!"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="DescriptionLabel" type="Label" parent="MarginContainer/HBoxContainer/InfoContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 22
+text = "Join thousands of players in designing, deck building, and testing custom tabletop card games. Instantly share your fields and decks with friends for live matches."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="MarginContainer/HBoxContainer/InfoContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="PlayBtn" type="Button" parent="MarginContainer/HBoxContainer/InfoContainer"]
+custom_minimum_size = Vector2(300, 75)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Get Started"
