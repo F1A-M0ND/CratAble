@@ -210,6 +210,14 @@ func _input(event):
 				_zoom_canvas(1.0 / 1.1, tabletop_view.get_local_mouse_position())
 	elif event is InputEventMouseMotion and is_panning:
 		field_canvas.position += event.relative
+	elif event is InputEventKey and event.pressed and not event.echo:
+		var ctrl = event.ctrl_pressed
+		if ctrl and event.keycode == KEY_EQUAL:   # Ctrl + = หรือ Ctrl + +
+			_zoom_canvas(1.1, tabletop_view.size / 2.0)
+			get_viewport().set_input_as_handled()
+		elif ctrl and event.keycode == KEY_MINUS:  # Ctrl + -
+			_zoom_canvas(1.0 / 1.1, tabletop_view.size / 2.0)
+			get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
 	# ป้องกันการเลื่อนจอเวลาพิมพ์ข้อความ
@@ -230,6 +238,21 @@ func _process(delta: float) -> void:
 	if move_vec != Vector2.ZERO:
 		var speed = 800.0
 		field_canvas.position += move_vec.normalized() * speed * delta
+	
+	# อัปเดต DeckBtnContainer show/hide จาก DraggableControl.is_hovering
+	if is_test_mode:
+		for child in field_canvas.get_children():
+			if child.has_meta("deck_btn_container") and not child.get_meta("deck_confirmed", false):
+				var container = child.get_meta("deck_btn_container")
+				if is_instance_valid(container):
+					var hovering = child.get("is_hovering")
+					if hovering == null: hovering = false
+					var dragging = child.get("dragging")
+					if dragging == null: dragging = false
+					if hovering or dragging:
+						container.show()
+					else:
+						container.hide()
 
 func _zoom_canvas(factor: float, mouse_pos: Vector2):
 	var old_zoom = field_zoom
@@ -584,6 +607,7 @@ func _create_selector_button(path: String, type: String):
 		lbl.text = data.get("deck_name", "Deck")
 
 	vbox.add_child(tex)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(lbl)
 	btn.add_child(vbox)
 	if type == "card" and data.has("file_path"):
@@ -649,6 +673,12 @@ func _create_selector_button(path: String, type: String):
 func _setup_changeling(obj: Control, asset_type: String):
 	test_spawned_nodes.append(obj)
 	obj.set_meta("is_changeling", true)
+	
+	if asset_type == "deck":
+		_setup_deck_changeling(obj)
+		return
+	
+	# card: click to reselect
 	var click_state = {"press_pos": Vector2.ZERO}
 	obj.gui_input.connect(func(event):
 		if not is_test_mode: return
@@ -659,6 +689,91 @@ func _setup_changeling(obj: Control, asset_type: String):
 				if event.global_position.distance_to(click_state["press_pos"]) < 5.0:
 					current_changeling_card = obj
 					_show_asset_selector(asset_type)
+	)
+
+func _setup_deck_changeling(deck_obj: Control):
+	# ปุ่มวงกลมเป็นลูกของ deck_obj เลย - ไม่มีปัญหา mouse signal
+	var btn_container = Control.new()
+	btn_container.name = "DeckBtnContainer"
+	btn_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	btn_container.offset_top = -36
+	btn_container.offset_bottom = 0
+	btn_container.z_index = 10
+	btn_container.mouse_filter = Control.MOUSE_FILTER_PASS
+	btn_container.hide()
+	deck_obj.add_child(btn_container)
+	
+	var _make_circle_btn = func(col_n: Color, col_h: Color) -> Button:
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(30, 30)
+		btn.text = ""
+		var s = StyleBoxFlat.new()
+		s.bg_color = col_n
+		s.corner_radius_top_left = 15
+		s.corner_radius_top_right = 15
+		s.corner_radius_bottom_left = 15
+		s.corner_radius_bottom_right = 15
+		btn.add_theme_stylebox_override("normal", s)
+		btn.add_theme_stylebox_override("pressed", s)
+		var sh = s.duplicate()
+		sh.bg_color = col_h
+		btn.add_theme_stylebox_override("hover", sh)
+		return btn
+	
+	var change_btn: Button = _make_circle_btn.call(
+		Color(0.18, 0.47, 0.90, 0.92), Color(0.40, 0.65, 1.00, 1.0)
+	)
+	change_btn.tooltip_text = "Change Deck"
+	change_btn.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	change_btn.offset_left = 10
+	change_btn.offset_top = -15
+	change_btn.offset_right = 40
+	change_btn.offset_bottom = 15
+	btn_container.add_child(change_btn)
+	
+	var confirm_btn: Button = _make_circle_btn.call(
+		Color(0.10, 0.60, 0.22, 0.92), Color(0.20, 0.80, 0.35, 1.0)
+	)
+	confirm_btn.tooltip_text = "Confirm Deck (lock)"
+	confirm_btn.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	confirm_btn.offset_left = -40
+	confirm_btn.offset_top = -15
+	confirm_btn.offset_right = -10
+	confirm_btn.offset_bottom = 15
+	btn_container.add_child(confirm_btn)
+	
+	# เก็บ reference ไว้ใน meta สำหรับ _process
+	deck_obj.set_meta("deck_btn_container", btn_container)
+	
+	change_btn.pressed.connect(func():
+		if not is_test_mode: return
+		btn_container.hide()
+		current_changeling_card = deck_obj
+		_show_asset_selector("deck")
+	)
+	
+	confirm_btn.pressed.connect(func():
+		if not is_test_mode: return
+		deck_obj.set_meta("deck_confirmed", true)
+		btn_container.queue_free()
+		# Reset scale กลับขนาดเดิมก่อน hover
+		var base = deck_obj.get("base_scale")
+		if base:
+			var t = deck_obj.create_tween()
+			t.tween_property(deck_obj, "scale", base, 0.12)
+		deck_obj.set("is_hovering", false)
+		# ไม่ lock - ยังลากได้
+		var badge = Label.new()
+		badge.text = "\u2714"
+		badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		badge.offset_left = 4
+		badge.offset_top = 4
+		badge.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 1.0))
+		badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		badge.add_theme_constant_override("outline_size", 4)
+		badge.add_theme_font_size_override("font_size", 20)
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		deck_obj.add_child(badge)
 	)
 
 func _show_other_import_dialog():
@@ -764,43 +879,33 @@ func spawn_deck_object(deck_data: Dictionary):
 		tex_rect.offset_bottom = -4
 		root_obj.add_child(tex_rect)
 	
-	var vbox = VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	var text_panel = PanelContainer.new()
-	var text_style = StyleBoxFlat.new()
-	text_style.bg_color = Color(0, 0, 0, 0.7)
-	text_panel.add_theme_stylebox_override("panel", text_style)
-	text_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(text_panel)
-	
-	var inner_vbox = VBoxContainer.new()
-	inner_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	text_panel.add_child(inner_vbox)
-	
-	var lbl = Label.new()
-	lbl.text = deck_data.get("deck_name", "Deck")
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
 	var total_cards = 0
 	if deck_data.has("groups"):
 		for g in deck_data["groups"]:
 			for p in g.get("cards", {}):
 				total_cards += int(g["cards"][p])
-				
-	var count_lbl = Label.new()
-	count_lbl.text = str(total_cards) + " Cards"
-	count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	count_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	count_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
-	inner_vbox.add_child(lbl)
-	inner_vbox.add_child(count_lbl)
-	root_obj.add_child(vbox)
+	var hover_lbl = Label.new()
+	hover_lbl.text = deck_data.get("deck_name", "Deck") + "\n" + str(total_cards) + " Cards"
+	hover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hover_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	hover_lbl.offset_top = 0
+	hover_lbl.offset_bottom = 40
+	hover_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	hover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	hover_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	hover_lbl.add_theme_constant_override("outline_size", 4)
+	hover_lbl.hide()
+	root_obj.add_child(hover_lbl)
+	
+	root_obj.mouse_entered.connect(func(): hover_lbl.show())
+	root_obj.mouse_exited.connect(func():
+		var local = root_obj.get_local_mouse_position()
+		if not Rect2(Vector2.ZERO, root_obj.size).has_point(local):
+			hover_lbl.hide()
+	)
 	
 	var highlight = ReferenceRect.new()
 	highlight.name = "DragHighlight"
