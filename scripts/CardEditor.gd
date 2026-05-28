@@ -251,6 +251,30 @@ func _on_save_button_pressed():
 		save_confirm.popup_centered()
 
 func _do_save_card():
+	var safe_name_for_img = card_name.text.strip_edges()
+	if safe_name_for_img == "":
+		safe_name_for_img = "UntitledCard"
+	safe_name_for_img = safe_name_for_img.replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
+
+	if current_image_path != "" and not current_image_path.begins_with("res://card_images/"):
+		var img_dir = "res://card_images"
+		if not DirAccess.dir_exists_absolute(img_dir):
+			DirAccess.make_dir_absolute(img_dir)
+		
+		var ext = current_image_path.get_extension()
+		if ext == "":
+			ext = "png"
+			
+		var new_img_path = img_dir + "/" + safe_name_for_img + "_img." + ext
+		
+		var dir = DirAccess.open("res://")
+		if dir:
+			var err = dir.copy(current_image_path, new_img_path)
+			if err == OK:
+				current_image_path = new_img_path
+			else:
+				print("DEBUG ERROR: Failed to copy image to ", new_img_path)
+
 	var new_card = {
 		"name": card_name.text,
 		"image_path": current_image_path,
