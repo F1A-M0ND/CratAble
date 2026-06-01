@@ -61,9 +61,157 @@ var pre_test_state: Array = []
 var test_spawned_nodes: Array = []
 var current_changeling_card: Control = null
 
+var hand_scroll: Control  # เป็น Control ธรรมดา ไม่ clip overflow
+var hand_zone: HBoxContainer
+var drag_layer: Control  # layer สำหรับการ์ดที่กำลังลากจากมือ (อยู่เหนือสุดทุกอย่าง)
+
+var _hand_collapsed: bool = false
+var _hand_normal_offset: float = -160.0
+var _resizing_hand: bool = false
+var _resize_start_y: float = 0.0
+var _resize_start_offset: float = 0.0
+const HAND_BAR_HEIGHT: float = 32.0
+var hand_hscroll: HScrollBar  # แถบเลื่อนแนวนอน
+
 func _ready():
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
+	
+	# Hand zone — ใช้ Control ธรรมดา (ไม่ clip) เพื่อให้การ์ดที่ขยายตอน hover โผล่เหนือขอบได้
+	hand_scroll = Control.new()
+	hand_scroll.name = "HandScroll"
+	hand_scroll.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	hand_scroll.offset_top = _hand_normal_offset
+	hand_scroll.offset_bottom = 0
+	hand_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	hand_scroll.clip_contents = false
+	hand_scroll.z_index = 10  # อยู่เหนือ field_canvas แต่ต่ำกว่า drag_layer
+	
+	# พื้นหลัง hand zone
+	var bg = ColorRect.new()
+	bg.name = "HandBg"
+	bg.color = Color(0.05, 0.05, 0.1, 0.88)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hand_scroll.add_child(bg)
+	
+	# --- Resize Handle (แถบบนสุด 8px, cursor = resize) ---
+	var resize_handle = Control.new()
+	resize_handle.name = "ResizeHandle"
+	resize_handle.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	resize_handle.offset_bottom = 8
+	resize_handle.mouse_default_cursor_shape = Control.CURSOR_VSIZE
+	resize_handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	resize_handle.z_index = 2
+	
+	var rh_bg = ColorRect.new()
+	rh_bg.color = Color(0.35, 0.45, 0.7, 0.55)
+	rh_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rh_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resize_handle.add_child(rh_bg)
+	
+	# grip dots ตกแต่ง
+	var grip_lbl = Label.new()
+	grip_lbl.text = "• • • • •"
+	grip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	grip_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	grip_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	grip_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grip_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
+	grip_lbl.add_theme_font_size_override("font_size", 8)
+	resize_handle.add_child(grip_lbl)
+	
+	resize_handle.gui_input.connect(func(event: InputEvent):
+		if _hand_collapsed: return
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_resizing_hand = true
+				_resize_start_y = event.global_position.y
+				_resize_start_offset = hand_scroll.offset_top
+			else:
+				_resizing_hand = false
+				_hand_normal_offset = hand_scroll.offset_top
+				_update_hand_zone_sizing()
+		if event is InputEventMouseMotion and _resizing_hand:
+			var delta = event.global_position.y - _resize_start_y
+			hand_scroll.offset_top = clamp(_resize_start_offset + delta, -520.0, -HAND_BAR_HEIGHT - 20.0)
+			_update_hand_zone_sizing()
+	)
+	hand_scroll.add_child(resize_handle)
+	
+	# --- Collapse Bar (ปุ่มแถบยาวใต้ resize handle) ---
+	var collapse_bar = Button.new()
+	collapse_bar.name = "CollapseBar"
+	collapse_bar.text = "▲  Hand Zone  ▲"
+	collapse_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	collapse_bar.offset_top = 8
+	collapse_bar.offset_bottom = 8 + HAND_BAR_HEIGHT - 8  # = HAND_BAR_HEIGHT
+	collapse_bar.mouse_filter = Control.MOUSE_FILTER_STOP
+	collapse_bar.z_index = 2
+	
+	var cb_normal = StyleBoxFlat.new()
+	cb_normal.bg_color = Color(0.12, 0.15, 0.25, 0.92)
+	cb_normal.border_width_top = 1
+	cb_normal.border_width_bottom = 1
+	cb_normal.border_color = Color(0.3, 0.4, 0.7, 0.5)
+	var cb_hover = cb_normal.duplicate()
+	cb_hover.bg_color = Color(0.18, 0.22, 0.38, 0.95)
+	collapse_bar.add_theme_stylebox_override("normal", cb_normal)
+	collapse_bar.add_theme_stylebox_override("pressed", cb_normal)
+	collapse_bar.add_theme_stylebox_override("hover", cb_hover)
+	collapse_bar.add_theme_stylebox_override("focus", cb_normal)
+	collapse_bar.add_theme_color_override("font_color", Color(0.75, 0.85, 1.0, 0.9))
+	collapse_bar.add_theme_font_size_override("font_size", 12)
+	
+	collapse_bar.pressed.connect(func():
+		_hand_collapsed = not _hand_collapsed
+		if _hand_collapsed:
+			_hand_normal_offset = hand_scroll.offset_top
+			hand_scroll.offset_top = -HAND_BAR_HEIGHT
+			hand_zone.hide()
+			collapse_bar.text = "▼  Hand Zone  ▼"
+		else:
+			hand_scroll.offset_top = _hand_normal_offset
+			hand_zone.show()
+			collapse_bar.text = "▲  Hand Zone  ▲"
+	)
+	hand_scroll.add_child(collapse_bar)
+	
+	hand_scroll.hide() # Hidden until test mode
+	
+	# --- Hand Zone (HBoxContainer ที่อยู่ใต้ bar) ---
+	hand_zone = HBoxContainer.new()
+	hand_zone.name = "HandZone"
+	hand_zone.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hand_zone.offset_top = HAND_BAR_HEIGHT  # เริ่มใต้ collapse bar
+	hand_zone.alignment = BoxContainer.ALIGNMENT_CENTER
+	hand_zone.add_theme_constant_override("separation", 12)
+	hand_zone.clip_contents = false
+	hand_scroll.add_child(hand_zone)
+	
+	# --- HScrollBar แนวนอน (แสดงเมื่อการ์ดเกินความกว้าง) ---
+	hand_hscroll = HScrollBar.new()
+	hand_hscroll.name = "HandHScroll"
+	hand_hscroll.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	hand_hscroll.offset_top = -14
+	hand_hscroll.offset_bottom = 0
+	hand_hscroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	hand_hscroll.step = 1.0
+	hand_hscroll.hide()
+	hand_hscroll.value_changed.connect(func(v: float):
+		hand_zone.position.x = -v
+	)
+	hand_scroll.add_child(hand_hscroll)
+	
+	add_child(hand_scroll)
+	
+	# DragLayer — วางไว้เหนือสุดสำหรับการ์ดที่ floating ระหว่างลาก
+	drag_layer = Control.new()
+	drag_layer.name = "DragLayer"
+	drag_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	drag_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drag_layer.z_index = 200
+	add_child(drag_layer)
 	
 	test_mode_btn = Button.new()
 	test_mode_btn.text = "Switch to Test Mode"
@@ -238,21 +386,6 @@ func _process(delta: float) -> void:
 	if move_vec != Vector2.ZERO:
 		var speed = 800.0
 		field_canvas.position += move_vec.normalized() * speed * delta
-	
-	# อัปเดต DeckBtnContainer show/hide จาก DraggableControl.is_hovering
-	if is_test_mode:
-		for child in field_canvas.get_children():
-			if child.has_meta("deck_btn_container") and not child.get_meta("deck_confirmed", false):
-				var container = child.get_meta("deck_btn_container")
-				if is_instance_valid(container):
-					var hovering = child.get("is_hovering")
-					if hovering == null: hovering = false
-					var dragging = child.get("dragging")
-					if dragging == null: dragging = false
-					if hovering or dragging:
-						container.show()
-					else:
-						container.hide()
 
 func _zoom_canvas(factor: float, mouse_pos: Vector2):
 	var old_zoom = field_zoom
@@ -515,15 +648,29 @@ func _init_asset_selector():
 	asset_selector = ConfirmationDialog.new()
 	asset_selector.min_size = Vector2i(600, 400)
 	
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	
 	var scroll = ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.custom_minimum_size = Vector2(580, 350)
 	
 	asset_grid = GridContainer.new()
 	asset_grid.columns = 5
 	scroll.add_child(asset_grid)
 	
-	asset_selector.add_child(scroll)
+	vbox.add_child(scroll)
+	
+	var hb = HBoxContainer.new()
+	hb.alignment = BoxContainer.ALIGNMENT_END
+	var shuffle_check = CheckBox.new()
+	shuffle_check.name = "ShuffleCheck"
+	shuffle_check.text = "Shuffle at start"
+	shuffle_check.button_pressed = true # default to true
+	hb.add_child(shuffle_check)
+	vbox.add_child(hb)
+	
+	asset_selector.add_child(vbox)
 	add_child(asset_selector)
 	
 	var ok_btn = asset_selector.get_ok_button()
@@ -534,6 +681,10 @@ func _init_asset_selector():
 func _show_asset_selector(type: String):
 	for child in asset_grid.get_children():
 		child.queue_free()
+		
+	var shuffle_check = asset_selector.find_child("ShuffleCheck", true, false)
+	if shuffle_check:
+		shuffle_check.visible = (type == "deck")
 		
 	var dir_path = "res://cards" if type == "card" else "res://deck"
 	asset_selector.title = "Select " + type.capitalize()
@@ -615,10 +766,16 @@ func _create_selector_button(path: String, type: String):
 		Global.make_card_inspectable(btn, data["file_path"])
 		
 	btn.pressed.connect(func():
+		var shuffle_at_start = false
+		var shuffle_check = asset_selector.find_child("ShuffleCheck", true, false)
+		if shuffle_check and shuffle_check.visible:
+			shuffle_at_start = shuffle_check.button_pressed
+			
 		asset_selector.hide()
 		
 		if current_changeling_card and is_instance_valid(current_changeling_card):
 			var spawned_obj = spawn_card_object(data) if type == "card" else spawn_deck_object(data)
+			if type == "deck": spawned_obj.set_meta("shuffle_at_start", shuffle_at_start)
 			
 			var origin_zone = current_changeling_card.get_meta("origin_zone")
 			if origin_zone and is_instance_valid(origin_zone):
@@ -642,6 +799,7 @@ func _create_selector_button(path: String, type: String):
 			var settings = current_target_zone.get_meta("zone_settings", {})
 			if is_test_mode and settings.get("purpose", 0) == 1:
 				var spawned_obj = spawn_card_object(data) if type == "card" else spawn_deck_object(data)
+				if type == "deck": spawned_obj.set_meta("shuffle_at_start", shuffle_at_start)
 				
 				_apply_card_size(spawned_obj, field_canvas, current_target_zone)
 				spawned_obj.set_meta("origin_zone", current_target_zone)
@@ -662,11 +820,13 @@ func _create_selector_button(path: String, type: String):
 				return
 				
 			var spawned_obj = spawn_card_object(data) if type == "card" else spawn_deck_object(data)
+			if type == "deck": spawned_obj.set_meta("shuffle_at_start", shuffle_at_start)
 			spawned_obj.position = current_target_zone.position
 			current_target_zone.queue_free()
 			current_target_zone = null
 		else:
 			var spawned_obj = spawn_card_object(data) if type == "card" else spawn_deck_object(data)
+			if type == "deck": spawned_obj.set_meta("shuffle_at_start", shuffle_at_start)
 	)
 	asset_grid.add_child(btn)
 
@@ -692,62 +852,116 @@ func _setup_changeling(obj: Control, asset_type: String):
 	)
 
 func _setup_deck_changeling(deck_obj: Control):
-	# ปุ่มวงกลมเป็นลูกของ deck_obj เลย - ไม่มีปัญหา mouse signal
-	var btn_container = Control.new()
-	btn_container.name = "DeckBtnContainer"
-	btn_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	btn_container.offset_top = -36
-	btn_container.offset_bottom = 0
-	btn_container.z_index = 10
-	btn_container.mouse_filter = Control.MOUSE_FILTER_PASS
-	btn_container.hide()
-	deck_obj.add_child(btn_container)
+	# --- Hover Overlay ---
+	# สร้าง overlay เป็น Panel โปร่งแสงที่ปรากฏตอนเมาส์ชี้เท่านั้น
+	var overlay = Panel.new()
+	overlay.name = "DeckHoverOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 10
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ไม่รับเมาส์เอง ให้ parent รับ
+	var ov_style = StyleBoxFlat.new()
+	ov_style.bg_color = Color(0, 0, 0, 0.55)
+	ov_style.corner_radius_top_left = 8
+	ov_style.corner_radius_top_right = 8
+	ov_style.corner_radius_bottom_left = 8
+	ov_style.corner_radius_bottom_right = 8
+	overlay.add_theme_stylebox_override("panel", ov_style)
+	overlay.hide()
+	deck_obj.add_child(overlay)
 	
-	var _make_circle_btn = func(col_n: Color, col_h: Color) -> Button:
+	# ชื่อ Deck
+	var name_lbl = Label.new()
+	var deck_data_meta = deck_obj.get_meta("deck_data", {})
+	var total_cards = 0
+	if deck_data_meta.has("groups"):
+		for g in deck_data_meta["groups"]:
+			for p in g.get("cards", {}):
+				total_cards += int(g["cards"][p])
+	name_lbl.text = deck_data_meta.get("deck_name", "Deck")
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	name_lbl.offset_bottom = 40
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	name_lbl.add_theme_constant_override("outline_size", 3)
+	name_lbl.add_theme_font_size_override("font_size", 14)
+	overlay.add_child(name_lbl)
+	
+	# จำนวนการ์ด
+	var count_lbl = Label.new()
+	count_lbl.name = "CountLabel"
+	count_lbl.text = str(total_cards) + " Cards"
+	count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	count_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count_lbl.set_anchors_preset(Control.PRESET_CENTER)
+	count_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	count_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1))
+	count_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	count_lbl.add_theme_constant_override("outline_size", 3)
+	count_lbl.add_theme_font_size_override("font_size", 13)
+	overlay.add_child(count_lbl)
+	deck_obj.set_meta("deck_count_label", count_lbl)
+	
+	# --- ปุ่มวงกลม (Change = ฟ้า, Confirm = เขียว) ---
+	var btn_row = HBoxContainer.new()
+	btn_row.name = "DeckBtnRow"
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	btn_row.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	btn_row.offset_top = -40
+	btn_row.offset_bottom = -8
+	btn_row.mouse_filter = Control.MOUSE_FILTER_PASS
+	overlay.add_child(btn_row)
+	
+	var _make_circle_btn = func(col_n: Color, col_h: Color, icon: String) -> Button:
 		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(30, 30)
-		btn.text = ""
+		btn.custom_minimum_size = Vector2(32, 32)
+		btn.text = icon
 		var s = StyleBoxFlat.new()
 		s.bg_color = col_n
-		s.corner_radius_top_left = 15
-		s.corner_radius_top_right = 15
-		s.corner_radius_bottom_left = 15
-		s.corner_radius_bottom_right = 15
+		s.corner_radius_top_left = 16
+		s.corner_radius_top_right = 16
+		s.corner_radius_bottom_left = 16
+		s.corner_radius_bottom_right = 16
 		btn.add_theme_stylebox_override("normal", s)
 		btn.add_theme_stylebox_override("pressed", s)
 		var sh = s.duplicate()
 		sh.bg_color = col_h
 		btn.add_theme_stylebox_override("hover", sh)
+		btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 		return btn
 	
 	var change_btn: Button = _make_circle_btn.call(
-		Color(0.18, 0.47, 0.90, 0.92), Color(0.40, 0.65, 1.00, 1.0)
+		Color(0.18, 0.47, 0.90, 0.92), Color(0.40, 0.65, 1.00, 1.0), "↺"
 	)
 	change_btn.tooltip_text = "Change Deck"
-	change_btn.set_anchors_preset(Control.PRESET_CENTER_LEFT)
-	change_btn.offset_left = 10
-	change_btn.offset_top = -15
-	change_btn.offset_right = 40
-	change_btn.offset_bottom = 15
-	btn_container.add_child(change_btn)
+	btn_row.add_child(change_btn)
 	
 	var confirm_btn: Button = _make_circle_btn.call(
-		Color(0.10, 0.60, 0.22, 0.92), Color(0.20, 0.80, 0.35, 1.0)
+		Color(0.10, 0.60, 0.22, 0.92), Color(0.20, 0.80, 0.35, 1.0), "✔"
 	)
-	confirm_btn.tooltip_text = "Confirm Deck (lock)"
-	confirm_btn.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	confirm_btn.offset_left = -40
-	confirm_btn.offset_top = -15
-	confirm_btn.offset_right = -10
-	confirm_btn.offset_bottom = 15
-	btn_container.add_child(confirm_btn)
+	confirm_btn.tooltip_text = "Confirm Deck"
+	btn_row.add_child(confirm_btn)
 	
-	# เก็บ reference ไว้ใน meta สำหรับ _process
-	deck_obj.set_meta("deck_btn_container", btn_container)
+	# --- mouse_entered / mouse_exited ควบคุม overlay ---
+	deck_obj.mouse_entered.connect(func():
+		if deck_obj.get_meta("deck_confirmed", false): return
+		if not is_instance_valid(overlay): return
+		overlay.show()
+	)
+	deck_obj.mouse_exited.connect(func():
+		if not is_instance_valid(overlay): return
+		var local = deck_obj.get_local_mouse_position()
+		if Rect2(Vector2.ZERO, deck_obj.size).has_point(local): return
+		overlay.hide()
+	)
 	
+	# --- Logic ปุ่ม ---
 	change_btn.pressed.connect(func():
 		if not is_test_mode: return
-		btn_container.hide()
+		overlay.hide()
 		current_changeling_card = deck_obj
 		_show_asset_selector("deck")
 	)
@@ -755,16 +969,11 @@ func _setup_deck_changeling(deck_obj: Control):
 	confirm_btn.pressed.connect(func():
 		if not is_test_mode: return
 		deck_obj.set_meta("deck_confirmed", true)
-		btn_container.queue_free()
-		# Reset scale กลับขนาดเดิมก่อน hover
-		var base = deck_obj.get("base_scale")
-		if base:
-			var t = deck_obj.create_tween()
-			t.tween_property(deck_obj, "scale", base, 0.12)
-		deck_obj.set("is_hovering", false)
-		# ไม่ lock - ยังลากได้
+		overlay.hide()
+		overlay.queue_free()
+		
 		var badge = Label.new()
-		badge.text = "\u2714"
+		badge.text = "✔"
 		badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		badge.offset_left = 4
 		badge.offset_top = 4
@@ -774,6 +983,58 @@ func _setup_deck_changeling(deck_obj: Control):
 		badge.add_theme_font_size_override("font_size", 20)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		deck_obj.add_child(badge)
+		
+		# สร้าง HoverInfo panel สำหรับแสดงตอนชี้เด็คที่ยืนยันแล้ว
+		var hover_panel = Panel.new()
+		hover_panel.name = "HoverInfo"
+		hover_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+		hover_panel.z_index = 10
+		hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var hp_style = StyleBoxFlat.new()
+		hp_style.bg_color = Color(0, 0, 0, 0.60)
+		hp_style.corner_radius_top_left = 8; hp_style.corner_radius_top_right = 8
+		hp_style.corner_radius_bottom_left = 8; hp_style.corner_radius_bottom_right = 8
+		hover_panel.add_theme_stylebox_override("panel", hp_style)
+		hover_panel.hide()
+		deck_obj.add_child(hover_panel)
+		
+		var hover_lbl = Label.new()
+		hover_lbl.name = "HoverLabel"
+		hover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hover_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		hover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hover_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+		hover_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		hover_lbl.add_theme_constant_override("outline_size", 3)
+		hover_lbl.add_theme_font_size_override("font_size", 13)
+		hover_panel.add_child(hover_lbl)
+		
+		# connect mouse hover เพื่อ show/hide hover info
+		deck_obj.mouse_entered.connect(func():
+			if not is_instance_valid(hover_panel): return
+			hover_panel.show()
+		)
+		deck_obj.mouse_exited.connect(func():
+			if not is_instance_valid(hover_panel): return
+			var local = deck_obj.get_local_mouse_position()
+			if Rect2(Vector2.ZERO, deck_obj.size).has_point(local): return
+			hover_panel.hide()
+		)
+		
+		var deck_data = deck_obj.get_meta("deck_data", {})
+		var draw_pile = []
+		if deck_data.has("groups"):
+			for g in deck_data["groups"]:
+				for p in g.get("cards", {}):
+					for i in range(int(g["cards"][p])):
+						draw_pile.append(p)
+		
+		if deck_obj.get_meta("shuffle_at_start", false):
+			draw_pile.shuffle()
+			
+		deck_obj.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(deck_obj)
 	)
 
 func _show_other_import_dialog():
@@ -879,33 +1140,7 @@ func spawn_deck_object(deck_data: Dictionary):
 		tex_rect.offset_bottom = -4
 		root_obj.add_child(tex_rect)
 	
-	var total_cards = 0
-	if deck_data.has("groups"):
-		for g in deck_data["groups"]:
-			for p in g.get("cards", {}):
-				total_cards += int(g["cards"][p])
-	
-	var hover_lbl = Label.new()
-	hover_lbl.text = deck_data.get("deck_name", "Deck") + "\n" + str(total_cards) + " Cards"
-	hover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hover_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	hover_lbl.offset_top = 0
-	hover_lbl.offset_bottom = 40
-	hover_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	hover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hover_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-	hover_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	hover_lbl.add_theme_constant_override("outline_size", 4)
-	hover_lbl.hide()
-	root_obj.add_child(hover_lbl)
-	
-	root_obj.mouse_entered.connect(func(): hover_lbl.show())
-	root_obj.mouse_exited.connect(func():
-		var local = root_obj.get_local_mouse_position()
-		if not Rect2(Vector2.ZERO, root_obj.size).has_point(local):
-			hover_lbl.hide()
-	)
+	# (ชื่อและจำนวนการ์ดแสดงผ่าน overlay ใน _setup_deck_changeling เท่านั้น)
 	
 	var highlight = ReferenceRect.new()
 	highlight.name = "DragHighlight"
@@ -922,16 +1157,19 @@ func spawn_deck_object(deck_data: Dictionary):
 		root_obj.drag_ended.connect(func(): _on_card_drag_ended(root_obj))
 	if root_obj.has_signal("drag_moved"):
 		root_obj.drag_moved.connect(func(): _on_card_drag_moved(root_obj))
+	if root_obj.has_signal("left_clicked"):
+		root_obj.left_clicked.connect(func(): _on_deck_left_clicked(root_obj))
 		
 	root_obj.set_meta("component_category", "deck")
 	root_obj.set_meta("deck_data", deck_data)
+	root_obj.z_index = 2  # อยู่เหนือ zone (z=0) เสมอ
 	
 	_add_delete_button(root_obj)
 	_apply_card_size(root_obj, field_canvas, null)
 	field_canvas.add_child(root_obj)
 	return root_obj
 
-func spawn_card_object(card_data: Dictionary) -> Control:
+func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
 	var root_obj = TextureRect.new()
 	
 	var has_image = false
@@ -1003,16 +1241,20 @@ func spawn_card_object(card_data: Dictionary) -> Control:
 		root_obj.drag_ended.connect(func(): _on_card_drag_ended(root_obj))
 	if root_obj.has_signal("drag_moved"):
 		root_obj.drag_moved.connect(func(): _on_card_drag_moved(root_obj))
+	if root_obj.has_signal("drag_started"):
+		root_obj.drag_started.connect(func(): _on_card_drag_started(root_obj))
 		
 	root_obj.set_meta("component_category", "card")
 	root_obj.set_meta("card_data", card_data)
+	root_obj.z_index = 2  # อยู่เหนือ zone (z=0) เสมอ
 	
 	if card_data.has("file_path"):
 		Global.make_card_inspectable(root_obj, card_data["file_path"])
 	
 	_add_delete_button(root_obj)
-	_apply_card_size(root_obj, field_canvas, null)
-	field_canvas.add_child(root_obj)
+	if auto_add:
+		_apply_card_size(root_obj, field_canvas, null)
+		field_canvas.add_child(root_obj)
 	return root_obj
 
 func _add_delete_button(target_node: Control):
@@ -1728,6 +1970,8 @@ func _toggle_test_mode():
 		test_mode_btn.text = "Switch to Build Mode"
 		test_mode_btn.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
 		
+		if hand_scroll: hand_scroll.show()
+		
 		pre_test_state.clear()
 		test_spawned_nodes.clear()
 		for child in field_canvas.get_children():
@@ -1757,6 +2001,8 @@ func _toggle_test_mode():
 	else:
 		test_mode_btn.text = "Switch to Test Mode"
 		test_mode_btn.remove_theme_color_override("font_color")
+		
+		if hand_scroll: hand_scroll.hide()
 		
 		for node in test_spawned_nodes:
 			if is_instance_valid(node) and not node.is_queued_for_deletion():
@@ -1791,6 +2037,24 @@ func _toggle_test_mode():
 							zc.visible = zc_state["visible"]
 		pre_test_state.clear()
 		
+		# ลบการ์ดทั้งหมดบนมือ
+		if hand_zone:
+			for c in hand_zone.get_children():
+				c.queue_free()
+		
+		# ลบการ์ดที่ถูกจั่วออกมาอยู่บนสนาม
+		for child in field_canvas.get_children():
+			var cat = child.get_meta("component_category", "")
+			if cat == "card":
+				child.queue_free()
+				continue
+			# reset สถานะ deck กลับ
+			if cat == "deck":
+				var deck_out_node = child.get_node_or_null("DeckOutOverlay")
+				if deck_out_node: deck_out_node.queue_free()
+				var hover_info = child.get_node_or_null("HoverInfo")
+				if hover_info: hover_info.hide()
+		
 		for child in field_canvas.get_children():
 			if child.has_meta("component_category") and child.get_meta("component_category") == "zone":
 				if child.has_meta("original_color"):
@@ -1817,9 +2081,48 @@ func _toggle_test_mode():
 func _on_card_drag_ended(card: Control):
 	if not is_test_mode: return
 	
+	# ตรวจว่าปล่อยการ์ดใน hand zone หรือเปล่า
+	if hand_scroll and hand_scroll.visible:
+		if hand_scroll.get_global_rect().has_point(get_global_mouse_position()):
+			_add_card_to_hand(card)
+			return
+	
+	# ปล่อยนอก hand zone → คืนขนาด field ก่อน แล้วค่อยวางบนสนาม
+	if card.get_meta("in_hand", false):
+		var field_sz = card.get_meta("field_size", card.size)
+		var field_sc = card.get_meta("field_scale", Vector2.ONE)
+		card.custom_minimum_size = field_sz
+		card.size = field_sz
+		card.pivot_offset = field_sz / 2.0
+		if card.has_method("update_base_scale"):
+			card.update_base_scale(field_sc)
+		else:
+			card.scale = field_sc
+		# center การ์ดบน cursor (ขนาดเพิ่งเปลี่ยน)
+		card.global_position = get_global_mouse_position() - field_sz / 2.0
+	
+	card.set_meta("in_hand", false)
+	
+	var drop_global = get_global_mouse_position()
 	var card_rect = Rect2(card.global_position, card.size * card.scale)
 	var card_center = card_rect.get_center()
 	
+	# reparent เข้า field_canvas ก่อนเช็ค zone
+	if card.get_parent() != field_canvas:
+		var g_pos = card.global_position
+		card.get_parent().remove_child(card)
+		field_canvas.add_child(card)
+		card.global_position = g_pos
+	
+	# รีเซ็ต hover state หลัง reparent
+	# (การ reparent ยิง mouse_exited + mouse_entered ทันที ทำให้ hover scale ถูก apply ซ้อน)
+	var htween = card.get("hover_tween")
+	if htween and htween is Tween: htween.kill()
+	card.set("is_hovering", false)
+	var base = card.get("base_scale")
+	if base: card.scale = base
+	
+	# เช็คว่าวางบน zone ไหมหรือเปล่า
 	var handled = false
 	for child in field_canvas.get_children():
 		if child == card: continue
@@ -1832,11 +2135,9 @@ func _on_card_drag_ended(card: Control):
 				break
 				
 	if not handled:
-		if card.get_parent() != field_canvas:
-			var global_pos = card.global_position
-			card.get_parent().remove_child(card)
-			field_canvas.add_child(card)
-			card.global_position = global_pos
+		# ตำแหน่งการ์ดถูกตามเมาส์อยู่แล้วผ่าน drag_offset ใน DraggableControl
+		# ไม่ต้องคำนวณใหม่ — global_position ของการ์ดคือตำแหน่งที่ถูกต้องแล้ว
+		pass
 			
 	var prev_zone = card.get_meta("current_hovered_zone", null)
 	if prev_zone:
@@ -1872,6 +2173,82 @@ func _on_card_drag_moved(card: Control):
 		_highlight_card(card, true)
 	else:
 		_highlight_card(card, false)
+
+func _on_card_drag_started(card: Control):
+	# ถ้าการ์ดอยู่บนมือ ไม่ต้องทำอะไร — ให้อยู่ใน hand_zone ระหว่าง drag
+	# (field size จะถูกคืนตอน drop ใน _on_card_drag_ended เหมือนกับที่ deck ทำ)
+	if card.get_meta("in_hand", false): return
+
+func _add_card_to_hand(card: Control):
+	card.set_meta("in_hand", true)
+	
+	# บันทึกขนาดบนสนาม ก่อนที่จะเปลี่ยนอะไรทั้งนั้น
+	# ต้องทำก่อน update_base_scale เพราะ base_scale ยังเป็นค่าบนสนามอยู่
+	var current_bs = card.get("base_scale")
+	card.set_meta("field_size", card.size)  # always overwrite (อาจถูก resize บนสนาม)
+	card.set_meta("field_scale", current_bs if current_bs != null else card.scale)
+	
+	if card.get_parent():
+		card.get_parent().remove_child(card)
+	# kill hover_tween ที่อาจค้างจาก mouse_exited ตอน remove_child
+	var htween = card.get("hover_tween")
+	if htween and htween is Tween: htween.kill()
+	card.set("is_hovering", false)
+	# reset scale ก่อน (ขนาดจะถูกคำนวณใหม่ใน _update_hand_zone_sizing)
+	if card.has_method("update_base_scale"):
+		card.update_base_scale(Vector2.ONE)
+	else:
+		card.scale = Vector2.ONE
+	if hand_zone:
+		hand_zone.add_child(card)
+		_update_hand_zone_sizing.call_deferred()
+
+func _update_hand_zone_sizing():
+	if _hand_collapsed or not hand_scroll.visible: return
+	
+	# ความสูงที่ใช้ได้จริง (หักลบ bar + hscrollbar)
+	var zone_h = abs(hand_scroll.offset_top) - HAND_BAR_HEIGHT - 14.0
+	if zone_h < 20: return
+	
+	var sep = 12
+	var total_w = 0.0
+	var child_count = 0
+	for card in hand_zone.get_children():
+		# อ่านขนาดบนสนามจาก meta เสมอ
+		var field_size: Vector2 = card.get_meta("field_size", Vector2(150, 210))
+		var aspect = field_size.x / max(field_size.y, 1.0)
+		var card_w = zone_h * aspect
+		
+		# ตั้ง size ตรงๆ เพื่อให้ HBoxContainer + pivot_offset ทำงานถูกต้อง
+		# (field_size ยังอยู่ใน meta ครบ ตอน drag จะ restore จาก meta เสมอ)
+		card.custom_minimum_size = Vector2(card_w, zone_h)
+		card.size = Vector2(card_w, zone_h)
+		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		# reset scale กลับ Vector2.ONE (pivot_offset = size/2 ของ hand display)
+		if card.has_method("update_base_scale"):
+			card.update_base_scale(Vector2.ONE)
+		else:
+			card.scale = Vector2.ONE
+		total_w += card_w
+		child_count += 1
+	
+	if child_count > 1:
+		total_w += sep * (child_count - 1)
+	
+	# อัพเดต scrollbar
+	var visible_w = hand_scroll.size.x
+	if visible_w <= 0: visible_w = get_viewport().size.x
+	if total_w > visible_w:
+		hand_hscroll.max_value = total_w - visible_w + 16
+		hand_hscroll.page = visible_w
+		hand_hscroll.show()
+		hand_zone.offset_bottom = -14
+	else:
+		hand_hscroll.value = 0
+		hand_zone.position.x = 0
+		hand_hscroll.hide()
+		hand_zone.offset_bottom = 0
 
 func _will_zone_accept_card(zone: Control, card: Control) -> bool:
 	var settings = zone.get_meta("zone_settings", {})
@@ -1918,13 +2295,12 @@ func _handle_card_dropped_on_zone(card: Control, zone: Control):
 				return
 				
 		if card.get_parent() != zone:
-			var global_pos = card.global_position
 			card.get_parent().remove_child(card)
 			zone.add_child(card)
-			# Center it
-			card.position = (zone.size / 2.0) - ((card.size * card.scale) / 2.0)
-		else:
-			card.position = (zone.size / 2.0) - ((card.size * card.scale) / 2.0)
+		# center card = center zone
+		# ไม่คูณ card.scale เพราะ pivot_offset = size/2 จัดการ scale ให้แล้ว
+		card.pivot_offset = card.size / 2.0
+		card.position = (zone.size / 2.0) - (card.size / 2.0)
 			
 		var face = settings.get("face", 0) # 0 = Up, 1 = Down, 2 = Free
 		if face == 1:
@@ -1949,6 +2325,7 @@ func _handle_card_dropped_on_zone(card: Control, zone: Control):
 			card.get_parent().remove_child(card)
 			field_canvas.add_child(card)
 			card.global_position = global_pos
+		# ไม่ต้องทำอะไรถ้าอยู่ใน field_canvas อยู่แล้ว
 
 func _set_card_face_down(card: Control, is_down: bool):
 	if is_down:
@@ -1988,3 +2365,84 @@ func _set_card_face_down(card: Control, is_down: bool):
 	else:
 		if card.has_node("CardBack"):
 			card.get_node("CardBack").hide()
+
+func _update_deck_count_label(deck_obj: Control):
+	var draw_pile = deck_obj.get_meta("draw_pile", [])
+	var is_out = draw_pile.is_empty()
+	var count_text = str(draw_pile.size()) + " Cards"
+	# อัปเดต CountLabel ใน overlay (ก่อนยืนยัน)
+	if deck_obj.has_meta("deck_count_label"):
+		var lbl = deck_obj.get_meta("deck_count_label")
+		if is_instance_valid(lbl):
+			lbl.text = count_text
+	# อัปเดต HoverLabel (หลังยืนยัน - แสดงตอน hover บนเด็คที่ lock แล้ว)
+	var hover_lbl = deck_obj.find_child("HoverLabel", true, false)
+	if hover_lbl:
+		var d_name = deck_obj.get_meta("deck_data", {}).get("deck_name", "Deck")
+		hover_lbl.text = d_name + "\n" + count_text
+	# แสดง / ซ่อน "Deck Out" overlay เมื่อการ์ดหมด
+	var deck_out_node = deck_obj.get_node_or_null("DeckOutOverlay")
+	if is_out:
+		if not deck_out_node:
+			deck_out_node = _create_deck_out_overlay()
+			deck_out_node.name = "DeckOutOverlay"
+			deck_obj.add_child(deck_out_node)
+		deck_out_node.show()
+	else:
+		if deck_out_node:
+			deck_out_node.hide()
+
+func _create_deck_out_overlay() -> Control:
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 1.0)  # ทึบ 100%
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lbl = Label.new()
+	lbl.text = "Deck Out"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.15, 0.15, 1.0))
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	lbl.add_theme_constant_override("outline_size", 4)
+	overlay.add_child(lbl)
+	return overlay
+
+func _on_deck_left_clicked(deck_obj: Control):
+	if not is_test_mode: return
+	if not deck_obj.get_meta("deck_confirmed", false): return
+	
+	var draw_pile = deck_obj.get_meta("draw_pile", [])
+	if draw_pile.is_empty(): return
+	
+	var card_path = draw_pile.pop_back()
+	deck_obj.set_meta("draw_pile", draw_pile)
+	_update_deck_count_label(deck_obj)
+	
+	if not FileAccess.file_exists(card_path): return
+	var json_str = FileAccess.get_file_as_string(card_path)
+	var json = JSON.new()
+	if json.parse(json_str) != OK: return
+	
+	var card_data = json.get_data()
+	card_data["file_path"] = card_path
+	
+	# สร้างการ์ดโดยไม่ add เข้า field_canvas ก่อน (ไม่ใช่ changeling)
+	var card = spawn_card_object(card_data, false)
+	
+	# บันทึกขนาดบนสนามที่ควรจะเป็น (เท่ากับ deck)
+	var field_size = deck_obj.size
+	var field_scale = deck_obj.get("base_scale")
+	if field_scale == null: field_scale = deck_obj.scale
+	card.custom_minimum_size = field_size
+	card.size = field_size
+	card.set_meta("field_size", field_size)
+	card.set_meta("field_scale", field_scale)
+	card.set_meta("in_hand", true)
+	
+	# scale = 1 สำหรับแสดงบนมือ ขนาดจะถูกคำนวณใหม่ใน _update_hand_zone_sizing
+	card.scale = Vector2.ONE
+	hand_zone.add_child(card)
+	_update_hand_zone_sizing.call_deferred()
