@@ -15,6 +15,10 @@ var tabletop_assets = {
 
 var main_menu_tab = "HOME"
 
+var play_mode: bool = false
+var loaded_field_path: String = ""
+var selected_deck_path: String = ""
+
 var inspect_timer: Timer
 var target_inspect_card_path: String = ""
 

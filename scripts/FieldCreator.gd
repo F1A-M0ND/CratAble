@@ -21,6 +21,7 @@ var current_editing_zone: Control = null
 var field_canvas: Control
 var field_zoom: float = 1.0
 var is_panning: bool = false
+var field_file_dialog: FileDialog
 
 var field_settings_dialog: ConfirmationDialog
 var field_name_input: LineEdit
@@ -62,7 +63,7 @@ var test_spawned_nodes: Array = []
 var current_changeling_card: Control = null
 
 var hand_scroll: Control  # เป็น Control ธรรมดา ไม่ clip overflow
-var hand_zone: HBoxContainer
+var hand_zone: Control
 var drag_layer: Control  # layer สำหรับการ์ดที่กำลังลากจากมือ (อยู่เหนือสุดทุกอย่าง)
 
 var _hand_collapsed: bool = false
@@ -73,9 +74,40 @@ var _resize_start_offset: float = 0.0
 const HAND_BAR_HEIGHT: float = 32.0
 var hand_hscroll: HScrollBar  # แถบเลื่อนแนวนอน
 
+# Tabletop Gameplay Context Menu & Viewer Dialogs
+var tabletop_popup_menu: PopupMenu
+var peeker_dialog: ConfirmationDialog
+var peeker_cards_container: HBoxContainer
+var peeker_deck_target: Control
+
+var zone_viewer_dialog: ConfirmationDialog
+var zone_viewer_grid: GridContainer
+var zone_viewer_target: Control
+var context_tabletop_node: Control = null
+var peeker_prompt_dialog: ConfirmationDialog
+var peeker_prompt_spinbox: SpinBox
+var peeker_held_cards: Array = []
+
 func _ready():
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
+	
+	# Setup Load Button programmatically right after Save Button
+	var load_btn = Button.new()
+	load_btn.name = "LoadFieldBtn"
+	load_btn.text = "Load Field"
+	$HBoxContainer/LeftSide.add_child(load_btn)
+	$HBoxContainer/LeftSide.move_child(load_btn, $HBoxContainer/LeftSide/SaveFieldBtn.get_index() + 1)
+	load_btn.pressed.connect(_on_load_field_pressed)
+	
+	# Setup Field File Dialog
+	field_file_dialog = FileDialog.new()
+	field_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	field_file_dialog.filters = PackedStringArray(["*.json ; Field Layout Files"])
+	field_file_dialog.size = Vector2(600, 400)
+	field_file_dialog.use_native_dialog = true
+	field_file_dialog.file_selected.connect(_on_field_file_selected)
+	add_child(field_file_dialog)
 	
 	# Hand zone — ใช้ Control ธรรมดา (ไม่ clip) เพื่อให้การ์ดที่ขยายตอน hover โผล่เหนือขอบได้
 	hand_scroll = Control.new()
@@ -179,13 +211,11 @@ func _ready():
 	
 	hand_scroll.hide() # Hidden until test mode
 	
-	# --- Hand Zone (HBoxContainer ที่อยู่ใต้ bar) ---
-	hand_zone = HBoxContainer.new()
+	# --- Hand Zone (Control ที่อยู่ใต้ bar) ---
+	hand_zone = Control.new()
 	hand_zone.name = "HandZone"
 	hand_zone.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hand_zone.offset_top = HAND_BAR_HEIGHT  # เริ่มใต้ collapse bar
-	hand_zone.alignment = BoxContainer.ALIGNMENT_CENTER
-	hand_zone.add_theme_constant_override("separation", 12)
 	hand_zone.clip_contents = false
 	hand_scroll.add_child(hand_zone)
 	
@@ -341,6 +371,35 @@ func _ready():
 	save_template_dialog.add_child(vb_temp)
 	save_template_dialog.confirmed.connect(_on_save_template_confirmed)
 	add_child(save_template_dialog)
+	
+	_init_tabletop_popup_menu()
+	_init_tabletop_viewers()
+	
+	if Global.play_mode:
+		# Configure UI and signals for Play Mode
+		$HBoxContainer/LeftSide.hide()
+		$Header/BackBtn.text = "< Exit Lobby"
+		if $Header/BackBtn.pressed.is_connected(_on_back_pressed):
+			$Header/BackBtn.pressed.disconnect(_on_back_pressed)
+		$Header/BackBtn.pressed.connect(func():
+			Global.play_mode = false
+			Global.switch_scene("res://scenes/RoomList.tscn")
+		)
+		
+		# Call deferred to trigger Play Mode settings
+		call_deferred("_enter_game_play_mode")
+
+func _enter_game_play_mode():
+	is_test_mode = false # force reset state
+	_toggle_test_mode() # switch to test/play mode
+	
+	# Hide the switch to build mode button to prevent switching back
+	if is_instance_valid(test_mode_btn):
+		test_mode_btn.hide()
+		
+	# Automatically load the selected layout
+	if Global.loaded_field_path != "":
+		_load_field_from_file(Global.loaded_field_path)
 
 func _input(event):
 	if event is InputEventMouseButton:
@@ -984,58 +1043,63 @@ func _setup_deck_changeling(deck_obj: Control):
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		deck_obj.add_child(badge)
 		
-		# สร้าง HoverInfo panel สำหรับแสดงตอนชี้เด็คที่ยืนยันแล้ว
-		var hover_panel = Panel.new()
-		hover_panel.name = "HoverInfo"
-		hover_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-		hover_panel.z_index = 10
-		hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var hp_style = StyleBoxFlat.new()
-		hp_style.bg_color = Color(0, 0, 0, 0.60)
-		hp_style.corner_radius_top_left = 8; hp_style.corner_radius_top_right = 8
-		hp_style.corner_radius_bottom_left = 8; hp_style.corner_radius_bottom_right = 8
-		hover_panel.add_theme_stylebox_override("panel", hp_style)
-		hover_panel.hide()
-		deck_obj.add_child(hover_panel)
-		
-		var hover_lbl = Label.new()
-		hover_lbl.name = "HoverLabel"
-		hover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		hover_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
-		hover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hover_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-		hover_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		hover_lbl.add_theme_constant_override("outline_size", 3)
-		hover_lbl.add_theme_font_size_override("font_size", 13)
-		hover_panel.add_child(hover_lbl)
-		
-		# connect mouse hover เพื่อ show/hide hover info
-		deck_obj.mouse_entered.connect(func():
-			if not is_instance_valid(hover_panel): return
-			hover_panel.show()
-		)
-		deck_obj.mouse_exited.connect(func():
-			if not is_instance_valid(hover_panel): return
-			var local = deck_obj.get_local_mouse_position()
-			if Rect2(Vector2.ZERO, deck_obj.size).has_point(local): return
-			hover_panel.hide()
-		)
-		
-		var deck_data = deck_obj.get_meta("deck_data", {})
-		var draw_pile = []
-		if deck_data.has("groups"):
-			for g in deck_data["groups"]:
-				for p in g.get("cards", {}):
-					for i in range(int(g["cards"][p])):
-						draw_pile.append(p)
-		
-		if deck_obj.get_meta("shuffle_at_start", false):
-			draw_pile.shuffle()
-			
-		deck_obj.set_meta("draw_pile", draw_pile)
-		_update_deck_count_label(deck_obj)
+		_confirm_deck_programmatically(deck_obj)
 	)
+
+func _confirm_deck_programmatically(deck_obj: Control):
+	deck_obj.set_meta("deck_confirmed", true)
+	var deck_data = deck_obj.get_meta("deck_data", {})
+	
+	# สร้าง HoverInfo panel สำหรับแสดงตอนชี้เด็คที่ยืนยันแล้ว
+	var hover_panel = Panel.new()
+	hover_panel.name = "HoverInfo"
+	hover_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hover_panel.z_index = 10
+	hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hp_style = StyleBoxFlat.new()
+	hp_style.bg_color = Color(0, 0, 0, 0.60)
+	hp_style.corner_radius_top_left = 8; hp_style.corner_radius_top_right = 8
+	hp_style.corner_radius_bottom_left = 8; hp_style.corner_radius_bottom_right = 8
+	hover_panel.add_theme_stylebox_override("panel", hp_style)
+	hover_panel.hide()
+	deck_obj.add_child(hover_panel)
+	
+	var hover_lbl = Label.new()
+	hover_lbl.name = "HoverLabel"
+	hover_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hover_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hover_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hover_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	hover_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	hover_lbl.add_theme_constant_override("outline_size", 3)
+	hover_lbl.add_theme_font_size_override("font_size", 13)
+	hover_panel.add_child(hover_lbl)
+	
+	# connect mouse hover เพื่อ show/hide hover info
+	deck_obj.mouse_entered.connect(func():
+		if not is_instance_valid(hover_panel): return
+		hover_panel.show()
+	)
+	deck_obj.mouse_exited.connect(func():
+		if not is_instance_valid(hover_panel): return
+		var local = deck_obj.get_local_mouse_position()
+		if Rect2(Vector2.ZERO, deck_obj.size).has_point(local): return
+		hover_panel.hide()
+	)
+	
+	var draw_pile = []
+	if deck_data.has("groups"):
+		for g in deck_data["groups"]:
+			for p in g.get("cards", {}):
+				for k in range(int(g["cards"][p])):
+					draw_pile.append(p)
+	
+	if deck_obj.get_meta("shuffle_at_start", false):
+		draw_pile.shuffle()
+		
+	deck_obj.set_meta("draw_pile", draw_pile)
+	_update_deck_count_label(deck_obj)
 
 func _show_other_import_dialog():
 	var file_dialog = FileDialog.new()
@@ -1053,7 +1117,7 @@ func _show_other_import_dialog():
 	add_child(file_dialog)
 	file_dialog.popup_centered(Vector2(600, 400))
 
-func _spawn_other_object(image_path: String):
+func _spawn_other_object(image_path: String) -> Control:
 	var root_obj = TextureRect.new()
 	
 	var tex = null
@@ -1083,8 +1147,11 @@ func _spawn_other_object(image_path: String):
 		root_obj.position = Vector2(200, 200)
 		
 		root_obj.set_script(load("res://scripts/DraggableControl.gd"))
+		root_obj.set_meta("component_category", "image")
+		root_obj.set_meta("image_path", image_path)
 		_add_delete_button(root_obj)
-		tabletop_view.add_child(root_obj)
+		field_canvas.add_child(root_obj)
+	return root_obj
 
 func spawn_deck_object(deck_data: Dictionary):
 	var root_obj = Control.new()
@@ -1159,6 +1226,8 @@ func spawn_deck_object(deck_data: Dictionary):
 		root_obj.drag_moved.connect(func(): _on_card_drag_moved(root_obj))
 	if root_obj.has_signal("left_clicked"):
 		root_obj.left_clicked.connect(func(): _on_deck_left_clicked(root_obj))
+	if root_obj.has_signal("right_clicked"):
+		root_obj.right_clicked.connect(func(): _on_deck_right_clicked(root_obj))
 		
 	root_obj.set_meta("component_category", "deck")
 	root_obj.set_meta("deck_data", deck_data)
@@ -1243,6 +1312,10 @@ func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
 		root_obj.drag_moved.connect(func(): _on_card_drag_moved(root_obj))
 	if root_obj.has_signal("drag_started"):
 		root_obj.drag_started.connect(func(): _on_card_drag_started(root_obj))
+	if root_obj.has_signal("right_clicked"):
+		root_obj.right_clicked.connect(func(): _on_card_right_clicked(root_obj))
+	if root_obj.has_signal("double_clicked"):
+		root_obj.double_clicked.connect(func(): _on_card_double_clicked(root_obj))
 		
 	root_obj.set_meta("component_category", "card")
 	root_obj.set_meta("card_data", card_data)
@@ -1492,7 +1565,7 @@ func _spawn_zone(zone_type: String):
 	field_canvas.add_child(zone)
 	return zone
 
-func _on_add_dice_pressed():
+func _on_add_dice_pressed() -> Control:
 	# สร้างคอนเทนเนอร์หลักสำหรับลูกเต๋าเพื่อให้ลากได้
 	var root_obj = Control.new()
 	root_obj.position = Vector2(300, 100)
@@ -1533,8 +1606,10 @@ func _on_add_dice_pressed():
 	)
 	
 	root_obj.add_child(dice_btn)
+	root_obj.set_meta("component_category", "dice")
 	_add_delete_button(root_obj)
 	field_canvas.add_child(root_obj)
+	return root_obj
 
 func _on_add_counter_pressed():
 	# สร้างตัวนับแต้ม (Token) ที่สามารถลากได้
@@ -1607,8 +1682,251 @@ func _on_add_counter_pressed():
 	return root_obj
 
 func _on_save_field_pressed():
-	# บันทึกตำแหน่งและ Asset ทั้งหมดในโต๊ะ
-	print("Field Layout Saved!")
+	if not DirAccess.dir_exists_absolute("res://fields"):
+		DirAccess.make_dir_absolute("res://fields")
+	field_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	field_file_dialog.title = "Save Field Layout"
+	field_file_dialog.current_dir = "res://fields"
+	field_file_dialog.popup_centered()
+
+func _on_load_field_pressed():
+	if not DirAccess.dir_exists_absolute("res://fields"):
+		DirAccess.make_dir_absolute("res://fields")
+	field_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	field_file_dialog.title = "Load Field Layout"
+	field_file_dialog.current_dir = "res://fields"
+	field_file_dialog.popup_centered()
+
+func _on_field_file_selected(path: String):
+	if field_file_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
+		_save_field_to_file(path)
+	else:
+		_load_field_from_file(path)
+
+func _gather_components(node: Node, list: Array):
+	for child in node.get_children():
+		if child is Control and child.has_meta("component_category"):
+			list.append(child)
+		_gather_components(child, list)
+
+func _save_field_to_file(path: String):
+	var layout_data = {
+		"canvas": {
+			"field_name": field_canvas.get_meta("field_name", "Main Field"),
+			"size_x": field_canvas.size.x,
+			"size_y": field_canvas.size.y,
+			"rotation_degrees": field_canvas.rotation_degrees,
+			"card_custom_width": field_canvas.get_meta("card_custom_width", 0),
+			"card_custom_height": field_canvas.get_meta("card_custom_height", 0),
+			"field_perms": field_canvas.get_meta("field_perms", {"move": true, "play": true})
+		},
+		"components": []
+	}
+	
+	var components = []
+	_gather_components(field_canvas, components)
+	
+	var node_to_id = {}
+	for i in range(components.size()):
+		node_to_id[components[i]] = i
+		
+	for i in range(components.size()):
+		var node = components[i]
+		var cat = node.get_meta("component_category", "")
+		
+		var parent_id = -1
+		var parent = node.get_parent()
+		if parent in node_to_id:
+			parent_id = node_to_id[parent]
+			
+		var comp_data = {
+			"id": i,
+			"parent_id": parent_id,
+			"category": cat,
+			"position_x": node.position.x,
+			"position_y": node.position.y,
+			"size_x": node.size.x,
+			"size_y": node.size.y,
+			"rotation_degrees": node.rotation_degrees
+		}
+		
+		if cat == "zone":
+			comp_data["zone_type"] = node.get_meta("zone_type", "Card Zone")
+			comp_data["zone_settings"] = node.get_meta("zone_settings", {}).duplicate()
+		elif cat == "counter":
+			comp_data["counter_name"] = node.counter_name if "counter_name" in node else ""
+			comp_data["name_position"] = node.name_position if "name_position" in node else 0
+			comp_data["default_value"] = node.default_value if "default_value" in node else 0
+			comp_data["name_auto_scale"] = node.name_auto_scale if "name_auto_scale" in node else true
+			comp_data["name_custom_size"] = node.name_custom_size if "name_custom_size" in node else 14
+			comp_data["is_vertical"] = node.is_vertical if "is_vertical" in node else false
+		elif cat == "field":
+			comp_data["field_name"] = node.get_meta("field_name", "Sub Field")
+			comp_data["field_perms"] = node.get_meta("field_perms", {"move": true, "play": true}).duplicate()
+			comp_data["card_custom_width"] = node.get_meta("card_custom_width", 0)
+			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
+		elif cat == "dice":
+			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
+			if dice_btn and dice_btn is Button:
+				comp_data["dice_text"] = dice_btn.text
+			else:
+				comp_data["dice_text"] = "D6: -"
+		elif cat == "image":
+			comp_data["image_path"] = node.get_meta("image_path", "")
+			
+		layout_data["components"].append(comp_data)
+		
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		var json_string = JSON.stringify(layout_data, "\t")
+		file.store_string(json_string)
+		file.close()
+		print("Field Layout Saved successfully to: ", path)
+	else:
+		print("ERROR: Failed to save Field Layout to: ", path)
+
+func _clear_all_components(node: Node):
+	for child in node.get_children():
+		if child is Control and child.has_meta("component_category"):
+			child.queue_free()
+		else:
+			_clear_all_components(child)
+
+func _load_field_from_file(path: String):
+	if not FileAccess.file_exists(path):
+		print("ERROR: Field Layout file not found at: ", path)
+		return
+		
+	var str_content = FileAccess.get_file_as_string(path)
+	var json = JSON.new()
+	if json.parse(str_content) != OK:
+		print("ERROR: Failed to parse Field Layout JSON from: ", path)
+		return
+		
+	var layout_data = json.get_data()
+	if typeof(layout_data) != TYPE_DICTIONARY or not layout_data.has("canvas") or not layout_data.has("components"):
+		print("ERROR: Invalid Field Layout format.")
+		return
+		
+	# 1. Apply Canvas Properties
+	var canvas_data = layout_data["canvas"]
+	field_canvas.set_meta("field_name", canvas_data.get("field_name", "Main Field"))
+	field_canvas.size = Vector2(canvas_data.get("size_x", 1500), canvas_data.get("size_y", 1000))
+	field_canvas.custom_minimum_size = field_canvas.size
+	field_canvas.rotation_degrees = canvas_data.get("rotation_degrees", 0.0)
+	field_canvas.set_meta("card_custom_width", canvas_data.get("card_custom_width", 0))
+	field_canvas.set_meta("card_custom_height", canvas_data.get("card_custom_height", 0))
+	field_canvas.set_meta("field_perms", canvas_data.get("field_perms", {"move": true, "play": true}))
+	
+	# 2. Clear Existing Components
+	_clear_all_components(field_canvas)
+	
+	# 3. First Pass: Instantiate all components and map their IDs
+	var components_data = layout_data["components"]
+	var id_to_node = {}
+	
+	for comp_data in components_data:
+		var cat = comp_data.get("category", "")
+		var node: Control = null
+		
+		if cat == "zone":
+			var z_type = comp_data.get("zone_type", "Card Zone")
+			node = _spawn_zone(z_type)
+			if node:
+				var s_data = comp_data.get("zone_settings", {}).duplicate()
+				node.set_meta("zone_settings", s_data)
+				var lbl = node.get_node_or_null("VBoxContainer/Label")
+				if lbl:
+					var p_str = "Place" if s_data.get("purpose", 0) == 0 else "Select"
+					var f_str = "Up" if s_data.get("face", 0) == 0 else ("Down" if s_data.get("face", 0) == 1 else "Free")
+					var m_str = "Move: Yes" if s_data.get("allow_move", true) else "Move: No"
+					var limit_str = "Max: " + str(s_data.get("max_cards", 1)) if s_data.get("has_max_cards", false) else "Max: ∞"
+					lbl.text = z_type + "\n(" + p_str + " | " + f_str + ")\n" + m_str + " | " + limit_str
+		elif cat == "counter":
+			node = _on_add_counter_pressed()
+			if node and node.has_method("set_counter_properties"):
+				node.set_counter_properties(
+					comp_data.get("counter_name", ""),
+					comp_data.get("name_position", 0),
+					comp_data.get("default_value", 0),
+					comp_data.get("name_auto_scale", true),
+					comp_data.get("name_custom_size", 14)
+				)
+				node.set_orientation(comp_data.get("is_vertical", false))
+		elif cat == "field":
+			node = _spawn_sub_field()
+			if node:
+				node.set_meta("field_name", comp_data.get("field_name", "Sub Field"))
+				node.set_meta("field_perms", comp_data.get("field_perms", {"move": true, "play": true}))
+				node.set_meta("card_custom_width", comp_data.get("card_custom_width", 0))
+				node.set_meta("card_custom_height", comp_data.get("card_custom_height", 0))
+		elif cat == "dice":
+			node = _on_add_dice_pressed()
+			if node:
+				var dice_text = comp_data.get("dice_text", "D6: -")
+				var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
+				if dice_btn and dice_btn is Button:
+					dice_btn.text = dice_text
+		elif cat == "image":
+			var img_path = comp_data.get("image_path", "")
+			node = _spawn_other_object(img_path)
+			
+		if node:
+			node.size = Vector2(comp_data.get("size_x", node.size.x), comp_data.get("size_y", node.size.y))
+			node.custom_minimum_size = node.size
+			node.position = Vector2(comp_data.get("position_x", node.position.x), comp_data.get("position_y", node.position.y))
+			node.rotation_degrees = comp_data.get("rotation_degrees", 0.0)
+			id_to_node[comp_data.get("id")] = node
+			
+	# 4. Second Pass: Reparent controls to subfields where parent_id is not -1
+	for comp_data in components_data:
+		var id = comp_data.get("id")
+		var parent_id = comp_data.get("parent_id", -1)
+		if parent_id != -1 and id_to_node.has(id) and id_to_node.has(parent_id):
+			var node = id_to_node[id]
+			var parent_node = id_to_node[parent_id]
+			if node.get_parent():
+				node.get_parent().remove_child(node)
+			parent_node.add_child(node)
+			# Restore local position as it gets modified during reparenting
+			node.position = Vector2(comp_data.get("position_x", 0.0), comp_data.get("position_y", 0.0))
+			
+	# Update all card sizes based on new field specs
+	_update_all_cards_size(field_canvas, field_canvas)
+	print("Field Layout Loaded successfully from: ", path)
+	
+	# 5. Play Mode Automatic Deck Spawning
+	if Global.play_mode and Global.selected_deck_path != "":
+		if FileAccess.file_exists(Global.selected_deck_path):
+			var d_str = FileAccess.get_file_as_string(Global.selected_deck_path)
+			var d_json = JSON.new()
+			if d_json.parse(d_str) == OK:
+				var deck_data = d_json.get_data()
+				# Find the first Deck Zone child under field_canvas recursively or directly
+				for child in field_canvas.get_children():
+					if child is Control and child.has_meta("component_category") and child.get_meta("component_category") == "zone":
+						if child.get_meta("zone_type", "") == "Deck Zone":
+							var spawned_deck = spawn_deck_object(deck_data)
+							spawned_deck.set_meta("shuffle_at_start", true) # Shuffled automatically in play mode
+							_apply_card_size(spawned_deck, field_canvas, child)
+							spawned_deck.set_meta("origin_zone", child)
+							
+							# Center on zone
+							spawned_deck.position = child.position + (child.size / 2.0) - ((spawned_deck.size * spawned_deck.scale) / 2.0)
+							
+							# Confirm deck programmatically to prepare draw pile
+							_confirm_deck_programmatically(spawned_deck)
+							
+							# Hide the raw zone background under the deck
+							child.hide()
+							break
+	
+	# Update locked status and editor button visibility for all loaded nodes recursively
+	_set_components_locked(field_canvas, is_test_mode)
+	var editor_nodes = get_tree().get_nodes_in_group("editor_only")
+	for node in editor_nodes:
+		if node is Control:
+			node.visible = not is_test_mode
 
 func _on_back_pressed():
 	Global.main_menu_tab = "CUSTOM"
@@ -1803,6 +2121,12 @@ func _spawn_sub_field():
 	return sub_field
 
 func _on_component_right_clicked(node: Control):
+	if is_test_mode:
+		var cat = node.get_meta("component_category", "")
+		if cat == "zone":
+			_on_zone_right_clicked(node)
+		return
+		
 	template_context_node = node
 	context_menu.position = get_viewport().get_mouse_position()
 	context_menu.popup()
@@ -2071,12 +2395,15 @@ func _toggle_test_mode():
 		if node is Control:
 			node.visible = not is_test_mode
 			
-	# ปรับสถานะ Lock ของ Component ต่างๆ
-	for child in field_canvas.get_children():
-		var cat = child.get_meta("component_category", "")
-		if cat in ["zone", "field", "counter", "dice", "image"]:
+	# ปรับสถานะ Lock ของ Component ต่างๆ แบบ recursive
+	_set_components_locked(field_canvas, is_test_mode)
+
+func _set_components_locked(node: Node, locked: bool):
+	for child in node.get_children():
+		if child is Control and child.has_meta("component_category"):
 			if "locked" in child:
-				child.locked = is_test_mode
+				child.locked = locked
+		_set_components_locked(child, locked)
 
 func _on_card_drag_ended(card: Control):
 	if not is_test_mode: return
@@ -2087,19 +2414,16 @@ func _on_card_drag_ended(card: Control):
 			_add_card_to_hand(card)
 			return
 	
-	# ปล่อยนอก hand zone → คืนขนาด field ก่อน แล้วค่อยวางบนสนาม
+	# ปล่อยนอก hand zone → คืนขนาดสนามก่อน
 	if card.get_meta("in_hand", false):
-		var field_sz = card.get_meta("field_size", card.size)
-		var field_sc = card.get_meta("field_scale", Vector2.ONE)
-		card.custom_minimum_size = field_sz
-		card.size = field_sz
-		card.pivot_offset = field_sz / 2.0
-		if card.has_method("update_base_scale"):
-			card.update_base_scale(field_sc)
-		else:
-			card.scale = field_sc
+		_apply_card_size(card, field_canvas, null)
 		# center การ์ดบน cursor (ขนาดเพิ่งเปลี่ยน)
-		card.global_position = get_global_mouse_position() - field_sz / 2.0
+		card.pivot_offset = card.size / 2.0
+		if card.has_method("update_base_scale"):
+			card.update_base_scale(Vector2.ONE)
+		else:
+			card.scale = Vector2.ONE
+		card.global_position = get_global_mouse_position() - card.size / 2.0
 	
 	card.set_meta("in_hand", false)
 	
@@ -2115,14 +2439,35 @@ func _on_card_drag_ended(card: Control):
 		card.global_position = g_pos
 	
 	# รีเซ็ต hover state หลัง reparent
-	# (การ reparent ยิง mouse_exited + mouse_entered ทันที ทำให้ hover scale ถูก apply ซ้อน)
 	var htween = card.get("hover_tween")
 	if htween and htween is Tween: htween.kill()
 	card.set("is_hovering", false)
-	var base = card.get("base_scale")
-	if base: card.scale = base
+	if card.has_method("update_base_scale"):
+		card.update_base_scale(Vector2.ONE)
+	else:
+		card.scale = Vector2.ONE
 	
-	# เช็คว่าวางบน zone ไหมหรือเปล่า
+	# เช็คว่าปล่อยทับ deck หรือเปล่า
+	var dropped_on_deck: Control = null
+	for child in field_canvas.get_children():
+		if child == card: continue
+		if child.has_meta("component_category") and child.get_meta("component_category") == "deck":
+			var deck_rect = Rect2(child.global_position, child.size * child.scale)
+			if deck_rect.has_point(card_center):
+				dropped_on_deck = child
+				break
+				
+	if dropped_on_deck:
+		context_tabletop_node = card
+		tabletop_popup_menu.clear()
+		tabletop_popup_menu.set_meta("target_deck", dropped_on_deck)
+		tabletop_popup_menu.add_item("Put on Top of Deck", 13)
+		tabletop_popup_menu.add_item("Put at Bottom of Deck", 14)
+		tabletop_popup_menu.position = get_viewport().get_mouse_position()
+		tabletop_popup_menu.popup()
+		return
+	
+	# เช็คว่าวางบน zone หรือเปล่า
 	var handled = false
 	for child in field_canvas.get_children():
 		if child == card: continue
@@ -2135,9 +2480,8 @@ func _on_card_drag_ended(card: Control):
 				break
 				
 	if not handled:
-		# ตำแหน่งการ์ดถูกตามเมาส์อยู่แล้วผ่าน drag_offset ใน DraggableControl
-		# ไม่ต้องคำนวณใหม่ — global_position ของการ์ดคือตำแหน่งที่ถูกต้องแล้ว
-		pass
+		# ถ้าวางบนสนามเปล่าๆ ให้การ์ดมีขนาดการ์ดมาตรฐาน (หรือ custom size ของ field)
+		_apply_card_size(card, field_canvas, null)
 			
 	var prev_zone = card.get_meta("current_hovered_zone", null)
 	if prev_zone:
@@ -2206,49 +2550,67 @@ func _add_card_to_hand(card: Control):
 func _update_hand_zone_sizing():
 	if _hand_collapsed or not hand_scroll.visible: return
 	
-	# ความสูงที่ใช้ได้จริง (หักลบ bar + hscrollbar)
+	# Total height available for hand zone
 	var zone_h = abs(hand_scroll.offset_top) - HAND_BAR_HEIGHT - 14.0
 	if zone_h < 20: return
 	
-	var sep = 12
-	var total_w = 0.0
-	var child_count = 0
-	for card in hand_zone.get_children():
-		# อ่านขนาดบนสนามจาก meta เสมอ
-		var field_size: Vector2 = card.get_meta("field_size", Vector2(150, 210))
-		var aspect = field_size.x / max(field_size.y, 1.0)
-		var card_w = zone_h * aspect
+	var cards = hand_zone.get_children()
+	var child_count = cards.size()
+	
+	# Always hide hand_hscroll since we use dynamic overlapping card layout
+	if is_instance_valid(hand_hscroll):
+		hand_hscroll.hide()
 		
-		# ตั้ง size ตรงๆ เพื่อให้ HBoxContainer + pivot_offset ทำงานถูกต้อง
-		# (field_size ยังอยู่ใน meta ครบ ตอน drag จะ restore จาก meta เสมอ)
+	if child_count == 0:
+		return
+		
+	var viewport_w = hand_scroll.size.x
+	if viewport_w <= 0: viewport_w = get_viewport().size.x
+	
+	var center_x = viewport_w / 2.0
+	var card_w = zone_h * (150.0 / 210.0) # standard card aspect ratio
+	
+	# Set clean offset bounds for hand_zone panel
+	hand_zone.offset_bottom = 0
+	hand_zone.position.x = 0
+	
+	# Dynamic overlapping spacing layout (MTG/Hearthstone style)
+	# Normal spacing is CARD_WIDTH = 160.0. If too many cards, we reduce spacing to fit the screen.
+	var spacing = 160.0
+	var total_w = (child_count - 1) * spacing + card_w
+	if total_w > viewport_w - 40.0:
+		spacing = (viewport_w - 40.0 - card_w) / max(child_count - 1, 1)
+		total_w = (child_count - 1) * spacing + card_w
+		
+	var start_x = center_x - (total_w / 2.0) + (card_w / 2.0)
+	
+	for i in range(child_count):
+		var card = cards[i]
 		card.custom_minimum_size = Vector2(card_w, zone_h)
 		card.size = Vector2(card_w, zone_h)
-		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		# reset scale กลับ Vector2.ONE (pivot_offset = size/2 ของ hand display)
+		card.pivot_offset = card.size / 2.0
+		
+		# Reset size flags to ignore Container layout rules
+		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		card.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		
+		# Calculate target local position
+		var target_x = start_x + (i * spacing) - (card_w / 2.0)
+		var target_y = (hand_zone.size.y / 2.0) - (zone_h / 2.0)
+		var target_pos = Vector2(target_x, target_y)
+		
+		# Set hand metadata so it is tracked correctly
+		card.set_meta("in_hand", true)
+		
+		# Tween position smoothly instead of snapping (Create Room style!)
+		var tween = get_tree().create_tween()
+		tween.tween_property(card, "position", target_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		
+		# Make sure scale is reset to Vector2.ONE
 		if card.has_method("update_base_scale"):
 			card.update_base_scale(Vector2.ONE)
 		else:
 			card.scale = Vector2.ONE
-		total_w += card_w
-		child_count += 1
-	
-	if child_count > 1:
-		total_w += sep * (child_count - 1)
-	
-	# อัพเดต scrollbar
-	var visible_w = hand_scroll.size.x
-	if visible_w <= 0: visible_w = get_viewport().size.x
-	if total_w > visible_w:
-		hand_hscroll.max_value = total_w - visible_w + 16
-		hand_hscroll.page = visible_w
-		hand_hscroll.show()
-		hand_zone.offset_bottom = -14
-	else:
-		hand_hscroll.value = 0
-		hand_zone.position.x = 0
-		hand_hscroll.hide()
-		hand_zone.offset_bottom = 0
 
 func _will_zone_accept_card(zone: Control, card: Control) -> bool:
 	var settings = zone.get_meta("zone_settings", {})
@@ -2282,6 +2644,9 @@ func _handle_card_dropped_on_zone(card: Control, zone: Control):
 	var purpose = settings.get("purpose", 0) # 0 = Place, 1 = Select
 	
 	if purpose == 0: # Place
+		# ปรับขนาดการ์ดให้เท่ากับขนาดของโซนที่วาง
+		_apply_card_size(card, field_canvas, zone)
+		
 		var current_cards = 0
 		for child in zone.get_children():
 			if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
@@ -2442,7 +2807,512 @@ func _on_deck_left_clicked(deck_obj: Control):
 	card.set_meta("field_scale", field_scale)
 	card.set_meta("in_hand", true)
 	
-	# scale = 1 สำหรับแสดงบนมือ ขนาดจะถูกคำนวณใหม่ใน _update_hand_zone_sizing
+	# Set card starting position to the deck's location in hand_zone's local space
+	card.position = hand_zone.get_global_transform().affine_inverse() * deck_obj.global_position
 	card.scale = Vector2.ONE
+	
+	# Start face down
+	_set_card_face_down(card, true)
+	
 	hand_zone.add_child(card)
 	_update_hand_zone_sizing.call_deferred()
+	
+	# Play flip animation midway during translation
+	var scale_tween = get_tree().create_tween()
+	scale_tween.tween_property(card, "scale:x", 0.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	scale_tween.tween_callback(func(): _set_card_face_down(card, false))
+	scale_tween.tween_property(card, "scale:x", 1.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+# ==========================================
+# In-Play Gameplay Operations & Callbacks
+# ==========================================
+
+func _init_tabletop_popup_menu():
+	tabletop_popup_menu = PopupMenu.new()
+	tabletop_popup_menu.id_pressed.connect(_on_tabletop_popup_menu_id_pressed)
+	add_child(tabletop_popup_menu)
+
+func _init_tabletop_viewers():
+	# 1. Deck Peeker Prompt Dialog
+	peeker_prompt_dialog = ConfirmationDialog.new()
+	peeker_prompt_dialog.title = "Look at Top Cards"
+	var hb = HBoxContainer.new()
+	var lbl = Label.new()
+	lbl.text = "Number of cards to peek:"
+	hb.add_child(lbl)
+	
+	peeker_prompt_spinbox = SpinBox.new()
+	peeker_prompt_spinbox.min_value = 1
+	peeker_prompt_spinbox.max_value = 100
+	peeker_prompt_spinbox.value = 3
+	hb.add_child(peeker_prompt_spinbox)
+	peeker_prompt_dialog.add_child(hb)
+	peeker_prompt_dialog.confirmed.connect(func():
+		if is_instance_valid(peeker_deck_target):
+			_open_deck_peeker_with_count(peeker_deck_target, int(peeker_prompt_spinbox.value))
+	)
+	add_child(peeker_prompt_dialog)
+
+	# 2. Deck Peeker Dialog
+	peeker_dialog = ConfirmationDialog.new()
+	peeker_dialog.title = "Deck Peeker"
+	peeker_dialog.min_size = Vector2i(700, 350)
+	
+	var peeker_scroll = ScrollContainer.new()
+	peeker_scroll.custom_minimum_size = Vector2(680, 280)
+	peeker_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	peeker_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	
+	peeker_cards_container = HBoxContainer.new()
+	peeker_cards_container.add_theme_constant_override("separation", 15)
+	peeker_scroll.add_child(peeker_cards_container)
+	peeker_dialog.add_child(peeker_scroll)
+	
+	peeker_dialog.confirmed.connect(_on_peeker_dialog_confirmed)
+	peeker_dialog.canceled.connect(_on_peeker_dialog_confirmed)
+	add_child(peeker_dialog)
+
+	# 3. Zone Pile Viewer Dialog
+	zone_viewer_dialog = ConfirmationDialog.new()
+	zone_viewer_dialog.title = "Zone Pile Viewer"
+	zone_viewer_dialog.min_size = Vector2i(600, 400)
+	
+	var zone_scroll = ScrollContainer.new()
+	zone_scroll.custom_minimum_size = Vector2(580, 330)
+	zone_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	zone_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	
+	zone_viewer_grid = GridContainer.new()
+	zone_viewer_grid.columns = 4
+	zone_viewer_grid.add_theme_constant_override("h_separation", 15)
+	zone_viewer_grid.add_theme_constant_override("v_separation", 15)
+	zone_scroll.add_child(zone_viewer_grid)
+	zone_viewer_dialog.add_child(zone_scroll)
+	
+	add_child(zone_viewer_dialog)
+
+func _on_card_right_clicked(card: Control):
+	if not is_test_mode: return
+	# การ์ดในมือจะไม่แสดงเมนูคลิกขวา
+	if card.get_meta("in_hand", false): return
+	_show_tabletop_context_menu(card, "card")
+
+func _on_card_double_clicked(card: Control):
+	if not is_test_mode: return
+	if card.get_meta("in_hand", false): return
+	_toggle_card_tap(card)
+
+func _on_deck_right_clicked(deck: Control):
+	if not is_test_mode: return
+	if not deck.get_meta("deck_confirmed", false): return
+	_show_tabletop_context_menu(deck, "deck")
+
+func _on_zone_right_clicked(zone: Control):
+	if not is_test_mode: return
+	_show_tabletop_context_menu(zone, "zone")
+
+func _show_tabletop_context_menu(node: Control, type: String):
+	context_tabletop_node = node
+	tabletop_popup_menu.clear()
+	# ลบ metadata เด็คที่ค้างไว้
+	tabletop_popup_menu.remove_meta("target_deck")
+	
+	if type == "card":
+		var current_rot = node.rotation_degrees
+		var is_tapped = abs(current_rot) > 45.0
+		tabletop_popup_menu.add_item("Untap" if is_tapped else "Tap (90°)", 10)
+		
+		var is_face_down = node.has_node("CardBack")
+		tabletop_popup_menu.add_item("Face Up" if is_face_down else "Face Down", 11)
+		
+		tabletop_popup_menu.add_item("Send to Hand", 12)
+		tabletop_popup_menu.add_item("Send to Deck (Top)", 13)
+		tabletop_popup_menu.add_item("Send to Deck (Bottom)", 14)
+		
+	elif type == "deck":
+		tabletop_popup_menu.add_item("Draw Card", 20)
+		tabletop_popup_menu.add_item("Shuffle Deck", 21)
+		tabletop_popup_menu.add_item("Look at Top Cards...", 22)
+		
+	elif type == "zone":
+		var settings = node.get_meta("zone_settings", {})
+		if settings.get("purpose", 0) == 0: # Place
+			var card_count = 0
+			for child in node.get_children():
+				if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+					card_count += 1
+			tabletop_popup_menu.add_item("View Cards in Pile (%d)" % card_count, 30)
+			tabletop_popup_menu.add_item("Shuffle Pile", 31)
+			
+	if tabletop_popup_menu.item_count > 0:
+		tabletop_popup_menu.position = get_viewport().get_mouse_position()
+		tabletop_popup_menu.popup()
+
+func _on_tabletop_popup_menu_id_pressed(id: int):
+	if not is_instance_valid(context_tabletop_node): return
+	
+	match id:
+		10: # Tap/Untap
+			_toggle_card_tap(context_tabletop_node)
+		11: # Flip face
+			var is_face_down = context_tabletop_node.has_node("CardBack")
+			_set_card_face_down(context_tabletop_node, not is_face_down)
+		12: # Send to Hand
+			_add_card_to_hand(context_tabletop_node)
+		13: # Send to Deck (Top)
+			var target_deck = tabletop_popup_menu.get_meta("target_deck", null)
+			if target_deck:
+				_insert_card_into_deck(context_tabletop_node, target_deck, true)
+			else:
+				_send_card_to_deck(context_tabletop_node, true)
+		14: # Send to Deck (Bottom)
+			var target_deck = tabletop_popup_menu.get_meta("target_deck", null)
+			if target_deck:
+				_insert_card_into_deck(context_tabletop_node, target_deck, false)
+			else:
+				_send_card_to_deck(context_tabletop_node, false)
+			
+		20: # Draw
+			_on_deck_left_clicked(context_tabletop_node)
+		21: # Shuffle
+			_shuffle_deck_programmatically(context_tabletop_node)
+		22: # Look at Top Cards
+			_open_deck_peeker(context_tabletop_node)
+			
+		30: # View Cards
+			_open_zone_viewer(context_tabletop_node)
+		31: # Shuffle Zone Pile
+			_shuffle_zone_pile(context_tabletop_node)
+
+func _toggle_card_tap(card: Control):
+	var current_rot = card.rotation_degrees
+	var target_rot = 90.0 if abs(current_rot) < 45.0 else 0.0
+	
+	var tween = create_tween()
+	tween.tween_property(card, "rotation_degrees", target_rot, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _send_card_to_deck(card: Control, to_top: bool):
+	var closest_deck: Control = null
+	var min_dist = 999999.0
+	var card_gpos = card.global_position
+	
+	for child in field_canvas.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") == "deck":
+			var dist = child.global_position.distance_to(card_gpos)
+			if dist < min_dist:
+				min_dist = dist
+				closest_deck = child
+				
+	if closest_deck:
+		_insert_card_into_deck(card, closest_deck, to_top)
+	else:
+		print("No deck found on the tabletop to send the card to!")
+
+func _insert_card_into_deck(card: Control, deck: Control, to_top: bool):
+	var card_data = card.get_meta("card_data", {})
+	var card_path = card_data.get("file_path", "")
+	if card_path == "":
+		card_path = card_data.get("image_path", "")
+	
+	if card_path != "":
+		var draw_pile = deck.get_meta("draw_pile", [])
+		if to_top:
+			draw_pile.append(card_path)
+		else:
+			draw_pile.push_front(card_path)
+		deck.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(deck)
+		
+		# อนิมเมจย่อการ์ดหายวาบเข้ากองเด็ค
+		var tween = create_tween()
+		tween.tween_property(card, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_callback(func(): card.queue_free())
+
+func _shuffle_deck_programmatically(deck: Control):
+	var draw_pile = deck.get_meta("draw_pile", [])
+	if draw_pile.size() > 1:
+		draw_pile.shuffle()
+		deck.set_meta("draw_pile", draw_pile)
+		
+		# เล่น Visual Effect กระพริบเบาๆ
+		var original_color = deck.modulate
+		var tween = create_tween()
+		tween.tween_property(deck, "modulate", Color(0.5, 1.5, 0.5, 1.0), 0.1)
+		tween.tween_property(deck, "modulate", original_color, 0.1)
+
+func _shuffle_zone_pile(zone: Control):
+	var cards = []
+	for child in zone.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards.append(child)
+			
+	if cards.size() > 1:
+		cards.shuffle()
+		for c in cards:
+			zone.remove_child(c)
+		for c in cards:
+			zone.add_child(c)
+			
+		for i in range(cards.size()):
+			var c = cards[i]
+			c.position = (zone.size / 2.0) - (c.size / 2.0)
+			
+		var original_color = zone.color
+		var tween = create_tween()
+		tween.tween_property(zone, "color", Color(0.2, 0.8, 0.2, 0.6), 0.1)
+		tween.tween_property(zone, "color", original_color, 0.1)
+
+func _open_deck_peeker(deck: Control):
+	peeker_deck_target = deck
+	var draw_pile = deck.get_meta("draw_pile", [])
+	peeker_prompt_spinbox.max_value = max(1, draw_pile.size())
+	peeker_prompt_spinbox.value = min(3, draw_pile.size())
+	peeker_prompt_dialog.popup_centered()
+
+func _open_deck_peeker_with_count(deck: Control, count: int):
+	peeker_deck_target = deck
+	var draw_pile = deck.get_meta("draw_pile", [])
+	
+	peeker_held_cards.clear()
+	for i in range(min(count, draw_pile.size())):
+		peeker_held_cards.append(draw_pile.pop_back())
+	
+	deck.set_meta("draw_pile", draw_pile)
+	_update_deck_count_label(deck)
+	
+	_refresh_peeker_view()
+	peeker_dialog.popup_centered()
+
+func _create_peeker_card_node(card_path: String, index: int) -> Control:
+	var item = PanelContainer.new()
+	item.custom_minimum_size = Vector2(130, 240)
+	
+	var vb = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	item.add_child(vb)
+	
+	var tex = null
+	var card_name = "Unknown"
+	if FileAccess.file_exists(card_path):
+		var json_str = FileAccess.get_file_as_string(card_path)
+		var json = JSON.new()
+		if json.parse(json_str) == OK:
+			var data = json.get_data()
+			card_name = data.get("name", "Unknown")
+			var img_path = data.get("image_path", "")
+			if img_path != "":
+				if img_path.begins_with("res://"):
+					if ResourceLoader.exists(img_path): tex = load(img_path)
+				else:
+					var img = Image.new()
+					if img.load(img_path) == OK:
+						tex = ImageTexture.create_from_image(img)
+						
+	var tr = TextureRect.new()
+	tr.custom_minimum_size = Vector2(100, 140)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	if tex:
+		tr.texture = tex
+	else:
+		var bg = ColorRect.new()
+		bg.color = Color(0.2, 0.2, 0.2, 0.8)
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.add_child(bg)
+	vb.add_child(tr)
+	
+	var name_lbl = Label.new()
+	name_lbl.text = card_name
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	vb.add_child(name_lbl)
+	
+	var hb_move = HBoxContainer.new()
+	hb_move.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_left = Button.new()
+	btn_left.text = "<"
+	btn_left.pressed.connect(func(): _move_peeker_card(index, -1))
+	hb_move.add_child(btn_left)
+	
+	var btn_right = Button.new()
+	btn_right.text = ">"
+	btn_right.pressed.connect(func(): _move_peeker_card(index, 1))
+	hb_move.add_child(btn_right)
+	
+	vb.add_child(hb_move)
+	
+	var hb_actions = HBoxContainer.new()
+	hb_actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_hand = Button.new()
+	btn_hand.text = "Hand"
+	btn_hand.pressed.connect(func(): _pull_peeker_card_to_hand(index))
+	hb_actions.add_child(btn_hand)
+	
+	var btn_board = Button.new()
+	btn_board.text = "Board"
+	btn_board.pressed.connect(func(): _pull_peeker_card_to_board(index))
+	hb_actions.add_child(btn_board)
+	
+	vb.add_child(hb_actions)
+	return item
+
+func _move_peeker_card(index: int, direction: int):
+	var new_index = index + direction
+	if new_index >= 0 and new_index < peeker_held_cards.size():
+		var temp = peeker_held_cards[index]
+		peeker_held_cards[index] = peeker_held_cards[new_index]
+		peeker_held_cards[new_index] = temp
+		_refresh_peeker_view()
+
+func _pull_peeker_card_to_hand(index: int):
+	var card_path = peeker_held_cards[index]
+	peeker_held_cards.remove_at(index)
+	_refresh_peeker_view()
+	
+	if FileAccess.file_exists(card_path):
+		var json_str = FileAccess.get_file_as_string(card_path)
+		var json = JSON.new()
+		if json.parse(json_str) == OK:
+			var card_data = json.get_data()
+			card_data["file_path"] = card_path
+			var card = spawn_card_object(card_data, false)
+			var field_size = peeker_deck_target.size
+			card.custom_minimum_size = field_size
+			card.size = field_size
+			card.set_meta("field_size", field_size)
+			card.set_meta("field_scale", peeker_deck_target.scale)
+			card.set_meta("in_hand", true)
+			
+			card.position = hand_zone.get_global_transform().affine_inverse() * peeker_deck_target.global_position
+			_set_card_face_down(card, false)
+			hand_zone.add_child(card)
+			_update_hand_zone_sizing.call_deferred()
+
+func _pull_peeker_card_to_board(index: int):
+	var card_path = peeker_held_cards[index]
+	peeker_held_cards.remove_at(index)
+	_refresh_peeker_view()
+	
+	if FileAccess.file_exists(card_path):
+		var json_str = FileAccess.get_file_as_string(card_path)
+		var json = JSON.new()
+		if json.parse(json_str) == OK:
+			var card_data = json.get_data()
+			card_data["file_path"] = card_path
+			var card = spawn_card_object(card_data, true)
+			card.global_position = peeker_deck_target.global_position + Vector2(180, 0)
+			_set_card_face_down(card, false)
+
+func _refresh_peeker_view():
+	for child in peeker_cards_container.get_children():
+		child.queue_free()
+	for i in range(peeker_held_cards.size()):
+		var card_path = peeker_held_cards[i]
+		var card_node = _create_peeker_card_node(card_path, i)
+		peeker_cards_container.add_child(card_node)
+
+func _on_peeker_dialog_confirmed():
+	if is_instance_valid(peeker_deck_target):
+		var draw_pile = peeker_deck_target.get_meta("draw_pile", [])
+		while peeker_held_cards.size() > 0:
+			var card_path = peeker_held_cards.pop_back()
+			draw_pile.append(card_path)
+		peeker_deck_target.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(peeker_deck_target)
+
+func _open_zone_viewer(zone: Control):
+	zone_viewer_target = zone
+	_refresh_zone_viewer()
+	zone_viewer_dialog.popup_centered()
+
+func _refresh_zone_viewer():
+	for child in zone_viewer_grid.get_children():
+		child.queue_free()
+		
+	if not is_instance_valid(zone_viewer_target): return
+	
+	var cards_in_zone = []
+	for child in zone_viewer_target.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards_in_zone.append(child)
+			
+	for card in cards_in_zone:
+		var item = PanelContainer.new()
+		item.custom_minimum_size = Vector2(120, 200)
+		
+		var vb = VBoxContainer.new()
+		vb.alignment = BoxContainer.ALIGNMENT_CENTER
+		item.add_child(vb)
+		
+		var tr = TextureRect.new()
+		tr.custom_minimum_size = Vector2(90, 126)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		if card is TextureRect and card.texture:
+			tr.texture = card.texture
+		else:
+			var bg = ColorRect.new()
+			bg.color = Color(0.2, 0.2, 0.2, 0.8)
+			bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+			tr.add_child(bg)
+		vb.add_child(tr)
+		
+		var card_name = "Unknown Card"
+		var card_data = card.get_meta("card_data", {})
+		if card_data.has("name"):
+			card_name = card_data["name"]
+			
+		var name_lbl = Label.new()
+		name_lbl.text = card_name
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		vb.add_child(name_lbl)
+		
+		var hb = HBoxContainer.new()
+		hb.alignment = BoxContainer.ALIGNMENT_CENTER
+		
+		var btn_hand = Button.new()
+		btn_hand.text = "Hand"
+		btn_hand.pressed.connect(func():
+			_pull_card_from_zone_to_hand(card)
+		)
+		hb.add_child(btn_hand)
+		
+		var btn_board = Button.new()
+		btn_board.text = "Board"
+		btn_board.pressed.connect(func():
+			_pull_card_from_zone_to_board(card)
+		)
+		hb.add_child(btn_board)
+		vb.add_child(hb)
+		
+		zone_viewer_grid.add_child(item)
+
+func _pull_card_from_zone_to_hand(card: Control):
+	if is_instance_valid(card):
+		_add_card_to_hand(card)
+		_organize_remaining_zone_cards(zone_viewer_target)
+		_refresh_zone_viewer()
+
+func _pull_card_from_zone_to_board(card: Control):
+	if is_instance_valid(card):
+		if card.get_parent():
+			card.get_parent().remove_child(card)
+		field_canvas.add_child(card)
+		card.global_position = get_viewport().size / 2.0 - card.size / 2.0
+		_apply_card_size(card, field_canvas, null)
+		card.set_meta("in_hand", false)
+		
+		_organize_remaining_zone_cards(zone_viewer_target)
+		_refresh_zone_viewer()
+
+func _organize_remaining_zone_cards(zone: Control):
+	if not is_instance_valid(zone): return
+	var cards = []
+	for child in zone.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards.append(child)
+	for c in cards:
+		c.position = (zone.size / 2.0) - (c.size / 2.0)

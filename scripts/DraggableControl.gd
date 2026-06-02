@@ -13,11 +13,13 @@ var hover_tween: Tween
 
 signal right_clicked
 signal left_clicked
+signal double_clicked
 signal drag_started
 signal drag_ended
 signal drag_moved
 
 var _click_start_pos = Vector2.ZERO
+var _is_double_clicking = false
 
 static var _hovered_instance: DraggableControl = null  # track ทั่วกลางว่าใครกำลัง hover
 
@@ -81,6 +83,12 @@ func _gui_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
+				if event.double_click:
+					dragging = false
+					_is_double_clicking = true
+					double_clicked.emit()
+					return
+				_is_double_clicking = false
 				dragging = true
 				_click_start_pos = global_position
 				pivot_offset = size / 2.0
@@ -94,8 +102,9 @@ func _gui_input(event):
 					z_index = original_z_index
 					var end_pos = global_position
 					drag_ended.emit()
-					if end_pos.distance_to(_click_start_pos) < 5.0:
+					if not _is_double_clicking and end_pos.distance_to(_click_start_pos) < 5.0:
 						left_clicked.emit()
+				_is_double_clicking = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			if not event.pressed:
 				right_clicked.emit()
