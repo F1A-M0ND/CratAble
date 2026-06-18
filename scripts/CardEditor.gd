@@ -74,7 +74,7 @@ func _ready():
 	overwrite_dialog.confirmed.connect(_do_save_card)
 	delete_confirm.confirmed.connect(_do_delete_card)
 	
-	if Global.current_card_path != "":
+	if not Global.current_card_data.is_empty():
 		_load_existing_card()
 	else:
 		delete_btn.hide()
@@ -136,31 +136,53 @@ func _reset_unsaved():
 	has_unsaved_changes = false
 
 func _load_existing_card():
-	if FileAccess.file_exists(Global.current_card_path):
-		var str = FileAccess.get_file_as_string(Global.current_card_path)
-		var json = JSON.new()
-		if json.parse(str) == OK:
-			var data = json.get_data()
-			card_name.text = data.get("name", "")
+	var data = Global.current_card_data
+	if data.is_empty():
+		return
+		
+	# Normalize stats for both local JSON layout and Supabase structure
+	var stats_data = {}
+	if data.has("stats") and typeof(data["stats"]) == TYPE_DICTIONARY:
+		stats_data = data["stats"]
+	else:
+		stats_data = data
+		
+	card_name.text = data.get("name", "")
+	
+	if stats_data.has("atk"):
+		atk_check.button_pressed = true
+		atk_spin.value = stats_data["atk"]
+	
+	if stats_data.has("def"):
+		def_check.button_pressed = true
+		def_spin.value = stats_data["def"]
+	
+	var image_src = ""
+	if data.has("image_url") and data["image_url"] != "":
+		image_src = data["image_url"]
+	elif stats_data.has("image_path") and stats_data["image_path"] != "":
+		image_src = stats_data["image_path"]
+		
+	if image_src != "":
+		if image_src.begins_with("http"):
+			preview_label.text = "Downloading..."
+			preview_label.show()
+			SupabaseService.get_texture_or_load(image_src, func(tex):
+				if tex and is_instance_valid(preview_image):
+					preview_image.texture = tex
+					preview_label.hide()
+					current_image_path = image_src
+			)
+		else:
+			_on_file_selected(image_src)
+		
+	if stats_data.has("custom_stats"):
+		for stat in stats_data["custom_stats"]:
+			_add_custom_stat(stat, stats_data["custom_stats"][stat])
 			
-			if data.has("atk"):
-				atk_check.button_pressed = true
-				atk_spin.value = data["atk"]
-			
-			if data.has("def"):
-				def_check.button_pressed = true
-				def_spin.value = data["def"]
-			
-			if data.has("image_path") and data["image_path"] != "":
-				_on_file_selected(data["image_path"])
-				
-			if data.has("custom_stats"):
-				for stat in data["custom_stats"]:
-					_add_custom_stat(stat, data["custom_stats"][stat])
-					
-			if data.has("tags"):
-				for tag in data["tags"]:
-					_add_custom_tag(tag)
+	if stats_data.has("tags"):
+		for tag in stats_data["tags"]:
+			_add_custom_tag(tag)
 	
 	_reset_unsaved()
 
@@ -232,94 +254,112 @@ func _on_save_button_pressed():
 	if current_image_path == "":
 		error_dialog.dialog_text = "Cannot save card: Image is missing!"
 		error_dialog.popup_centered()
-		print("DEBUG: User attempted to save without an image. Blocked.")
 		return
-		
-	var safe_name = card_name.text.strip_edges()
-	if safe_name == "":
-		safe_name = "UntitledCard"
-	safe_name = safe_name.replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
-	
-	var save_dir = "res://cards"
-	var potential_path = save_dir + "/" + safe_name + ".json"
-	
-	if FileAccess.file_exists(potential_path) and Global.current_card_path != potential_path:
-		print("DEBUG: Card overwrite conflict detected.")
-		overwrite_dialog.popup_centered()
-	else:
-		print("DEBUG: Prompting standard save confirmation.")
-		save_confirm.popup_centered()
+	save_confirm.popup_centered()
 
 func _do_save_card():
-	var new_card = {
-		"name": card_name.text,
-		"image_path": current_image_path,
+	save_btn.disabled = true
+	save_btn.text = "Saving..."
+	
+	var stats = {
 		"custom_stats": {},
 		"tags": []
 	}
 	
 	if preview_image.texture != null:
 		var size = preview_image.texture.get_size()
-		new_card["image_size"] = {"x": size.x, "y": size.y}
+		stats["image_size"] = {"x": size.x, "y": size.y}
 	else:
-		new_card["image_size"] = {"x": 0, "y": 0}
-	
-	if atk_check.button_pressed:
-		new_card["atk"] = atk_spin.value
+		stats["image_size"] = {"x": 0, "y": 0}
 		
+	if atk_check.button_pressed:
+		stats["atk"] = atk_spin.value
 	if def_check.button_pressed:
-		new_card["def"] = def_spin.value
+		stats["def"] = def_spin.value
 		
 	for child in custom_stats_container.get_children():
 		if child is HBoxContainer:
 			var s_name = child.get_child(0).text
 			var s_val = child.get_child(1).value
 			if s_name != "":
-				new_card.custom_stats[s_name] = s_val
+				stats.custom_stats[s_name] = s_val
 				
 	for child in custom_tags_container.get_children():
 		if child is HBoxContainer:
 			var tag_name = child.get_child(0).text
 			if tag_name != "":
-				new_card.tags.append(tag_name)
+				stats.tags.append(tag_name)
 				
-	var save_dir = "res://cards"
-	if not DirAccess.dir_exists_absolute(save_dir):
-		DirAccess.make_dir_absolute(save_dir)
+	var card_name_str = card_name.text.strip_edges()
+	if card_name_str == "":
+		card_name_str = "UntitledCard"
 		
-	var safe_name = new_card.name.strip_edges()
-	if safe_name == "":
-		safe_name = "UntitledCard"
-	safe_name = safe_name.replace(" ", "_").replace("/", "-").replace("\\", "-").replace(":", "-")
-	
-	var file_path = save_dir + "/" + safe_name + ".json"
-	
-	var file = FileAccess.open(file_path, FileAccess.WRITE)
-	if file:
-		var json_string = JSON.stringify(new_card, "\t")
-		file.store_string(json_string)
-		file.close()
-		Global.current_card_path = file_path
-		
-		# Optional: update library footprint in Global
-		print("DEBUG: Card saved to JSON successfully (", file_path, ")")
-		_reset_unsaved()
+	var on_db_save_complete = func(status_code, response_data):
+		save_btn.disabled = false
+		save_btn.text = "Save"
+		if status_code == 200 or status_code == 201:
+			print("Card saved to Supabase successfully!")
+			_reset_unsaved()
+			Global.switch_scene("res://scenes/CardSelector.tscn")
+		else:
+			print("Failed to save card: ", status_code, " ", response_data)
+			error_dialog.dialog_text = "Failed to save card to database. (Status: " + str(status_code) + ")"
+			error_dialog.popup_centered()
+
+	if current_image_path.begins_with("http"):
+		_save_card_data_to_db(card_name_str, current_image_path, stats, on_db_save_complete)
 	else:
-		print("DEBUG ERROR: Error saving JSON to ", file_path)
+		if not FileAccess.file_exists(current_image_path):
+			save_btn.disabled = false
+			save_btn.text = "Save"
+			error_dialog.dialog_text = "Local image file not found: " + current_image_path
+			error_dialog.popup_centered()
+			return
+			
+		var file_bytes = FileAccess.get_file_as_bytes(current_image_path)
+		if file_bytes.size() == 0:
+			save_btn.disabled = false
+			save_btn.text = "Save"
+			error_dialog.dialog_text = "Failed to read image file bytes."
+			error_dialog.popup_centered()
+			return
+			
+		SupabaseService.upload_card_image(current_image_path.get_file(), file_bytes, func(success, public_url):
+			if success:
+				_save_card_data_to_db(card_name_str, public_url, stats, on_db_save_complete)
+			else:
+				save_btn.disabled = false
+				save_btn.text = "Save"
+				error_dialog.dialog_text = "Failed to upload card image to storage."
+				error_dialog.popup_centered()
+		)
+
+func _save_card_data_to_db(c_name: String, img_url: String, stats: Dictionary, callback: Callable):
+	var is_edit = not Global.current_card_data.is_empty()
+	if is_edit:
+		var uuid = Global.current_card_data.get("id", "")
+		SupabaseService.update_card(uuid, c_name, img_url, "custom", stats, callback)
+	else:
+		SupabaseService.insert_card(c_name, img_url, "custom", stats, callback)
 
 func _on_delete_pressed():
 	print("DEBUG: Prompting delete confirmation.")
 	delete_confirm.popup_centered()
 
 func _do_delete_card():
-	if Global.current_card_path != "" and FileAccess.file_exists(Global.current_card_path):
-		var err = DirAccess.remove_absolute(Global.current_card_path)
-		if err == OK:
-			print("DEBUG: Deleted card JSON successfully (", Global.current_card_path, ")")
-			Global.current_card_path = ""
-			Global.switch_scene("res://scenes/CardSelector.tscn")
-		else:
-			print("DEBUG ERROR: Failed to delete card JSON (", Global.current_card_path, ")")
+	if not Global.current_card_data.is_empty():
+		var uuid = Global.current_card_data.get("id", "")
+		delete_btn.disabled = true
+		SupabaseService.delete_card(uuid, func(status, data):
+			delete_btn.disabled = false
+			if status == 200 or status == 204:
+				print("Deleted card from Supabase successfully")
+				Global.current_card_data = {}
+				Global.switch_scene("res://scenes/CardSelector.tscn")
+			else:
+				error_dialog.dialog_text = "Failed to delete card from database."
+				error_dialog.popup_centered()
+		)
 
 func _on_back_pressed():
 	if has_unsaved_changes:

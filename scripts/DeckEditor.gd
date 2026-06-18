@@ -87,6 +87,7 @@ func _ready():
 	)
 	add_child(amount_popup)
 	
+	_init_online_dialogs()
 	_load_library_cards()
 	_refresh_deck_ui()
 
@@ -127,43 +128,29 @@ func _load_library_cards():
 	for child in card_grid.get_children():
 		child.queue_free()
 		
-	var save_dir = "res://cards"
-	if not DirAccess.dir_exists_absolute(save_dir):
-		return
-		
-	var dir = DirAccess.open(save_dir)
-	if dir:
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".json"):
-				var file_path = save_dir + "/" + file_name
-				_create_library_thumbnail(file_path, file_name)
-			file_name = dir.get_next()
+	SupabaseService.fetch_all_cards(func(status, data):
+		if status == 200 and typeof(data) == TYPE_ARRAY:
+			for card_row in data:
+				_create_library_thumbnail(card_row)
+		else:
+			print("Failed to fetch library cards: ", status)
+	)
 
-func _create_library_thumbnail(file_path: String, file_name: String):
-	var data = {}
-	var has_image = false
-	var image_tex = null
+func _create_library_thumbnail(card_row: Dictionary):
+	var stats_data = {}
+	if card_row.has("stats") and typeof(card_row["stats"]) == TYPE_DICTIONARY:
+		stats_data = card_row["stats"]
+	else:
+		stats_data = card_row
+		
+	var card_name_str = card_row.get("name", "Untitled")
+	var card_uuid = card_row.get("id", "")
 	
-	if FileAccess.file_exists(file_path):
-		var str = FileAccess.get_file_as_string(file_path)
-		var json = JSON.new()
-		if json.parse(str) == OK:
-			data = json.get_data()
-			if data.has("image_path") and data["image_path"] != "":
-				var img = Image.new()
-				if img.load(data["image_path"]) == OK:
-					image_tex = ImageTexture.create_from_image(img)
-					has_image = true
-					
-	var card_name_str = data.get("name", file_name.replace(".json", ""))
-	
-	# Cache for easy retrieval later
-	card_cache[file_path] = {
+	card_cache[card_uuid] = {
 		"name": card_name_str,
-		"image_tex": image_tex,
-		"has_image": has_image
+		"image_tex": null,
+		"has_image": false,
+		"card_row": card_row
 	}
 	
 	var margin = MarginContainer.new()
@@ -176,8 +163,28 @@ func _create_library_thumbnail(file_path: String, file_name: String):
 	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tex.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	if has_image:
-		tex.texture = image_tex
+	
+	var img_url = card_row.get("image_url", "")
+	if img_url == "" and stats_data.has("image_path"):
+		img_url = stats_data["image_path"]
+		
+	if img_url != "":
+		if img_url.begins_with("http"):
+			SupabaseService.get_texture_or_load(img_url, func(texture):
+				if texture and is_instance_valid(tex):
+					tex.texture = texture
+					if card_cache.has(card_uuid):
+						card_cache[card_uuid]["image_tex"] = texture
+						card_cache[card_uuid]["has_image"] = true
+						_refresh_deck_ui()
+			)
+		else:
+			var img = Image.new()
+			if img.load(img_url) == OK:
+				var texture = ImageTexture.create_from_image(img)
+				tex.texture = texture
+				card_cache[card_uuid]["image_tex"] = texture
+				card_cache[card_uuid]["has_image"] = true
 		
 	var lbl = Label.new()
 	lbl.text = card_name_str
@@ -190,15 +197,15 @@ func _create_library_thumbnail(file_path: String, file_name: String):
 	
 	var btn = Button.new()
 	btn.modulate = Color(1, 1, 1, 0)
-	btn.button_down.connect(func(): pressed_card_paths[file_path] = 0.0)
+	btn.button_down.connect(func(): pressed_card_paths[card_uuid] = 0.0)
 	btn.button_up.connect(func():
-		if pressed_card_paths.has(file_path):
-			var time_held = pressed_card_paths[file_path]
-			pressed_card_paths.erase(file_path)
+		if pressed_card_paths.has(card_uuid):
+			var time_held = pressed_card_paths[card_uuid]
+			pressed_card_paths.erase(card_uuid)
 			if time_held < 0.5:
-				_add_card_copies(file_path, 1)
+				_add_card_copies(card_uuid, 1)
 	)
-	Global.make_card_inspectable(btn, file_path)
+	Global.make_card_inspectable(btn, card_row)
 	
 	var panel = Panel.new()
 	
@@ -213,8 +220,8 @@ func _create_library_thumbnail(file_path: String, file_name: String):
 		"name": card_name_str.to_lower(),
 		"tags": []
 	}
-	if data.has("tags"):
-		for t in data["tags"]:
+	if stats_data.has("tags"):
+		for t in stats_data["tags"]:
 			card_info["tags"].append(str(t).to_lower())
 			
 	loaded_cards.append(card_info)
@@ -508,58 +515,149 @@ func _on_group_settings_saved():
 
 # --- Saving / Loading ---
 
-func _on_save_pressed():
-	var safe_name = deck_data["deck_name"]
-	safe_name = safe_name.replace("/", "_").replace("\\", "_").replace(":", "_").replace("*", "_").replace("?", "_").replace("\"", "_").replace("<", "_").replace(">", "_").replace("|", "_")
-	if safe_name.strip_edges() == "":
-		safe_name = "New_Deck"
+var online_load_popup: ConfirmationDialog
+var online_load_list: ItemList
+var online_decks_cache = []
+
+func _init_online_dialogs():
+	online_load_popup = ConfirmationDialog.new()
+	online_load_popup.title = "Open Online Deck"
+	online_load_popup.min_size = Vector2i(500, 400)
 	
-	var path = "res://deck/" + safe_name + ".json"
-	_save_deck_to_file(path)
+	var vbox = VBoxContainer.new()
+	
+	var lbl = Label.new()
+	lbl.text = "Select a deck to load from Supabase:"
+	vbox.add_child(lbl)
+	
+	online_load_list = ItemList.new()
+	online_load_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	online_load_list.custom_minimum_size = Vector2(0, 250)
+	vbox.add_child(online_load_list)
+	
+	online_load_popup.add_child(vbox)
+	online_load_popup.confirmed.connect(_on_online_load_confirmed)
+	
+	online_load_popup.add_button("Delete Selected", true, "delete_deck")
+	online_load_popup.custom_action.connect(_on_online_deck_custom_action)
+	
+	add_child(online_load_popup)
+
+func _on_online_deck_custom_action(action: String):
+	if action == "delete_deck":
+		var selected = online_load_list.get_selected_items()
+		if selected.size() > 0:
+			var idx = selected[0]
+			var deck = online_decks_cache[idx]
+			var db_id = deck.get("id", "")
+			if db_id != "":
+				var confirm_del = ConfirmationDialog.new()
+				confirm_del.title = "Confirm Delete"
+				confirm_del.dialog_text = "Are you sure you want to delete deck '" + deck.get("name", "Untitled") + "'?"
+				confirm_del.confirmed.connect(func():
+					SupabaseService.delete_deck(db_id, func(status, response):
+						if status == 200 or status == 204:
+							print("Deck deleted successfully")
+							# Refresh the list
+							_on_open_pressed()
+						else:
+							error_dialog.dialog_text = "Failed to delete deck."
+							error_dialog.popup_centered()
+					)
+				)
+				add_child(confirm_del)
+				confirm_del.popup_centered()
+
+func _on_save_pressed():
+	var deck_name_str = deck_data.get("deck_name", "New Deck").strip_edges()
+	if deck_name_str == "":
+		deck_name_str = "New Deck"
+		
+	save_btn.disabled = true
+	save_btn.text = "Saving..."
+	
+	var db_id = deck_data.get("db_id", "")
+	var cards_data_to_save = deck_data.duplicate()
+	cards_data_to_save.erase("db_id")
+	
+	var on_save_complete = func(status, response):
+		save_btn.disabled = false
+		save_btn.text = "Save"
+		if status == 200 or status == 201:
+			print("Deck saved successfully!")
+			if typeof(response) == TYPE_ARRAY and response.size() > 0:
+				deck_data["db_id"] = response[0].get("id", "")
+			elif typeof(response) == TYPE_DICTIONARY:
+				deck_data["db_id"] = response.get("id", "")
+				
+			var success_dialog = AcceptDialog.new()
+			success_dialog.title = "Save Successful"
+			success_dialog.dialog_text = "Deck '" + deck_name_str + "' saved to Supabase!"
+			add_child(success_dialog)
+			success_dialog.popup_centered()
+		else:
+			error_dialog.dialog_text = "Failed to save deck to Supabase. (Status: " + str(status) + ")"
+			error_dialog.popup_centered()
+			
+	if db_id != "":
+		SupabaseService.update_deck(db_id, deck_name_str, cards_data_to_save, on_save_complete)
+	else:
+		SupabaseService.insert_deck(deck_name_str, cards_data_to_save, on_save_complete)
 
 func _on_open_pressed():
-	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	file_dialog.current_dir = "res://deck"
-	file_dialog.popup_centered()
+	open_btn.disabled = true
+	open_btn.text = "Loading..."
+	SupabaseService.fetch_all_decks(func(status, data):
+		open_btn.disabled = false
+		open_btn.text = "Open"
+		if status == 200 and typeof(data) == TYPE_ARRAY:
+			online_decks_cache = data
+			online_load_list.clear()
+			for deck in data:
+				var dname = deck.get("name", "Untitled Deck")
+				online_load_list.add_item(dname)
+			online_load_popup.popup_centered()
+		else:
+			error_dialog.dialog_text = "Failed to fetch decks from Supabase. (Status: " + str(status) + ")"
+			error_dialog.popup_centered()
+	)
+
+func _on_online_load_confirmed():
+	var selected_indices = online_load_list.get_selected_items()
+	if selected_indices.size() > 0:
+		var idx = selected_indices[0]
+		var deck = online_decks_cache[idx]
+		
+		var db_cards_data = deck.get("cards_data", {})
+		if typeof(db_cards_data) == TYPE_DICTIONARY and db_cards_data.has("groups"):
+			deck_data = db_cards_data
+			deck_data["deck_name"] = deck.get("name", "New Deck")
+		else:
+			deck_data = {
+				"deck_name": deck.get("name", "New Deck"),
+				"groups": [
+					{
+						"name": "Main Deck",
+						"min": 40,
+						"max": 60,
+						"shuffle_at_start": false,
+						"cards": db_cards_data
+					}
+				]
+			}
+		
+		deck_data["db_id"] = deck.get("id", "")
+		active_group_idx = 0
+		_refresh_deck_ui()
 
 func _on_file_selected(path: String):
-	if file_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-		_save_deck_to_file(path)
-	else:
-		_load_deck_from_file(path)
+	pass
 
 func _save_deck_to_file(path: String):
-	var dir = path.get_base_dir()
-	if not DirAccess.dir_exists_absolute(dir):
-		DirAccess.make_dir_recursive_absolute(dir)
-		
-	var file = FileAccess.open(path, FileAccess.WRITE)
-	if file:
-		var json = JSON.stringify(deck_data, "\t")
-		file.store_string(json)
-		file.close()
-		print("Deck saved: ", path)
-	else:
-		error_dialog.dialog_text = "Failed to save file."
-		error_dialog.popup_centered()
+	pass
 
 func _load_deck_from_file(path: String):
-	if FileAccess.file_exists(path):
-		var str = FileAccess.get_file_as_string(path)
-		var json = JSON.new()
-		if json.parse(str) == OK:
-			var data = json.get_data()
-			# Validate minimum format
-			if typeof(data) == TYPE_DICTIONARY and data.has("groups"):
-				deck_data = data
-				active_group_idx = 0
-				_refresh_deck_ui()
-			else:
-				error_dialog.dialog_text = "Invalid deck file format."
-				error_dialog.popup_centered()
-		else:
-			error_dialog.dialog_text = "Error parsing JSON."
-			error_dialog.popup_centered()
+	pass
 
 func _on_back_pressed():
 	Global.main_menu_tab = "CUSTOM"

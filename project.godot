@@ -22,6 +22,7 @@ config/features=PackedStringArray("4.6", "Forward Plus")
 
 Global="*res://scripts/Global.gd"
 CardInspector="*res://scenes/CardInspector.tscn"
+SupabaseService="*res://scripts/SupabaseService.gd"
 
 [display]
 

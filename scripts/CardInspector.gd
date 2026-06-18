@@ -75,23 +75,43 @@ func _apply_zoom(factor: float, mouse_pos: Vector2):
 	zoom_image.position = mouse_pos + (zoom_image.position - mouse_pos) * actual_factor
 	zoom_image.scale = new_scale
 
-func show_card(card_path: String):
+func show_card(card_data: Variant):
 	if is_open: return
 	
-	if not FileAccess.file_exists(card_path):
-		print("DEBUG: Inspector cannot find card at ", card_path)
+	var data: Dictionary = {}
+	
+	if typeof(card_data) == TYPE_DICTIONARY:
+		data = card_data
+	elif typeof(card_data) == TYPE_STRING:
+		if card_data.strip_edges().begins_with("{"):
+			var json = JSON.new()
+			if json.parse(card_data) == OK:
+				data = json.get_data()
+		else:
+			if FileAccess.file_exists(card_data):
+				var str_content = FileAccess.get_file_as_string(card_data)
+				var json = JSON.new()
+				if json.parse(str_content) == OK:
+					data = json.get_data()
+					
+	if data.is_empty():
+		print("DEBUG: Inspector cannot parse card data: ", card_data)
 		return
 		
-	var str = FileAccess.get_file_as_string(card_path)
-	var json = JSON.new()
-	if json.parse(str) != OK:
-		print("DEBUG: Inspector failed to parse JSON at ", card_path)
-		return
+	# Normalize stats for both local JSON layout and Supabase structure
+	var final_data = {}
+	if data.has("stats") and typeof(data["stats"]) == TYPE_DICTIONARY:
+		final_data = data["stats"].duplicate()
+	else:
+		final_data = data.duplicate()
 		
-	var data = json.get_data()
+	if data.has("name"): final_data["name"] = data["name"]
+	if data.has("image_url"): final_data["image_url"] = data["image_url"]
+	if data.has("image_path"): final_data["image_path"] = data["image_path"]
+	if data.has("card_type"): final_data["card_type"] = data["card_type"]
 	
 	# Clear old data
-	name_label.text = data.get("name", "Unknown Card")
+	name_label.text = final_data.get("name", "Unknown Card")
 	card_image.texture = null
 	
 	for child in stats_grid.get_children():
@@ -100,22 +120,34 @@ func show_card(card_path: String):
 		child.queue_free()
 		
 	# Populate new data
-	if data.has("image_path") and data["image_path"] != "":
-		var img = Image.new()
-		if img.load(data["image_path"]) == OK:
-			card_image.texture = ImageTexture.create_from_image(img)
-			
-	if data.has("atk"):
-		_add_stat("ATK", data["atk"])
-	if data.has("def"):
-		_add_stat("DEF", data["def"])
+	var image_src = ""
+	if final_data.has("image_url") and final_data["image_url"] != "":
+		image_src = final_data["image_url"]
+	elif final_data.has("image_path") and final_data["image_path"] != "":
+		image_src = final_data["image_path"]
 		
-	if data.has("custom_stats"):
-		for stat in data["custom_stats"]:
-			_add_stat(stat, data["custom_stats"][stat])
+	if image_src != "":
+		if image_src.begins_with("http"):
+			SupabaseService.get_texture_or_load(image_src, func(tex):
+				if is_open and card_image:
+					card_image.texture = tex
+			)
+		else:
+			var img = Image.new()
+			if img.load(image_src) == OK:
+				card_image.texture = ImageTexture.create_from_image(img)
 			
-	if data.has("tags"):
-		for tag in data["tags"]:
+	if final_data.has("atk"):
+		_add_stat("ATK", final_data["atk"])
+	if final_data.has("def"):
+		_add_stat("DEF", final_data["def"])
+		
+	if final_data.has("custom_stats"):
+		for stat in final_data["custom_stats"]:
+			_add_stat(stat, final_data["custom_stats"][stat])
+			
+	if final_data.has("tags"):
+		for tag in final_data["tags"]:
 			_add_tag(tag)
 	
 	# Enable interaction

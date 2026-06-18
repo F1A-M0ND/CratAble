@@ -27,36 +27,23 @@ func _load_existing_cards():
 	for child in card_list.get_children():
 		child.queue_free()
 		
-	var save_dir = "res://cards"
-	if not DirAccess.dir_exists_absolute(save_dir):
-		return
-		
-	var dir = DirAccess.open(save_dir)
-	if dir:
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".json"):
-				var file_path = save_dir + "/" + file_name
-				_create_card_thumbnail(file_path, file_name)
-			file_name = dir.get_next()
+	SupabaseService.fetch_all_cards(func(status, data):
+		if status == 200 and typeof(data) == TYPE_ARRAY:
+			for card_row in data:
+				_create_card_thumbnail(card_row)
+		else:
+			print("Failed to fetch cards: ", status)
+	)
 
-func _create_card_thumbnail(file_path: String, file_name: String):
-	var data = {}
-	var has_image = false
-	var image_tex = null
+func _create_card_thumbnail(card_row: Dictionary):
+	var stats_data = {}
+	if card_row.has("stats") and typeof(card_row["stats"]) == TYPE_DICTIONARY:
+		stats_data = card_row["stats"]
+	else:
+		stats_data = card_row
+		
+	var card_name_str = card_row.get("name", "Untitled")
 	
-	if FileAccess.file_exists(file_path):
-		var str = FileAccess.get_file_as_string(file_path)
-		var json = JSON.new()
-		if json.parse(str) == OK:
-			data = json.get_data()
-			if data.has("image_path") and data["image_path"] != "":
-				var img = Image.new()
-				if img.load(data["image_path"]) == OK:
-					image_tex = ImageTexture.create_from_image(img)
-					has_image = true
-					
 	var margin = MarginContainer.new()
 	margin.custom_minimum_size = Vector2(160, 220)
 	
@@ -67,11 +54,23 @@ func _create_card_thumbnail(file_path: String, file_name: String):
 	tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tex.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	if has_image:
-		tex.texture = image_tex
-		
-	var card_name_str = data.get("name", file_name.replace(".json", ""))
 	
+	# Load image asynchronously
+	var img_url = card_row.get("image_url", "")
+	if img_url == "" and stats_data.has("image_path"):
+		img_url = stats_data["image_path"]
+		
+	if img_url != "":
+		if img_url.begins_with("http"):
+			SupabaseService.get_texture_or_load(img_url, func(texture):
+				if texture and is_instance_valid(tex):
+					tex.texture = texture
+			)
+		else:
+			var img = Image.new()
+			if img.load(img_url) == OK:
+				tex.texture = ImageTexture.create_from_image(img)
+		
 	var lbl = Label.new()
 	lbl.text = card_name_str
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -83,8 +82,8 @@ func _create_card_thumbnail(file_path: String, file_name: String):
 	
 	var btn = Button.new()
 	btn.modulate = Color(1, 1, 1, 0)
-	btn.pressed.connect(_on_existing_card_pressed.bind(file_path))
-	Global.make_card_inspectable(btn, file_path)
+	btn.pressed.connect(_on_existing_card_pressed.bind(card_row))
+	Global.make_card_inspectable(btn, card_row)
 	
 	var panel = Panel.new()
 	
@@ -101,8 +100,8 @@ func _create_card_thumbnail(file_path: String, file_name: String):
 		"tags": []
 	}
 	
-	if data.has("tags"):
-		for t in data["tags"]:
+	if stats_data.has("tags"):
+		for t in stats_data["tags"]:
 			card_info["tags"].append(str(t).to_lower())
 			
 	loaded_cards.append(card_info)
@@ -161,11 +160,11 @@ func _filter_cards():
 			card["node"].visible = false
 
 func _on_create_new_pressed():
-	Global.current_card_path = ""
+	Global.current_card_data = {}
 	Global.switch_scene("res://scenes/CardEditor.tscn")
 
-func _on_existing_card_pressed(path: String):
-	Global.current_card_path = path
+func _on_existing_card_pressed(card_row: Dictionary):
+	Global.current_card_data = card_row
 	Global.switch_scene("res://scenes/CardEditor.tscn")
 
 func _on_back_pressed():

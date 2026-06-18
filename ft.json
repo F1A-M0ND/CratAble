@@ -1,0 +1,81 @@
+{
+	"canvas": {
+		"card_custom_height": 0,
+		"card_custom_width": 0,
+		"field_name": "Main Field",
+		"field_perms": {
+			"move": true,
+			"play": true
+		},
+		"rotation_degrees": 0.0,
+		"size_x": 1500.0,
+		"size_y": 1000.0
+	},
+	"components": [
+		{
+			"category": "zone",
+			"id": 0,
+			"parent_id": -1,
+			"position_x": 100.0,
+			"position_y": 100.0,
+			"rotation_degrees": 0.0,
+			"size_x": 150.0,
+			"size_y": 210.0,
+			"zone_settings": {
+				"allow_move": true,
+				"face": 0,
+				"has_max_cards": false,
+				"max_cards": 1,
+				"purpose": 1
+			},
+			"zone_type": "Deck Zone"
+		},
+		{
+			"category": "zone",
+			"id": 1,
+			"parent_id": -1,
+			"position_x": 390.14306640625,
+			"position_y": 103.602653503418,
+			"rotation_degrees": 0.0,
+			"size_x": 150.0,
+			"size_y": 210.0,
+			"zone_settings": {
+				"allow_move": true,
+				"face": 0,
+				"has_max_cards": false,
+				"max_cards": 1,
+				"purpose": 0
+			},
+			"zone_type": "Card Zone"
+		},
+		{
+			"category": "zone",
+			"id": 2,
+			"parent_id": -1,
+			"position_x": 629.826293945313,
+			"position_y": 105.40404510498,
+			"rotation_degrees": 0.0,
+			"size_x": 149.999938964844,
+			"size_y": 209.999969482422,
+			"zone_settings": {
+				"allow_move": true,
+				"face": 0,
+				"has_max_cards": false,
+				"max_cards": 1,
+				"purpose": 1
+			},
+			"zone_type": "Card Zone"
+		},
+		{
+			"category": "dice",
+			"dice_text": "D6: -",
+			"id": 3,
+			"parent_id": -1,
+			"position_x": 300.0,
+			"position_y": 100.0,
+			"rotation_degrees": 0.0,
+			"size_x": 80.0,
+			"size_y": 80.0
+		}
+	]
+}
