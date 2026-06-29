@@ -572,6 +572,19 @@ func _on_save_pressed():
 	var deck_name_str = deck_data.get("deck_name", "New Deck").strip_edges()
 	if deck_name_str == "":
 		deck_name_str = "New Deck"
+	
+	var on_local = func():
+		file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		file_dialog.current_file = deck_name_str + ".json"
+		file_dialog.popup_centered()
+	var on_online = func():
+		_do_save_deck_online()
+	_show_save_destination_dialog(on_local, on_online)
+
+func _do_save_deck_online():
+	var deck_name_str = deck_data.get("deck_name", "New Deck").strip_edges()
+	if deck_name_str == "":
+		deck_name_str = "New Deck"
 		
 	save_btn.disabled = true
 	save_btn.text = "Saving..."
@@ -589,7 +602,7 @@ func _on_save_pressed():
 				deck_data["db_id"] = response[0].get("id", "")
 			elif typeof(response) == TYPE_DICTIONARY:
 				deck_data["db_id"] = response.get("id", "")
-				
+			
 			var success_dialog = AcceptDialog.new()
 			success_dialog.title = "Save Successful"
 			success_dialog.dialog_text = "Deck '" + deck_name_str + "' saved to Supabase!"
@@ -598,13 +611,127 @@ func _on_save_pressed():
 		else:
 			error_dialog.dialog_text = "Failed to save deck to Supabase. (Status: " + str(status) + ")"
 			error_dialog.popup_centered()
-			
+	
 	if db_id != "":
 		SupabaseService.update_deck(db_id, deck_name_str, cards_data_to_save, on_save_complete)
 	else:
 		SupabaseService.insert_deck(deck_name_str, cards_data_to_save, on_save_complete)
 
+func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Choose Save Destination"
+	dialog.size = Vector2(320, 160)
+	
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85) # Dark semi-transparent glass
+	panel_style.set_border_width_all(1)
+	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
+	panel_style.set_corner_radius_all(12)
+	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_size = 12
+	dialog.add_theme_stylebox_override("panel", panel_style)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 15)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	var lbl = Label.new()
+	lbl.text = "Select save destination:"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	vbox.add_child(lbl)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 15)
+	
+	var btn_normal = StyleBoxFlat.new()
+	btn_normal.bg_color = Color(0.12, 0.12, 0.16, 0.6)
+	btn_normal.set_border_width_all(1)
+	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.1)
+	btn_normal.set_corner_radius_all(6)
+	btn_normal.content_margin_left = 12
+	btn_normal.content_margin_right = 12
+	
+	var btn_hover = StyleBoxFlat.new()
+	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
+	btn_hover.set_border_width_all(1)
+	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.set_corner_radius_all(6)
+	btn_hover.content_margin_left = 12
+	btn_hover.content_margin_right = 12
+	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_size = 4
+	
+	var local_btn = Button.new()
+	local_btn.text = "Save Local (File)"
+	local_btn.focus_mode = Control.FOCUS_NONE
+	local_btn.add_theme_stylebox_override("normal", btn_normal)
+	local_btn.add_theme_stylebox_override("hover", btn_hover)
+	local_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_local.call()
+	)
+	hbox.add_child(local_btn)
+	
+	var online_style_normal = StyleBoxFlat.new()
+	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.set_corner_radius_all(6)
+	online_style_normal.set_border_width_all(1)
+	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
+	online_style_normal.content_margin_left = 12
+	online_style_normal.content_margin_right = 12
+	
+	var online_style_hover = StyleBoxFlat.new()
+	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.set_corner_radius_all(6)
+	online_style_hover.set_border_width_all(1)
+	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
+	online_style_hover.content_margin_left = 12
+	online_style_hover.content_margin_right = 12
+	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_size = 8
+
+	var online_btn = Button.new()
+	online_btn.text = "Save Online (Database)"
+	online_btn.focus_mode = Control.FOCUS_NONE
+	online_btn.add_theme_stylebox_override("normal", online_style_normal)
+	online_btn.add_theme_stylebox_override("hover", online_style_hover)
+	online_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_online.call()
+	)
+	hbox.add_child(online_btn)
+	
+	vbox.add_child(hbox)
+	
+	var cancel_btn = Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.focus_mode = Control.FOCUS_NONE
+	cancel_btn.add_theme_stylebox_override("normal", btn_normal)
+	cancel_btn.add_theme_stylebox_override("hover", btn_hover)
+	cancel_btn.pressed.connect(func():
+		dialog.queue_free()
+	)
+	vbox.add_child(cancel_btn)
+	
+	dialog.add_child(vbox)
+	dialog.get_ok_button().hide()
+	dialog.get_cancel_button().hide()
+	
+	add_child(dialog)
+	dialog.popup_centered()
+
 func _on_open_pressed():
+	var on_local = func():
+		file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+		file_dialog.popup_centered()
+	var on_online = func():
+		_do_load_deck_online()
+	_show_open_destination_dialog(on_local, on_online)
+
+func _do_load_deck_online():
 	open_btn.disabled = true
 	open_btn.text = "Loading..."
 	SupabaseService.fetch_all_decks(func(status, data):
@@ -621,6 +748,112 @@ func _on_open_pressed():
 			error_dialog.dialog_text = "Failed to fetch decks from Supabase. (Status: " + str(status) + ")"
 			error_dialog.popup_centered()
 	)
+
+func _show_open_destination_dialog(on_local: Callable, on_online: Callable):
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Choose Open Source"
+	dialog.size = Vector2(320, 160)
+	
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85) # Dark semi-transparent glass
+	panel_style.set_border_width_all(1)
+	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
+	panel_style.set_corner_radius_all(12)
+	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_size = 12
+	dialog.add_theme_stylebox_override("panel", panel_style)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 15)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	var lbl = Label.new()
+	lbl.text = "Select open source:"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	vbox.add_child(lbl)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 15)
+	
+	var btn_normal = StyleBoxFlat.new()
+	btn_normal.bg_color = Color(0.12, 0.12, 0.16, 0.6)
+	btn_normal.set_border_width_all(1)
+	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.1)
+	btn_normal.set_corner_radius_all(6)
+	btn_normal.content_margin_left = 12
+	btn_normal.content_margin_right = 12
+	
+	var btn_hover = StyleBoxFlat.new()
+	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
+	btn_hover.set_border_width_all(1)
+	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.set_corner_radius_all(6)
+	btn_hover.content_margin_left = 12
+	btn_hover.content_margin_right = 12
+	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_size = 4
+	
+	var local_btn = Button.new()
+	local_btn.text = "Open Local (File)"
+	local_btn.focus_mode = Control.FOCUS_NONE
+	local_btn.add_theme_stylebox_override("normal", btn_normal)
+	local_btn.add_theme_stylebox_override("hover", btn_hover)
+	local_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_local.call()
+	)
+	hbox.add_child(local_btn)
+	
+	var online_style_normal = StyleBoxFlat.new()
+	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.set_corner_radius_all(6)
+	online_style_normal.set_border_width_all(1)
+	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
+	online_style_normal.content_margin_left = 12
+	online_style_normal.content_margin_right = 12
+	
+	var online_style_hover = StyleBoxFlat.new()
+	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.set_corner_radius_all(6)
+	online_style_hover.set_border_width_all(1)
+	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
+	online_style_hover.content_margin_left = 12
+	online_style_hover.content_margin_right = 12
+	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_size = 8
+
+	var online_btn = Button.new()
+	online_btn.text = "Open Online (Database)"
+	online_btn.focus_mode = Control.FOCUS_NONE
+	online_btn.add_theme_stylebox_override("normal", online_style_normal)
+	online_btn.add_theme_stylebox_override("hover", online_style_hover)
+	online_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_online.call()
+	)
+	hbox.add_child(online_btn)
+	
+	vbox.add_child(hbox)
+	
+	var cancel_btn = Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.focus_mode = Control.FOCUS_NONE
+	cancel_btn.add_theme_stylebox_override("normal", btn_normal)
+	cancel_btn.add_theme_stylebox_override("hover", btn_hover)
+	cancel_btn.pressed.connect(func():
+		dialog.queue_free()
+	)
+	vbox.add_child(cancel_btn)
+	
+	dialog.add_child(vbox)
+	dialog.get_ok_button().hide()
+	dialog.get_cancel_button().hide()
+	
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _on_online_load_confirmed():
 	var selected_indices = online_load_list.get_selected_items()
@@ -651,13 +884,66 @@ func _on_online_load_confirmed():
 		_refresh_deck_ui()
 
 func _on_file_selected(path: String):
-	pass
+	if file_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
+		_save_deck_to_file(path)
+	else:
+		_load_deck_from_file(path)
 
 func _save_deck_to_file(path: String):
-	pass
+	var deck_name_str = deck_data.get("deck_name", "New Deck").strip_edges()
+	if deck_name_str == "":
+		deck_name_str = "New Deck"
+		
+	var cards_data_to_save = deck_data.duplicate()
+	cards_data_to_save.erase("db_id")
+	
+	var save_data = {
+		"deck_name": deck_name_str,
+		"deck_data": cards_data_to_save
+	}
+	
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(save_data, "\t"))
+		file.close()
+		print("Deck saved locally successfully to: ", path)
+		
+		var success_dialog = AcceptDialog.new()
+		success_dialog.title = "Save Successful"
+		success_dialog.dialog_text = "Deck '" + deck_name_str + "' saved locally to: " + path.get_file()
+		add_child(success_dialog)
+		success_dialog.popup_centered()
+	else:
+		error_dialog.dialog_text = "Failed to save deck file locally."
+		error_dialog.popup_centered()
 
 func _load_deck_from_file(path: String):
-	pass
+	if not FileAccess.file_exists(path):
+		error_dialog.dialog_text = "Deck file not found: " + path
+		error_dialog.popup_centered()
+		return
+		
+	var str_content = FileAccess.get_file_as_string(path)
+	var json = JSON.new()
+	if json.parse(str_content) != OK:
+		error_dialog.dialog_text = "Failed to parse deck file JSON."
+		error_dialog.popup_centered()
+		return
+		
+	var parsed = json.get_data()
+	if typeof(parsed) == TYPE_DICTIONARY:
+		deck_data = parsed.get("deck_data", {})
+		deck_data["deck_name"] = parsed.get("deck_name", "Loaded Deck")
+		deck_data["db_id"] = "" # Clear online ID since it's local
+		
+		# Set line edit text
+		$Split/DeckPanel/Margin/VBox/Header/DeckName.text = deck_data["deck_name"]
+		active_group_idx = 0
+		_refresh_deck_ui()
+		print("Deck loaded successfully from: ", path)
+	else:
+		error_dialog.dialog_text = "Invalid deck file format."
+		error_dialog.popup_centered()
 
 func _on_back_pressed():
 	Global.main_menu_tab = "CUSTOM"

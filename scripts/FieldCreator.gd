@@ -101,6 +101,9 @@ var inserting_card_index: int = -1
 var deck_viewer_cards: Array = []
 var deck_viewer_hovered_item: Control = null
 var deck_viewer_hover_side: int = 0
+var local_player_hands: Dictionary = {}
+var _save_dest_is_local: bool = false
+
 
 
 func _ready():
@@ -421,6 +424,191 @@ func _enter_game_play_mode():
 		_load_field_from_dict(Global.loaded_field_data)
 	elif Global.loaded_field_path != "":
 		_load_field_from_file(Global.loaded_field_path)
+		
+	# Setup local multiplayer UI if needed
+	_setup_local_multiplayer_ui()
+
+func _setup_local_multiplayer_ui():
+	local_player_hands.clear()
+	Global.local_active_player_idx = 0
+	
+	if Global.local_player_count > 1:
+		var p_switch = HBoxContainer.new()
+		p_switch.name = "PlayerSwitchContainer"
+		p_switch.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		p_switch.offset_left = -450
+		p_switch.offset_right = -10
+		p_switch.offset_top = 8
+		p_switch.offset_bottom = 8 + HAND_BAR_HEIGHT - 8
+		p_switch.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		p_switch.alignment = BoxContainer.ALIGNMENT_END
+		p_switch.add_theme_constant_override("separation", 8)
+		
+		var lbl = Label.new()
+		lbl.text = "Active Player:"
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		p_switch.add_child(lbl)
+		
+		# Styles
+		var active_style = StyleBoxFlat.new()
+		active_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		active_style.set_corner_radius_all(5)
+		active_style.set_border_width_all(1)
+		active_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
+		active_style.content_margin_left = 10
+		active_style.content_margin_right = 10
+		active_style.shadow_color = Color(0.98, 0.45, 0.08, 0.45)
+		active_style.shadow_size = 8
+		
+		var normal_style = StyleBoxFlat.new()
+		normal_style.bg_color = Color(0.12, 0.12, 0.15, 0.75)
+		normal_style.set_corner_radius_all(5)
+		normal_style.set_border_width_all(1)
+		normal_style.border_color = Color(1.0, 1.0, 1.0, 0.12)
+		normal_style.content_margin_left = 10
+		normal_style.content_margin_right = 10
+		
+		var hover_style = StyleBoxFlat.new()
+		hover_style.bg_color = Color(0.18, 0.18, 0.22, 0.85)
+		hover_style.set_corner_radius_all(5)
+		hover_style.set_border_width_all(1)
+		hover_style.border_color = Color(0.98, 0.45, 0.08, 0.8)
+		hover_style.content_margin_left = 10
+		hover_style.content_margin_right = 10
+		hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+		hover_style.shadow_size = 5
+
+		var pressed_style = StyleBoxFlat.new()
+		pressed_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		pressed_style.set_corner_radius_all(5)
+		pressed_style.set_border_width_all(1)
+		pressed_style.border_color = Color(1.0, 1.0, 1.0, 0.3)
+		pressed_style.content_margin_left = 10
+		pressed_style.content_margin_right = 10
+		
+		for i in range(Global.local_player_count):
+			var btn = Button.new()
+			btn.name = "PlayerBtn_%d" % i
+			btn.text = "P%d" % (i + 1)
+			btn.focus_mode = Control.FOCUS_NONE
+			btn.add_theme_font_size_override("font_size", 12)
+			
+			if i == 0:
+				btn.add_theme_stylebox_override("normal", active_style)
+				btn.add_theme_stylebox_override("hover", active_style)
+				btn.add_theme_stylebox_override("pressed", active_style)
+			else:
+				btn.add_theme_stylebox_override("normal", normal_style)
+				btn.add_theme_stylebox_override("hover", hover_style)
+				btn.add_theme_stylebox_override("pressed", pressed_style)
+				
+			btn.pressed.connect(func(): _switch_active_player(i))
+			
+			# Hover scale micro-animations
+			btn.mouse_entered.connect(func():
+				var t = btn.create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+				btn.pivot_offset = btn.size / 2.0
+				t.tween_property(btn, "scale", Vector2(1.08, 1.08), 0.15)
+			)
+			btn.mouse_exited.connect(func():
+				var t = btn.create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+				btn.pivot_offset = btn.size / 2.0
+				t.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.15)
+			)
+			
+			p_switch.add_child(btn)
+			
+		hand_scroll.add_child(p_switch)
+
+func _switch_active_player(target_idx: int):
+	if target_idx == Global.local_active_player_idx:
+		return
+		
+	# 1. Save current hand cards to local_player_hands
+	var current_cards = []
+	for child in hand_zone.get_children():
+		current_cards.append(child)
+	local_player_hands[Global.local_active_player_idx] = current_cards
+	
+	# 2. Remove from hand_zone
+	for card in current_cards:
+		hand_zone.remove_child(card)
+		
+	# 3. Set new active player
+	Global.local_active_player_idx = target_idx
+	
+	# 4. Add new active player's cards to hand_zone
+	var new_cards = local_player_hands.get(target_idx, [])
+	for card in new_cards:
+		hand_zone.add_child(card)
+		
+	# 5. Update UI buttons styling
+	var p_switch = hand_scroll.get_node_or_null("PlayerSwitchContainer")
+	if p_switch:
+		var active_style = StyleBoxFlat.new()
+		active_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		active_style.set_corner_radius_all(5)
+		active_style.set_border_width_all(1)
+		active_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
+		active_style.content_margin_left = 10
+		active_style.content_margin_right = 10
+		active_style.shadow_color = Color(0.98, 0.45, 0.08, 0.45)
+		active_style.shadow_size = 8
+		
+		var normal_style = StyleBoxFlat.new()
+		normal_style.bg_color = Color(0.12, 0.12, 0.15, 0.75)
+		normal_style.set_corner_radius_all(5)
+		normal_style.set_border_width_all(1)
+		normal_style.border_color = Color(1.0, 1.0, 1.0, 0.12)
+		normal_style.content_margin_left = 10
+		normal_style.content_margin_right = 10
+		
+		var hover_style = StyleBoxFlat.new()
+		hover_style.bg_color = Color(0.18, 0.18, 0.22, 0.85)
+		hover_style.set_corner_radius_all(5)
+		hover_style.set_border_width_all(1)
+		hover_style.border_color = Color(0.98, 0.45, 0.08, 0.8)
+		hover_style.content_margin_left = 10
+		hover_style.content_margin_right = 10
+		hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+		hover_style.shadow_size = 5
+
+		var pressed_style = StyleBoxFlat.new()
+		pressed_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		pressed_style.set_corner_radius_all(5)
+		pressed_style.set_border_width_all(1)
+		pressed_style.border_color = Color(1.0, 1.0, 1.0, 0.3)
+		pressed_style.content_margin_left = 10
+		pressed_style.content_margin_right = 10
+		
+		var btn_index = 1 # Skip the Label child
+		for child in p_switch.get_children():
+			if child is Button:
+				var i = btn_index - 1
+				child.pivot_offset = child.size / 2.0
+				if i == target_idx:
+					child.add_theme_stylebox_override("normal", active_style)
+					child.add_theme_stylebox_override("hover", active_style)
+					child.add_theme_stylebox_override("pressed", active_style)
+				else:
+					child.add_theme_stylebox_override("normal", normal_style)
+					child.add_theme_stylebox_override("hover", hover_style)
+					child.add_theme_stylebox_override("pressed", pressed_style)
+				btn_index += 1
+				
+	# 6. Update hand sizing and scrolling
+	_update_hand_zone_sizing()
+
+func _exit_tree():
+	# Clean up any orphaned card nodes in local_player_hands to avoid memory leaks
+	for idx in local_player_hands:
+		var cards = local_player_hands[idx]
+		for card in cards:
+			if is_instance_valid(card) and card.get_parent() == null:
+				card.queue_free()
+
 
 func _input(event):
 	if event is InputEventMouseButton:
@@ -1846,7 +2034,6 @@ func _init_online_field_dialogs():
 	
 	online_field_load_popup.add_button("Delete Selected", true, "delete_field")
 	online_field_load_popup.custom_action.connect(_on_online_field_custom_action)
-	
 	add_child(online_field_load_popup)
 
 func _on_online_field_custom_action(action: String):
@@ -1899,7 +2086,14 @@ func _on_save_field_pressed():
 	if not save_field_dialog:
 		_init_save_field_dialog()
 	save_field_name_input.text = field_canvas.get_meta("field_name", "Main Field")
-	save_field_dialog.popup_centered()
+	
+	var on_local = func():
+		_save_dest_is_local = true
+		save_field_dialog.popup_centered()
+	var on_online = func():
+		_save_dest_is_local = false
+		save_field_dialog.popup_centered()
+	_show_save_destination_dialog(on_local, on_online)
 
 func _on_save_field_confirmed():
 	var f_name = save_field_name_input.text.strip_edges()
@@ -1907,6 +2101,14 @@ func _on_save_field_confirmed():
 		f_name = "Main Field"
 	field_canvas.set_meta("field_name", f_name)
 	
+	if _save_dest_is_local:
+		field_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		field_file_dialog.current_file = f_name + ".json"
+		field_file_dialog.popup_centered()
+	else:
+		_do_save_field_online(f_name)
+
+func _do_save_field_online(f_name: String):
 	var db_id = field_canvas.get_meta("db_id", "")
 	
 	var canvas_settings = {
@@ -1994,11 +2196,117 @@ func _on_save_field_confirmed():
 			err_dialog.dialog_text = "Failed to save Field Layout. (Status: " + str(status) + ")"
 			add_child(err_dialog)
 			err_dialog.popup_centered()
-
+			
 	if db_id != "":
 		SupabaseService.update_field(db_id, f_name, canvas_settings, components_layout, on_save_complete)
 	else:
 		SupabaseService.insert_field(f_name, canvas_settings, components_layout, on_save_complete)
+
+func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Choose Save Destination"
+	dialog.size = Vector2(320, 160)
+	
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85) # Dark semi-transparent glass
+	panel_style.set_border_width_all(1)
+	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
+	panel_style.set_corner_radius_all(12)
+	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_size = 12
+	dialog.add_theme_stylebox_override("panel", panel_style)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 15)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	var lbl = Label.new()
+	lbl.text = "Select save destination:"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	vbox.add_child(lbl)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 15)
+	
+	var btn_normal = StyleBoxFlat.new()
+	btn_normal.bg_color = Color(0.12, 0.12, 0.16, 0.6)
+	btn_normal.set_border_width_all(1)
+	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.1)
+	btn_normal.set_corner_radius_all(6)
+	btn_normal.content_margin_left = 12
+	btn_normal.content_margin_right = 12
+	
+	var btn_hover = StyleBoxFlat.new()
+	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
+	btn_hover.set_border_width_all(1)
+	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.set_corner_radius_all(6)
+	btn_hover.content_margin_left = 12
+	btn_hover.content_margin_right = 12
+	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_size = 4
+	
+	var local_btn = Button.new()
+	local_btn.text = "Save Local (File)"
+	local_btn.focus_mode = Control.FOCUS_NONE
+	local_btn.add_theme_stylebox_override("normal", btn_normal)
+	local_btn.add_theme_stylebox_override("hover", btn_hover)
+	local_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_local.call()
+	)
+	hbox.add_child(local_btn)
+	
+	var online_style_normal = StyleBoxFlat.new()
+	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.set_corner_radius_all(6)
+	online_style_normal.set_border_width_all(1)
+	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
+	online_style_normal.content_margin_left = 12
+	online_style_normal.content_margin_right = 12
+	
+	var online_style_hover = StyleBoxFlat.new()
+	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.set_corner_radius_all(6)
+	online_style_hover.set_border_width_all(1)
+	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
+	online_style_hover.content_margin_left = 12
+	online_style_hover.content_margin_right = 12
+	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_size = 8
+
+	var online_btn = Button.new()
+	online_btn.text = "Save Online (Database)"
+	online_btn.focus_mode = Control.FOCUS_NONE
+	online_btn.add_theme_stylebox_override("normal", online_style_normal)
+	online_btn.add_theme_stylebox_override("hover", online_style_hover)
+	online_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_online.call()
+	)
+	hbox.add_child(online_btn)
+	
+	vbox.add_child(hbox)
+	
+	var cancel_btn = Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.focus_mode = Control.FOCUS_NONE
+	cancel_btn.add_theme_stylebox_override("normal", btn_normal)
+	cancel_btn.add_theme_stylebox_override("hover", btn_hover)
+	cancel_btn.pressed.connect(func():
+		dialog.queue_free()
+	)
+	vbox.add_child(cancel_btn)
+	
+	dialog.add_child(vbox)
+	dialog.get_ok_button().hide()
+	dialog.get_cancel_button().hide()
+	
+	add_child(dialog)
+	dialog.popup_centered()
 
 func _on_load_field_pressed():
 	SupabaseService.fetch_all_fields(func(status, data):
@@ -2047,7 +2355,105 @@ func _on_field_file_selected(path: String):
 		_load_field_from_file(path)
 
 func _save_field_to_file(path: String):
-	pass
+	var f_name = field_canvas.get_meta("field_name", "Main Field")
+	
+	var canvas_settings = {
+		"size_x": field_canvas.size.x,
+		"size_y": field_canvas.size.y,
+		"rotation_degrees": field_canvas.rotation_degrees,
+		"card_custom_width": field_canvas.get_meta("card_custom_width", 0),
+		"card_custom_height": field_canvas.get_meta("card_custom_height", 0),
+		"field_perms": field_canvas.get_meta("field_perms", {"move": true, "play": true})
+	}
+	
+	var components = []
+	_gather_components(field_canvas, components)
+	
+	var node_to_id = {}
+	for i in range(components.size()):
+		node_to_id[components[i]] = i
+		
+	var components_layout = []
+	for i in range(components.size()):
+		var node = components[i]
+		var cat = node.get_meta("component_category", "")
+		var parent_id = -1
+		var parent = node.get_parent()
+		if parent in node_to_id:
+			parent_id = node_to_id[parent]
+			
+		var comp_data = {
+			"id": i,
+			"parent_id": parent_id,
+			"category": cat,
+			"position_x": node.position.x,
+			"position_y": node.position.y,
+			"size_x": node.size.x,
+			"size_y": node.size.y,
+			"rotation_degrees": node.rotation_degrees
+		}
+		
+		if cat == "zone":
+			comp_data["zone_type"] = node.get_meta("zone_type", "Card Zone")
+			comp_data["zone_settings"] = node.get_meta("zone_settings", {}).duplicate()
+		elif cat == "counter":
+			comp_data["counter_name"] = node.counter_name if "counter_name" in node else ""
+			comp_data["name_position"] = node.name_position if "name_position" in node else 0
+			comp_data["default_value"] = node.default_value if "default_value" in node else 0
+			comp_data["name_auto_scale"] = node.name_auto_scale if "name_auto_scale" in node else true
+			comp_data["name_custom_size"] = node.name_custom_size if "name_custom_size" in node else 14
+			comp_data["is_vertical"] = node.is_vertical if "is_vertical" in node else false
+		elif cat == "field":
+			comp_data["field_name"] = node.get_meta("field_name", "Sub Field")
+			comp_data["field_perms"] = node.get_meta("field_perms", {"move": true, "play": true}).duplicate()
+			comp_data["card_custom_width"] = node.get_meta("card_custom_width", 0)
+			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
+		elif cat == "dice":
+			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
+			if dice_btn and dice_btn is Button:
+				comp_data["dice_text"] = dice_btn.text
+			else:
+				comp_data["dice_text"] = "D6: -"
+		elif cat == "image":
+			comp_data["image_path"] = node.get_meta("image_path", "")
+		elif cat == "card":
+			comp_data["card_data"] = node.get_meta("card_data", {}).duplicate()
+		elif cat == "deck":
+			comp_data["deck_data"] = node.get_meta("deck_data", {}).duplicate()
+			comp_data["shuffle_at_start"] = node.get_meta("shuffle_at_start", false)
+			
+		components_layout.append(comp_data)
+		
+	var layout_data = {
+		"canvas": {
+			"field_name": f_name,
+			"size_x": canvas_settings.size_x,
+			"size_y": canvas_settings.size_y,
+			"rotation_degrees": canvas_settings.rotation_degrees,
+			"card_custom_width": canvas_settings.card_custom_width,
+			"card_custom_height": canvas_settings.card_custom_height,
+			"field_perms": canvas_settings.field_perms
+		},
+		"components": components_layout
+	}
+	
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(layout_data, "\t"))
+		file.close()
+		print("Field Layout saved locally successfully to: ", path)
+		
+		var success_dialog = AcceptDialog.new()
+		success_dialog.title = "Save Successful"
+		success_dialog.dialog_text = "Field Layout '" + f_name + "' saved locally to: " + path.get_file()
+		add_child(success_dialog)
+		success_dialog.popup_centered()
+	else:
+		var err_dialog = AcceptDialog.new()
+		err_dialog.title = "Save Failed"
+		err_dialog.dialog_text = "Failed to save Field Layout locally."
+		add_child(err_dialog)
+		err_dialog.popup_centered()
 
 func _load_field_from_file(path: String):
 	if not FileAccess.file_exists(path):

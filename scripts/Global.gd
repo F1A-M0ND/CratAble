@@ -21,6 +21,9 @@ var main_menu_tab = "HOME"
 var play_mode: bool = false
 var loaded_field_path: String = ""
 var selected_deck_path: String = ""
+var local_player_count: int = 1
+var local_active_player_idx: int = 0
+
 
 var inspect_timer: Timer
 var target_inspect_card_data: Variant = null

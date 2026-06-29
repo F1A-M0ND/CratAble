@@ -23,6 +23,7 @@ extends Control
 @onready var error_dialog = $ErrorDialog
 
 var file_dialog: FileDialog
+var card_save_file_dialog: FileDialog
 var current_image_path: String = ""
 var has_unsaved_changes: bool = false
 var unsaved_dialog: ConfirmationDialog
@@ -57,6 +58,15 @@ func _ready():
 	file_dialog.size = Vector2(600, 400)
 	file_dialog.use_native_dialog = true
 	add_child(file_dialog)
+	
+	card_save_file_dialog = FileDialog.new()
+	card_save_file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	card_save_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	card_save_file_dialog.filters = PackedStringArray(["*.json ; Card Files"])
+	card_save_file_dialog.file_selected.connect(_save_card_to_file)
+	card_save_file_dialog.size = Vector2(600, 400)
+	card_save_file_dialog.use_native_dialog = true
+	add_child(card_save_file_dialog)
 	
 	unsaved_dialog = ConfirmationDialog.new()
 	unsaved_dialog.title = "Unsaved Changes"
@@ -255,7 +265,177 @@ func _on_save_button_pressed():
 		error_dialog.dialog_text = "Cannot save card: Image is missing!"
 		error_dialog.popup_centered()
 		return
-	save_confirm.popup_centered()
+	var on_local = func(): 
+		var card_name_str = card_name.text.strip_edges()
+		if card_name_str == "":
+			card_name_str = "UntitledCard"
+		card_save_file_dialog.current_file = card_name_str + ".json"
+		card_save_file_dialog.popup_centered()
+	var on_online = func():
+		save_confirm.popup_centered()
+	_show_save_destination_dialog(on_local, on_online)
+
+func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "Choose Save Destination"
+	dialog.size = Vector2(320, 160)
+	
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85) # Dark semi-transparent glass
+	panel_style.set_border_width_all(1)
+	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
+	panel_style.set_corner_radius_all(12)
+	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_size = 12
+	dialog.add_theme_stylebox_override("panel", panel_style)
+	
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 15)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	var lbl = Label.new()
+	lbl.text = "Select save destination:"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	vbox.add_child(lbl)
+	
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 15)
+	
+	var btn_normal = StyleBoxFlat.new()
+	btn_normal.bg_color = Color(0.12, 0.12, 0.16, 0.6)
+	btn_normal.set_border_width_all(1)
+	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.1)
+	btn_normal.set_corner_radius_all(6)
+	btn_normal.content_margin_left = 12
+	btn_normal.content_margin_right = 12
+	
+	var btn_hover = StyleBoxFlat.new()
+	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
+	btn_hover.set_border_width_all(1)
+	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.set_corner_radius_all(6)
+	btn_hover.content_margin_left = 12
+	btn_hover.content_margin_right = 12
+	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_size = 4
+	
+	var local_btn = Button.new()
+	local_btn.text = "Save Local (File)"
+	local_btn.focus_mode = Control.FOCUS_NONE
+	local_btn.add_theme_stylebox_override("normal", btn_normal)
+	local_btn.add_theme_stylebox_override("hover", btn_hover)
+	local_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_local.call()
+	)
+	hbox.add_child(local_btn)
+	
+	var online_style_normal = StyleBoxFlat.new()
+	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.set_corner_radius_all(6)
+	online_style_normal.set_border_width_all(1)
+	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
+	online_style_normal.content_margin_left = 12
+	online_style_normal.content_margin_right = 12
+	
+	var online_style_hover = StyleBoxFlat.new()
+	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.set_corner_radius_all(6)
+	online_style_hover.set_border_width_all(1)
+	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
+	online_style_hover.content_margin_left = 12
+	online_style_hover.content_margin_right = 12
+	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_size = 8
+
+	var online_btn = Button.new()
+	online_btn.text = "Save Online (Database)"
+	online_btn.focus_mode = Control.FOCUS_NONE
+	online_btn.add_theme_stylebox_override("normal", online_style_normal)
+	online_btn.add_theme_stylebox_override("hover", online_style_hover)
+	online_btn.pressed.connect(func():
+		dialog.queue_free()
+		on_online.call()
+	)
+	hbox.add_child(online_btn)
+	
+	vbox.add_child(hbox)
+	
+	var cancel_btn = Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.focus_mode = Control.FOCUS_NONE
+	cancel_btn.add_theme_stylebox_override("normal", btn_normal)
+	cancel_btn.add_theme_stylebox_override("hover", btn_hover)
+	cancel_btn.pressed.connect(func():
+		dialog.queue_free()
+	)
+	vbox.add_child(cancel_btn)
+	
+	dialog.add_child(vbox)
+	dialog.get_ok_button().hide()
+	dialog.get_cancel_button().hide()
+	
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _save_card_to_file(path: String):
+	var stats = {
+		"custom_stats": {},
+		"tags": []
+	}
+	
+	if preview_image.texture != null:
+		var size = preview_image.texture.get_size()
+		stats["image_size"] = {"x": size.x, "y": size.y}
+	else:
+		stats["image_size"] = {"x": 0, "y": 0}
+		
+	if atk_check.button_pressed:
+		stats["atk"] = atk_spin.value
+	if def_check.button_pressed:
+		stats["def"] = def_spin.value
+		
+	for child in custom_stats_container.get_children():
+		if child is HBoxContainer:
+			var s_name = child.get_child(0).text
+			var s_val = child.get_child(1).value
+			if s_name != "":
+				stats.custom_stats[s_name] = s_val
+				
+	for child in custom_tags_container.get_children():
+		if child is HBoxContainer:
+			var tag_name = child.get_child(0).text
+			if tag_name != "":
+				stats.tags.append(tag_name)
+				
+	var card_name_str = card_name.text.strip_edges()
+	if card_name_str == "":
+		card_name_str = "UntitledCard"
+		
+	var card_data = {
+		"name": card_name_str,
+		"image_path": current_image_path,
+		"stats": stats
+	}
+	
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(card_data, "\t"))
+		file.close()
+		print("Card saved locally successfully to: ", path)
+		_reset_unsaved()
+		
+		var success_dialog = AcceptDialog.new()
+		success_dialog.title = "Save Successful"
+		success_dialog.dialog_text = "Card saved locally to: " + path.get_file()
+		add_child(success_dialog)
+		success_dialog.popup_centered()
+	else:
+		error_dialog.dialog_text = "Failed to save card file locally."
+		error_dialog.popup_centered()
 
 func _do_save_card():
 	save_btn.disabled = true
