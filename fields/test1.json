@@ -1,0 +1,34 @@
+{
+	"canvas": {
+		"card_custom_height": 0,
+		"card_custom_width": 0,
+		"field_name": "test1",
+		"field_perms": {
+			"move": true,
+			"play": true
+		},
+		"rotation_degrees": 0.0,
+		"size_x": 1500.0,
+		"size_y": 1000.0
+	},
+	"components": [
+		{
+			"category": "zone",
+			"id": 0,
+			"parent_id": -1,
+			"position_x": 100.0,
+			"position_y": 100.0,
+			"rotation_degrees": 0.0,
+			"size_x": 150.0,
+			"size_y": 210.0,
+			"zone_settings": {
+				"allow_move": true,
+				"face": 0,
+				"has_max_cards": false,
+				"max_cards": 1,
+				"purpose": 1
+			},
+			"zone_type": "Deck Zone"
+		}
+	]
+}
