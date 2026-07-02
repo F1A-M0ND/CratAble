@@ -4,8 +4,7 @@ var card_index: int = -1
 var deck_viewer_ref: Node = null # Reference to FieldCreator instance
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
-	# Only allow dragging if this is the inserting card
-	if deck_viewer_ref == null or card_index != deck_viewer_ref.inserting_card_index:
+	if deck_viewer_ref == null:
 		return null
 		
 	# Create drag preview

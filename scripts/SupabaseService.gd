@@ -162,6 +162,8 @@ func upload_card_image(file_name: String, file_data: PackedByteArray, callback: 
 		return new_headers
 		
 	request_supabase(path, HTTPClient.METHOD_POST, file_data, modifier, func(status, data):
+		if not callback.is_valid():
+			return
 		if status == 200 or status == 201:
 			var public_url = SUPABASE_URL + "/storage/v1/object/public/card-images/" + unique_name.uri_encode()
 			callback.call(true, public_url)

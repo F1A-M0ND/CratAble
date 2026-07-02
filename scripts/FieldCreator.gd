@@ -72,6 +72,10 @@ var _hand_collapsed: bool = false
 var _hand_normal_offset: float = -160.0
 var _resizing_hand: bool = false
 var _resize_start_y: float = 0.0
+var swipe_active = false
+var swipe_last_pos = Vector2.ZERO
+var swipe_card_entries = {}
+
 var _resize_start_offset: float = 0.0
 const HAND_BAR_HEIGHT: float = 32.0
 var hand_hscroll: HScrollBar  # แถบเลื่อนแนวนอน
@@ -90,13 +94,15 @@ var peeker_prompt_dialog: ConfirmationDialog
 var peeker_prompt_spinbox: SpinBox
 var peeker_held_cards: Array = []
 
-var deck_viewer_dialog: ConfirmationDialog
-var deck_viewer_grid: GridContainer
+var deck_viewer_dialog: PanelContainer
+var deck_viewer_grid: Control
 var deck_viewer_target: Control
 var _hovered_deck_node: Control = null
 var _hover_deck_time: float = 0.0
 const DECK_HOVER_TRIGGER_TIME: float = 1.0
 var deck_viewer_inserting_card: Control = null
+var deck_viewer_dragging_card: Control = null  # การ์ดที่กำลังลากอยู่ขณะที่ deck viewer เปิด
+var deck_viewer_has_entered: bool = false      # ตรวจจับว่าการ์ดลากเข้ามาใน panel หรือยัง เพื่อเลี่ยงการปิดทันทีตอนเปิด
 var inserting_card_index: int = -1
 var deck_viewer_cards: Array = []
 var deck_viewer_hovered_item: Control = null
@@ -612,20 +618,72 @@ func _exit_tree():
 
 func _input(event):
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_MIDDLE:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				swipe_active = true
+				swipe_last_pos = event.global_position
+				swipe_card_entries.clear()
+			else:
+				swipe_active = false
+				swipe_card_entries.clear()
+		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			if event.pressed:
 				if tabletop_view.get_global_rect().has_point(event.global_position):
 					is_panning = true
 			else:
 				is_panning = false
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			if is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible and Rect2(Vector2.ZERO, deck_viewer_dialog.size).has_point(deck_viewer_dialog.get_local_mouse_position()):
+				return
 			if tabletop_view.get_global_rect().has_point(event.global_position):
 				_zoom_canvas(1.1, tabletop_view.get_local_mouse_position())
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			if is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible and Rect2(Vector2.ZERO, deck_viewer_dialog.size).has_point(deck_viewer_dialog.get_local_mouse_position()):
+				return
 			if tabletop_view.get_global_rect().has_point(event.global_position):
 				_zoom_canvas(1.0 / 1.1, tabletop_view.get_local_mouse_position())
-	elif event is InputEventMouseMotion and is_panning:
-		field_canvas.position += event.relative
+	elif event is InputEventMouseMotion:
+		if is_panning:
+			field_canvas.position += event.relative
+			
+		if swipe_active and is_test_mode:
+			var current_pos = event.global_position
+			var any_dragging = false
+			
+			var all_cards = []
+			all_cards.append_array(field_canvas.get_children())
+			if is_instance_valid(hand_zone):
+				all_cards.append_array(hand_zone.get_children())
+				
+			for child in all_cards:
+				if child.has_meta("component_category") and child.get_meta("component_category") == "card":
+					if child.get("dragging") == true:
+						any_dragging = true
+						break
+						
+			if not any_dragging:
+				for child in all_cards:
+					if not child.has_meta("component_category") or child.get_meta("component_category") != "card": continue
+					if not child.visible: continue
+					
+					var card_rect = child.get_global_rect()
+					var has_now = card_rect.has_point(current_pos)
+					var had_before = card_rect.has_point(swipe_last_pos)
+					
+					if has_now and not had_before:
+						swipe_card_entries[child] = current_pos
+					elif not has_now and had_before:
+						if swipe_card_entries.has(child):
+							var enter_pos = swipe_card_entries[child]
+							# วัดระยะจนถึงจุดปัจจุบัน (current_pos) จะได้ระยะที่แม่นยำกว่า swipe_last_pos
+							var dist = enter_pos.distance_to(current_pos)
+							var min_dist = min(card_rect.size.x, card_rect.size.y) * 0.4
+							if dist > min_dist:
+								var is_face_down = child.has_node("CardBack") and child.get_node("CardBack").visible
+								_set_card_face_down(child, not is_face_down)
+							swipe_card_entries.erase(child)
+			swipe_last_pos = current_pos
+			
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var ctrl = event.ctrl_pressed
 		if ctrl and event.keycode == KEY_EQUAL:   # Ctrl + = หรือ Ctrl + +
@@ -658,7 +716,7 @@ func _process(delta: float) -> void:
 			_hovered_deck_node = null
 			_hover_deck_time = 0.0
 			
-			# Locate the dragged card and stop dragging it
+			# ค้นหาการ์ดที่กำลังลากอยู่ (ไม่หยุด drag)
 			var dragged_card: Control = null
 			for child in field_canvas.get_children():
 				if child.has_meta("component_category") and child.get_meta("component_category") == "card":
@@ -672,9 +730,8 @@ func _process(delta: float) -> void:
 							dragged_card = child
 							break
 							
+			# เปิด deck viewer โดยไม่หยุด drag และไม่ซ่อนการ์ด
 			if dragged_card:
-				dragged_card.set("dragging", false)
-				dragged_card.emit_signal("drag_ended")
 				_open_deck_viewer_for_insertion(target, dragged_card)
 			else:
 				_open_deck_viewer(target)
@@ -3121,18 +3178,54 @@ func _set_components_locked(node: Node, locked: bool):
 		_set_components_locked(child, locked)
 
 func _on_card_drag_ended(card: Control):
-	if not is_test_mode: return
+	var cat = card.get_meta("component_category", "")
+	if cat == "deck":
+		return
+		
+	var from_deck_viewer = card.get_meta("from_deck_viewer", false)
+	if not is_test_mode and not from_deck_viewer: return
+	if card.has_meta("from_deck_viewer"):
+		card.remove_meta("from_deck_viewer")
 	
 	_hovered_deck_node = null
 	_hover_deck_time = 0.0
+	
+	var was_in_hand = card.get_meta("in_hand", false)
+	
+	# ตรวจสอบการปล่อยใน deck viewer
+	if is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible and deck_viewer_dragging_card == card:
+		var local_mouse = deck_viewer_dialog.get_local_mouse_position()
+		if Rect2(Vector2.ZERO, deck_viewer_dialog.size).has_point(local_mouse):
+			var index = _get_drop_index_at_global_position(get_global_mouse_position())
+			var card_data = card.get_meta("card_data", {})
+			var card_path = card_data.get("file_path", "")
+			if card_path == "":
+				card_path = card_data.get("image_path", "")
+				
+			if card_path != "":
+				if inserting_card_index >= 0 and inserting_card_index < deck_viewer_cards.size():
+					deck_viewer_cards.remove_at(inserting_card_index)
+				
+				index = clamp(index, 0, deck_viewer_cards.size())
+				deck_viewer_cards.insert(index, card_path)
+				
+				deck_viewer_inserting_card = card
+				inserting_card_index = index
+				
+				card.hide()
+				_refresh_deck_viewer()
+				
+				deck_viewer_dragging_card = null
+				
+				if was_in_hand:
+					_update_hand_zone_sizing.call_deferred()
+				return
 	
 	# ตรวจว่าปล่อยการ์ดใน hand zone หรือเปล่า
 	if hand_scroll and hand_scroll.visible:
 		if hand_scroll.get_global_rect().has_point(get_global_mouse_position()):
 			_add_card_to_hand(card)
 			return
-	
-	var was_in_hand = card.get_meta("in_hand", false)
 	
 	# ปล่อยนอก hand zone → คืนขนาดสนามก่อน
 	if was_in_hand:
@@ -3210,6 +3303,33 @@ func _on_card_drag_ended(card: Control):
 
 func _on_card_drag_moved(card: Control):
 	if not is_test_mode: return
+	
+	# ถ้า deck viewer เปิดอยู่เพราะการ์ดใบนี้ และการ์ดลากออกนอก panel → ปิด deck viewer
+	if deck_viewer_dragging_card == card and is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible:
+		var local_mouse = deck_viewer_dialog.get_local_mouse_position()
+		var has_mouse = Rect2(Vector2.ZERO, deck_viewer_dialog.size).has_point(local_mouse)
+		if has_mouse:
+			deck_viewer_has_entered = true
+			if inserting_card_index != -1:
+				var new_index = _get_drop_index_at_global_position(get_global_mouse_position())
+				if new_index != inserting_card_index:
+					var card_path = deck_viewer_cards[inserting_card_index]
+					deck_viewer_cards.remove_at(inserting_card_index)
+					if new_index > deck_viewer_cards.size():
+						new_index = deck_viewer_cards.size()
+					deck_viewer_cards.insert(new_index, card_path)
+					
+					if inserting_card_index < deck_viewer_grid.get_child_count():
+						var child_node = deck_viewer_grid.get_child(inserting_card_index)
+						deck_viewer_grid.move_child(child_node, new_index)
+						
+					inserting_card_index = new_index
+					_update_deck_viewer_labels()
+					if deck_viewer_grid.has_method("update_layout"):
+						deck_viewer_grid.update_layout(true)
+		elif deck_viewer_has_entered:
+			print("[Drag Moved] Mouse left panel! Closing deck viewer.")
+			_close_deck_viewer_keep_card()
 	
 	# ถ้าเมาส์อยู่ใน hand_scroll และการ์ดอยู่บนมือ ให้สลับตำแหน่งและข้ามการตรวจจับโซนสนาม
 	if hand_scroll and hand_scroll.visible and card.get_meta("in_hand", false):
@@ -3568,11 +3688,18 @@ func _create_deck_out_overlay() -> Control:
 	return overlay
 
 func _on_deck_left_clicked(deck_obj: Control):
-	if not is_test_mode: return
-	if not deck_obj.get_meta("deck_confirmed", false): return
+	print("[Deck Click] Left clicked deck: ", deck_obj.name)
+	if not is_test_mode:
+		print("[Deck Click]   Ignored: is_test_mode is false")
+		return
+	if not deck_obj.get_meta("deck_confirmed", false):
+		print("[Deck Click]   Ignored: deck_confirmed is false")
+		return
 	
 	var draw_pile = deck_obj.get_meta("draw_pile", [])
-	if draw_pile.is_empty(): return
+	if draw_pile.is_empty():
+		print("[Deck Click]   Ignored: draw_pile is empty")
+		return
 	
 	var card_path = draw_pile.pop_back()
 	deck_obj.set_meta("draw_pile", draw_pile)
@@ -3693,26 +3820,89 @@ func _init_tabletop_viewers():
 	zone_viewer_dialog.add_child(zone_scroll)
 	add_child(zone_viewer_dialog)
 
-	# 4. Deck Viewer Dialog (shows all cards in deck)
-	deck_viewer_dialog = ConfirmationDialog.new()
-	deck_viewer_dialog.title = "Deck Viewer"
-	deck_viewer_dialog.min_size = Vector2i(700, 450)
+	# 4. Deck Viewer Panel (non-modal overlay — allows drag & drop to hand/field)
+	deck_viewer_dialog = PanelContainer.new()
+	deck_viewer_dialog.name = "DeckViewerPanel"
+	deck_viewer_dialog.custom_minimum_size = Vector2(760, 520)
+	deck_viewer_dialog.z_index = 90
+	deck_viewer_dialog.set_anchors_preset(Control.PRESET_CENTER)
+	deck_viewer_dialog.hide()
 	
+	var dv_style = StyleBoxFlat.new()
+	dv_style.bg_color = Color(0.1, 0.12, 0.18, 0.97)
+	dv_style.border_width_left = 2
+	dv_style.border_width_top = 2
+	dv_style.border_width_right = 2
+	dv_style.border_width_bottom = 2
+	dv_style.border_color = Color(0.35, 0.55, 0.9, 0.8)
+	dv_style.corner_radius_top_left = 8
+	dv_style.corner_radius_top_right = 8
+	dv_style.corner_radius_bottom_left = 8
+	dv_style.corner_radius_bottom_right = 8
+	deck_viewer_dialog.add_theme_stylebox_override("panel", dv_style)
+	
+	var dv_margin = MarginContainer.new()
+	dv_margin.add_theme_constant_override("margin_left", 12)
+	dv_margin.add_theme_constant_override("margin_top", 12)
+	dv_margin.add_theme_constant_override("margin_right", 12)
+	dv_margin.add_theme_constant_override("margin_bottom", 12)
+	deck_viewer_dialog.add_child(dv_margin)
+	
+	var dv_vbox = VBoxContainer.new()
+	dv_vbox.add_theme_constant_override("separation", 8)
+	dv_margin.add_child(dv_vbox)
+	
+	# Header
+	var dv_header = HBoxContainer.new()
+	var dv_title = Label.new()
+	dv_title.text = "Deck Viewer"
+	dv_title.add_theme_font_size_override("font_size", 18)
+	dv_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dv_header.add_child(dv_title)
+	
+	var dv_hint = Label.new()
+	dv_hint.text = "ลากการ์ดจัดเรียง / ลากออกไปสนามหรือมือ"
+	dv_hint.add_theme_font_size_override("font_size", 12)
+	dv_hint.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0, 0.7))
+	dv_header.add_child(dv_hint)
+	dv_vbox.add_child(dv_header)
+	
+	var dv_sep = HSeparator.new()
+	dv_vbox.add_child(dv_sep)
+	
+	# Card grid scroll area
 	var deck_scroll = ScrollContainer.new()
-	deck_scroll.custom_minimum_size = Vector2(680, 380)
+	deck_scroll.custom_minimum_size = Vector2(720, 360)
+	deck_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	
-	deck_viewer_grid = GridContainer.new()
+	deck_viewer_grid = Control.new()
 	deck_viewer_grid.set_script(load("res://scripts/DeckViewerGrid.gd"))
 	deck_viewer_grid.deck_viewer_ref = self
 	deck_viewer_grid.columns = 4
-	deck_viewer_grid.add_theme_constant_override("h_separation", 15)
-	deck_viewer_grid.add_theme_constant_override("v_separation", 15)
+	deck_viewer_grid.h_separation = 15.0
+	deck_viewer_grid.v_separation = 15.0
 	deck_scroll.add_child(deck_viewer_grid)
-	deck_viewer_dialog.add_child(deck_scroll)
-	deck_viewer_dialog.confirmed.connect(_on_deck_viewer_confirmed)
-	deck_viewer_dialog.canceled.connect(_on_deck_viewer_canceled)
+	dv_vbox.add_child(deck_scroll)
+	
+	# Footer buttons
+	var dv_footer_sep = HSeparator.new()
+	dv_vbox.add_child(dv_footer_sep)
+	
+	var dv_footer = HBoxContainer.new()
+	dv_footer.alignment = BoxContainer.ALIGNMENT_END
+	dv_footer.add_theme_constant_override("separation", 10)
+	
+
+	
+	var dv_ok_btn = Button.new()
+	dv_ok_btn.text = "OK"
+	dv_ok_btn.custom_minimum_size = Vector2(90, 32)
+	dv_ok_btn.pressed.connect(_on_deck_viewer_confirmed)
+	dv_footer.add_child(dv_ok_btn)
+	
+	dv_vbox.add_child(dv_footer)
 	
 	add_child(deck_viewer_dialog)
 
@@ -3781,7 +3971,7 @@ func _on_tabletop_popup_menu_id_pressed(id: int):
 		10: # Tap/Untap
 			_toggle_card_tap(context_tabletop_node)
 		11: # Flip face
-			var is_face_down = context_tabletop_node.has_node("CardBack")
+			var is_face_down = context_tabletop_node.has_node("CardBack") and context_tabletop_node.get_node("CardBack").visible
 			_set_card_face_down(context_tabletop_node, not is_face_down)
 		12: # Send to Hand
 			_add_card_to_hand(context_tabletop_node)
@@ -3854,7 +4044,10 @@ func _insert_card_into_deck(card: Control, deck: Control, to_top: bool):
 		# อนิมเมจย่อการ์ดหายวาบเข้ากองเด็ค
 		var tween = create_tween()
 		tween.tween_property(card, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		tween.tween_callback(func(): card.queue_free())
+		tween.tween_callback(func():
+			if is_instance_valid(card):
+				card.queue_free()
+		)
 
 func _shuffle_deck_programmatically(deck: Control):
 	var draw_pile = deck.get_meta("draw_pile", [])
@@ -4169,20 +4362,42 @@ func _organize_remaining_zone_cards(zone: Control):
 	for c in cards:
 		c.position = (zone.size / 2.0) - (c.size / 2.0)
 
+func _close_deck_viewer_keep_card():
+	# ปิด deck viewer แต่ไม่แตะการ์ดที่ยังลากอยู่
+	# เอาการ์ดที่กำลัง insert ออกจาก deck_viewer_cards (ถ้ามี)
+	if inserting_card_index >= 0 and inserting_card_index < deck_viewer_cards.size():
+		deck_viewer_cards.remove_at(inserting_card_index)
+	
+	deck_viewer_inserting_card = null
+	deck_viewer_dragging_card = null
+	deck_viewer_has_entered = false
+	deck_viewer_target = null
+	deck_viewer_cards.clear()
+	inserting_card_index = -1
+	
+	deck_viewer_dialog.hide()
+
+func _center_deck_viewer_panel():
+	deck_viewer_dialog.show()
+	await get_tree().process_frame
+	var viewport_size = get_viewport_rect().size
+	deck_viewer_dialog.position = (viewport_size - deck_viewer_dialog.size) / 2.0
+
 func _open_deck_viewer(deck: Control):
 	deck_viewer_target = deck
 	deck_viewer_inserting_card = null
 	inserting_card_index = -1
 	deck_viewer_cards = deck.get_meta("draw_pile", []).duplicate()
 	_refresh_deck_viewer()
-	deck_viewer_dialog.popup_centered()
+	_center_deck_viewer_panel()
 
 func _open_deck_viewer_for_insertion(deck: Control, card: Control):
 	deck_viewer_target = deck
 	deck_viewer_inserting_card = card
+	deck_viewer_dragging_card = card  # track การ์ดที่ยังลากอยู่
+	deck_viewer_has_entered = false   # รีเซ็ตสถานะการลากเมาส์เข้ามาในพาเนล
 	
-	# Hide the card from tabletop view during insertion
-	card.hide()
+	# ไม่ซ่อนการ์ด — การ์ดยังลากอยู่ตามปกติ
 	
 	deck_viewer_cards = deck.get_meta("draw_pile", []).duplicate()
 	
@@ -4196,7 +4411,7 @@ func _open_deck_viewer_for_insertion(deck: Control, card: Control):
 	inserting_card_index = deck_viewer_cards.size() - 1
 	
 	_refresh_deck_viewer()
-	deck_viewer_dialog.popup_centered()
+	_center_deck_viewer_panel()
 
 func _on_deck_viewer_confirmed():
 	if is_instance_valid(deck_viewer_target):
@@ -4209,13 +4424,18 @@ func _on_deck_viewer_confirmed():
 	deck_viewer_target = null
 	deck_viewer_cards.clear()
 	inserting_card_index = -1
+	deck_viewer_dialog.hide()
 
 func _on_deck_viewer_canceled():
+	# ถ้ายังลากอยู่ ไม่ต้องทำอะไรกับการ์ด (มันยังลอยอยู่กับ mouse)
+	# ถ้าไม่ได้ลาก (เปิด viewer ด้วย right-click menu แล้ว cancel) ให้คืนการ์ดไปมือ
 	if is_instance_valid(deck_viewer_inserting_card):
-		deck_viewer_inserting_card.show()
-		_add_card_to_hand(deck_viewer_inserting_card)
+		if not deck_viewer_inserting_card.get("dragging"):
+			deck_viewer_inserting_card.show()
+			_add_card_to_hand(deck_viewer_inserting_card)
 		
 	deck_viewer_inserting_card = null
+	deck_viewer_dragging_card = null
 	deck_viewer_target = null
 	deck_viewer_cards.clear()
 	inserting_card_index = -1
@@ -4234,6 +4454,29 @@ func _refresh_deck_viewer():
 			
 		var card_node = _create_deck_viewer_card_node(card_path, i, is_inserting)
 		deck_viewer_grid.add_child(card_node)
+		
+	if deck_viewer_grid.has_method("update_layout"):
+		deck_viewer_grid.update_layout(false)
+
+func _update_deck_viewer_labels():
+	var children = deck_viewer_grid.get_children()
+	var total_size = children.size()
+	for i in range(total_size):
+		var child = children[i]
+		if "card_index" in child:
+			child.card_index = i
+		var vb = child.get_node_or_null("VBox")
+		if vb:
+			var lbl = vb.get_node_or_null("OrderLabel")
+			if lbl is Label:
+				var text = "Card %d" % (i + 1)
+				if is_instance_valid(deck_viewer_inserting_card) and i == inserting_card_index:
+					text += " [NEW]"
+				if i == 0:
+					text += " (Bottom)"
+				elif i == total_size - 1:
+					text += " (Top)"
+				lbl.text = text
 
 func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: bool = false) -> Control:
 	var item = PanelContainer.new()
@@ -4257,10 +4500,12 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 		item.add_theme_stylebox_override("panel", style)
 		
 	var vb = VBoxContainer.new()
+	vb.name = "VBox"
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
 	item.add_child(vb)
 	
 	var order_lbl = Label.new()
+	order_lbl.name = "OrderLabel"
 	var total_size = deck_viewer_cards.size()
 	order_lbl.text = "Card %d" % (index + 1)
 	if is_inserting:
@@ -4520,3 +4765,67 @@ func _pull_deck_viewer_card_to_board(index: int):
 			card.scale = field_scale
 		card.global_position = deck_viewer_target.global_position + Vector2(180, 0)
 		_set_card_face_down(card, false)
+
+# ==========================================
+# Global Drop Data (Extracting from Deck Viewer)
+# ==========================================
+
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "deck_viewer_card":
+		return true
+	return false
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "deck_viewer_card":
+		var index = data.get("index", -1)
+		if index >= 0 and index < deck_viewer_cards.size():
+			var card_path = deck_viewer_cards[index]
+			deck_viewer_cards.remove_at(index)
+			
+			var card_data = {}
+			if FileAccess.file_exists(card_path):
+				var json_str = FileAccess.get_file_as_string(card_path)
+				var json = JSON.new()
+				if json.parse(json_str) == OK:
+					card_data = json.get_data()
+					card_data["file_path"] = card_path
+			else:
+				if SupabaseService.card_cache.has(card_path):
+					var row = SupabaseService.card_cache[card_path]
+					card_data = row.get("stats", {}).duplicate()
+					card_data["name"] = row.get("name", "Untitled")
+					card_data["image_path"] = row.get("image_url", "")
+					card_data["file_path"] = row.get("id", "")
+					card_data["id"] = row.get("id", "")
+					
+			var new_card = spawn_card_object(card_data, false)
+			if new_card:
+				var field_size = Vector2(150, 210)
+				if is_instance_valid(deck_viewer_target):
+					field_size = deck_viewer_target.size
+					var field_scale = deck_viewer_target.get("base_scale")
+					if field_scale == null: field_scale = deck_viewer_target.scale
+					new_card.set_meta("field_size", field_size)
+					new_card.set_meta("field_scale", field_scale)
+					
+				new_card.custom_minimum_size = field_size
+				new_card.size = field_size
+				new_card.scale = Vector2.ONE
+				
+				# ตรวจสอบว่าดรอปในมือหรือไม่
+				if hand_scroll and hand_scroll.visible and hand_scroll.get_global_rect().has_point(get_global_mouse_position()):
+					new_card.set_meta("in_hand", true)
+					hand_zone.add_child(new_card)
+					_update_hand_zone_sizing.call_deferred()
+				else:
+					new_card.set_meta("in_hand", false)
+					field_canvas.add_child(new_card)
+					new_card.global_position = get_global_mouse_position() - (new_card.size / 2.0)
+					_apply_card_size(new_card, field_canvas, null)
+					
+			var child_node = deck_viewer_grid.get_child(index)
+			if child_node: child_node.queue_free()
+			
+			_update_deck_viewer_labels()
+			if deck_viewer_grid.has_method("update_layout"):
+				deck_viewer_grid.update_layout(true)
