@@ -105,8 +105,9 @@ var deck_viewer_dragging_card: Control = null  # การ์ดที่กำ�
 var deck_viewer_has_entered: bool = false      # ตรวจจับว่าการ์ดลากเข้ามาใน panel หรือยัง เพื่อเลี่ยงการปิดทันทีตอนเปิด
 var inserting_card_index: int = -1
 var deck_viewer_cards: Array = []
-var deck_viewer_hovered_item: Control = null
-var deck_viewer_hover_side: int = 0
+var deck_viewer_selected_index: int = -1
+var deck_viewer_dragging_index: int = -1
+var deck_viewer_drag_preview: Control = null
 var local_player_hands: Dictionary = {}
 var _save_dest_is_local: bool = false
 
@@ -3187,6 +3188,8 @@ func _on_card_drag_ended(card: Control):
 	if card.has_meta("from_deck_viewer"):
 		card.remove_meta("from_deck_viewer")
 	
+	Global.play_sfx("res://SFX/Throw Card.ogg")
+	
 	_hovered_deck_node = null
 	_hover_deck_time = 0.0
 	
@@ -3203,17 +3206,26 @@ func _on_card_drag_ended(card: Control):
 				card_path = card_data.get("image_path", "")
 				
 			if card_path != "":
-				if inserting_card_index >= 0 and inserting_card_index < deck_viewer_cards.size():
-					deck_viewer_cards.remove_at(inserting_card_index)
-				
-				index = clamp(index, 0, deck_viewer_cards.size())
-				deck_viewer_cards.insert(index, card_path)
+				var target_index = deck_viewer_grid.insert_indicator_index
+				if target_index == -1:
+					target_index = _get_drop_index_at_global_position(get_global_mouse_position())
+					
+				deck_viewer_grid.set_insert_indicator(-1)
+				target_index = clamp(target_index, 0, deck_viewer_cards.size())
+				deck_viewer_cards.insert(target_index, card_path)
 				
 				deck_viewer_inserting_card = card
-				inserting_card_index = index
+				inserting_card_index = target_index
 				
 				card.hide()
-				_refresh_deck_viewer()
+				
+				# สร้าง node ใหม่และใส่ที่ตำแหน่ง drop แทนการ refresh ทั้งหมด เพื่อให้ animate ได้
+				var card_node = _create_deck_viewer_card_node(card_path, target_index, true)
+				deck_viewer_grid.add_child(card_node)
+				deck_viewer_grid.move_child(card_node, target_index)
+				card_node.position = deck_viewer_grid.get_local_mouse_position()
+				_update_deck_viewer_labels()
+				deck_viewer_grid.update_layout(true)
 				
 				deck_viewer_dragging_card = null
 				
@@ -3310,23 +3322,8 @@ func _on_card_drag_moved(card: Control):
 		var has_mouse = Rect2(Vector2.ZERO, deck_viewer_dialog.size).has_point(local_mouse)
 		if has_mouse:
 			deck_viewer_has_entered = true
-			if inserting_card_index != -1:
-				var new_index = _get_drop_index_at_global_position(get_global_mouse_position())
-				if new_index != inserting_card_index:
-					var card_path = deck_viewer_cards[inserting_card_index]
-					deck_viewer_cards.remove_at(inserting_card_index)
-					if new_index > deck_viewer_cards.size():
-						new_index = deck_viewer_cards.size()
-					deck_viewer_cards.insert(new_index, card_path)
-					
-					if inserting_card_index < deck_viewer_grid.get_child_count():
-						var child_node = deck_viewer_grid.get_child(inserting_card_index)
-						deck_viewer_grid.move_child(child_node, new_index)
-						
-					inserting_card_index = new_index
-					_update_deck_viewer_labels()
-					if deck_viewer_grid.has_method("update_layout"):
-						deck_viewer_grid.update_layout(true)
+			var new_index = _get_drop_index_at_global_position(get_global_mouse_position())
+			deck_viewer_grid.set_insert_indicator(new_index)
 		elif deck_viewer_has_entered:
 			print("[Drag Moved] Mouse left panel! Closing deck viewer.")
 			_close_deck_viewer_keep_card()
@@ -3391,6 +3388,7 @@ func _on_card_drag_moved(card: Control):
 		_highlight_card(card, false)
 
 func _on_card_drag_started(card: Control):
+	Global.play_sfx("res://SFX/Draw sfx.ogg")
 	# ถ้าการ์ดอยู่บนมือ ไม่ต้องทำอะไร — ให้อยู่ใน hand_zone ระหว่าง drag
 	# (field size จะถูกคืนตอน drop ใน _on_card_drag_ended เหมือนกับที่ deck ทำ)
 	if card.get_meta("in_hand", false): return
@@ -3701,6 +3699,7 @@ func _on_deck_left_clicked(deck_obj: Control):
 		print("[Deck Click]   Ignored: draw_pile is empty")
 		return
 	
+	Global.play_sfx("res://SFX/Draw sfx.ogg")
 	var card_path = draw_pile.pop_back()
 	deck_obj.set_meta("draw_pile", draw_pile)
 	_update_deck_count_label(deck_obj)
@@ -4374,6 +4373,12 @@ func _close_deck_viewer_keep_card():
 	deck_viewer_target = null
 	deck_viewer_cards.clear()
 	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
 	
 	deck_viewer_dialog.hide()
 
@@ -4406,11 +4411,12 @@ func _open_deck_viewer_for_insertion(deck: Control, card: Control):
 	if card_path == "":
 		card_path = card_data.get("image_path", "")
 		
-	# Place the new card at the top of the deck by default
-	deck_viewer_cards.append(card_path)
-	inserting_card_index = deck_viewer_cards.size() - 1
+	# ไม่เพิ่มการ์ดลงใน array จนกว่าจะปล่อยเมาส์
+	inserting_card_index = -1
 	
 	_refresh_deck_viewer()
+	# สมมติตำแหน่งเริ่มต้น
+	deck_viewer_grid.set_insert_indicator(deck_viewer_cards.size())
 	_center_deck_viewer_panel()
 
 func _on_deck_viewer_confirmed():
@@ -4424,6 +4430,12 @@ func _on_deck_viewer_confirmed():
 	deck_viewer_target = null
 	deck_viewer_cards.clear()
 	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
 	deck_viewer_dialog.hide()
 
 func _on_deck_viewer_canceled():
@@ -4439,6 +4451,12 @@ func _on_deck_viewer_canceled():
 	deck_viewer_target = null
 	deck_viewer_cards.clear()
 	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
 
 func _refresh_deck_viewer():
 	for child in deck_viewer_grid.get_children():
@@ -4485,7 +4503,7 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	item.deck_viewer_ref = self
 	item.custom_minimum_size = Vector2(140, 260)
 	
-	if is_inserting:
+	if is_inserting or index == deck_viewer_selected_index:
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0.25, 0.25, 0.1, 0.8) # Goldish tint
 		style.border_width_left = 3
@@ -4502,10 +4520,12 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	var vb = VBoxContainer.new()
 	vb.name = "VBox"
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.mouse_filter = Control.MOUSE_FILTER_PASS
 	item.add_child(vb)
 	
 	var order_lbl = Label.new()
 	order_lbl.name = "OrderLabel"
+	order_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var total_size = deck_viewer_cards.size()
 	order_lbl.text = "Card %d" % (index + 1)
 	if is_inserting:
@@ -4519,6 +4539,7 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	vb.add_child(order_lbl)
 	
 	var tr = TextureRect.new()
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tr.custom_minimum_size = Vector2(100, 140)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -4549,10 +4570,12 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 		var bg = ColorRect.new()
 		bg.color = Color(0.2, 0.2, 0.2, 0.8)
 		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tr.add_child(bg)
 		
 	var name_lbl = Label.new()
 	name_lbl.text = card_name
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_lbl.add_theme_font_size_override("font_size", 12)
@@ -4627,7 +4650,15 @@ func _reorder_deck_viewer_card(from_idx: int, to_idx: int):
 	elif inserting_card_index < from_idx and inserting_card_index >= dest_idx:
 		inserting_card_index += 1
 		
-	_refresh_deck_viewer()
+	# Move the actual child node in the UI to match the array without destroying all nodes
+	if from_idx < deck_viewer_grid.get_child_count():
+		var child_node = deck_viewer_grid.get_child(from_idx)
+		deck_viewer_grid.move_child(child_node, dest_idx)
+	
+	_update_deck_viewer_labels()
+	
+	# ปล่อยให้มันเล่น animate อัตโนมัติ (ข้าม skip_index = -1 เพื่อเปิดโชว์ใหม่)
+	deck_viewer_grid.update_layout(true, -1)
 
 func _get_drop_index_at_global_position(global_pos: Vector2) -> int:
 	var children = deck_viewer_grid.get_children()
@@ -4680,28 +4711,79 @@ func _get_drop_index_at_global_position(global_pos: Vector2) -> int:
 			
 	return row_end_idx
 
-func _set_deck_viewer_hover(item: Control, side: int):
-	if deck_viewer_hovered_item != item or deck_viewer_hover_side != side:
-		var prev = deck_viewer_hovered_item
-		deck_viewer_hovered_item = item
-		deck_viewer_hover_side = side
-		if is_instance_valid(prev):
-			prev.queue_redraw()
-		if is_instance_valid(deck_viewer_hovered_item):
-			deck_viewer_hovered_item.queue_redraw()
+func _on_dv_card_clicked(index: int):
+	deck_viewer_selected_index = index
+	_refresh_deck_viewer()
 
-func _clear_deck_viewer_hover():
-	if is_instance_valid(deck_viewer_hovered_item):
-		var prev = deck_viewer_hovered_item
-		deck_viewer_hovered_item = null
-		deck_viewer_hover_side = 0
-		prev.queue_redraw()
-	deck_viewer_hovered_item = null
-	deck_viewer_hover_side = 0
+func _on_dv_card_drag_started(index: int):
+	deck_viewer_selected_index = index
+	deck_viewer_dragging_index = index
+	
+	# Create drag preview (ภาพลอยตามเมาส์)
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	
+	var preview = TextureRect.new()
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	preview.custom_minimum_size = Vector2(100, 140)
+	preview.size = Vector2(100, 140)
+	
+	var item = deck_viewer_grid.get_child(index)
+	var tr = null
+	for child in item.get_children():
+		if child is VBoxContainer:
+			for subchild in child.get_children():
+				if subchild is TextureRect:
+					tr = subchild
+					break
+			break
+	if tr and tr.texture:
+		preview.texture = tr.texture
+	else:
+		var bg = ColorRect.new()
+		bg.color = Color(0.2, 0.2, 0.2, 0.8)
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		preview.add_child(bg)
+		
+	# ลอยเหนือนิ้วมือหรือเมาส์เล็กน้อย
+	preview.position = get_viewport().get_mouse_position() - preview.size / 2.0
+	get_node("/root").add_child(preview)
+	deck_viewer_drag_preview = preview
+	
+	# อัปเดต Layout ให้เว้นช่องว่างนี้ (ให้การ์ดข้างๆ เติมเต็ม)
+	deck_viewer_grid.update_layout(true, deck_viewer_dragging_index)
+	
+func _on_dv_card_drag_moved(global_pos: Vector2):
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.position = global_pos - deck_viewer_drag_preview.size / 2.0
+		
+	var target_idx = _get_drop_index_at_global_position(global_pos)
+	# ลากข้าม index ตัวเอง ต้องปรับ
+	if target_idx > deck_viewer_dragging_index:
+		target_idx -= 1
+	
+	deck_viewer_grid.set_insert_indicator(target_idx)
+
+func _on_dv_card_drag_ended(index: int):
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+		deck_viewer_drag_preview = null
+		
+	var target_idx = deck_viewer_grid.insert_indicator_index
+	deck_viewer_grid.set_insert_indicator(-1)
+	
+	var from_idx = deck_viewer_dragging_index
+	deck_viewer_dragging_index = -1
+	
+	if from_idx != -1 and target_idx != -1 and from_idx != target_idx:
+		_reorder_deck_viewer_card(from_idx, target_idx)
+	else:
+		# ยกเลิกการลาก กลับที่เดิม
+		deck_viewer_grid.update_layout(true, -1)
 
 func _notification(what: int):
-	if what == NOTIFICATION_DRAG_END:
-		_clear_deck_viewer_hover()
+	pass
 
 
 func _pull_deck_viewer_card_to_hand(index: int):

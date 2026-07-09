@@ -67,3 +67,15 @@ func format_num(value) -> String:
 		else:
 			return str(value)
 	return str(value)
+
+func play_sfx(stream_path: String, volume_db: float = 0.0):
+	var sfx = AudioStreamPlayer.new()
+	sfx.stream = load(stream_path)
+	if sfx.stream == null:
+		print("Failed to load SFX: ", stream_path)
+		sfx.queue_free()
+		return
+	sfx.volume_db = volume_db
+	add_child(sfx)
+	sfx.play()
+	sfx.finished.connect(sfx.queue_free)

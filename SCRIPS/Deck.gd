@@ -11,6 +11,7 @@ func _ready() -> void:
 	player_deck.shuffle()
 
 func draw_card():
+	Global.play_sfx("res://SFX/Draw sfx.ogg")
 	var card_drawn_name = player_deck[0]
 	player_deck.erase(card_drawn_name)
 	

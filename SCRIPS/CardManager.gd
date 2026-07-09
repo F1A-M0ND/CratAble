@@ -27,10 +27,12 @@ func _process(delta: float) -> void:
 
 
 func start_drag(card):
+	Global.play_sfx("res://SFX/Draw sfx.ogg")
 	card_being_dragged = card
 	card.scale = Vector2(1 ,1)
 
 func finish_drag():
+	Global.play_sfx("res://SFX/Throw Card.ogg")
 	card_being_dragged.scale = Vector2(1.05 ,1.05)
 	var card_slot_found = raycast_check_for_card_slot()
 	if card_slot_found and not card_slot_found.card_in_slot :
