@@ -108,6 +108,10 @@ var deck_viewer_cards: Array = []
 var deck_viewer_selected_index: int = -1
 var deck_viewer_dragging_index: int = -1
 var deck_viewer_drag_preview: Control = null
+var deck_viewer_dragged_card_path: String = ""
+var deck_viewer_dragged_item: Control = null
+var deck_viewer_scroll: ScrollContainer = null
+var realtime_client: Node = null
 var local_player_hands: Dictionary = {}
 var _save_dest_is_local: bool = false
 
@@ -116,6 +120,38 @@ var _save_dest_is_local: bool = false
 func _ready():
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
+	
+	if Global.online_room_id != "":
+		var rt_script = load("res://scripts/SupabaseRealtime.gd")
+		if rt_script:
+			realtime_client = Node.new()
+			realtime_client.set_script(rt_script)
+			add_child(realtime_client)
+			realtime_client.card_moved.connect(_on_remote_card_moved)
+			realtime_client.card_flipped.connect(_on_remote_card_flipped)
+			realtime_client.card_tapped.connect(_on_remote_card_tapped)
+			realtime_client.deck_shuffled.connect(_on_remote_deck_shuffled)
+			realtime_client.card_spawned.connect(_on_remote_card_spawned)
+			realtime_client.card_sent_to_hand.connect(_on_remote_card_sent_to_hand)
+			realtime_client.card_inserted_into_deck.connect(_on_remote_card_inserted_into_deck)
+			realtime_client.deck_drawn.connect(_on_remote_deck_drawn)
+			realtime_client.zone_shuffled.connect(_on_remote_zone_shuffled)
+			
+			# Realtime custom signals
+			realtime_client.connection_established.connect(func():
+				print("Realtime Connection Established!")
+				# Send a join signal or broadcast who we are
+				realtime_client.send_broadcast("player_joined", {"player_name": Global.online_player_name, "role": Global.online_player_role})
+			)
+			
+			# Listen to other custom events
+			var ref_rt = realtime_client
+			ref_rt.process_mode = PROCESS_MODE_ALWAYS
+			# Handle other events dynamically by patching _handle_message handler
+			# Or we can handle it inside _handle_message by adding custom signals to SupabaseRealtime.gd, 
+			# but it is simpler to just connect to room and handle in _input or handle custom event broadcast.
+			
+			realtime_client.connect_to_room(Global.online_room_id, SupabaseService.SUPABASE_KEY)
 	
 	# Setup Load Button programmatically right after Save Button
 	var load_btn = Button.new()
@@ -618,6 +654,21 @@ func _exit_tree():
 
 
 func _input(event):
+	if deck_viewer_dragging_index != -1:
+		if event is InputEventMouseMotion:
+			_on_dv_card_drag_moved(event.global_position)
+			accept_event()
+			return
+		elif event is InputEventMouseButton:
+			if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+				_on_dv_card_drag_ended(deck_viewer_dragging_index)
+				accept_event()
+				return
+			elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				_on_dv_card_drag_scrolled(event.button_index)
+				accept_event()
+				return
+
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
@@ -1488,6 +1539,7 @@ func _spawn_other_object(image_path: String) -> Control:
 
 func spawn_deck_object(deck_data: Dictionary):
 	var root_obj = Control.new()
+	root_obj.name = "Deck_" + str(randi() % 1000000)
 	root_obj.custom_minimum_size = Vector2(150, 210)
 	root_obj.size = Vector2(150, 210)
 	root_obj.position = Vector2(200, 200)
@@ -1571,6 +1623,7 @@ func spawn_deck_object(deck_data: Dictionary):
 
 func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
 	var root_obj = TextureRect.new()
+	root_obj.name = "Card_" + str(randi() % 1000000)
 	
 	var has_image = false
 	var img_path = ""
@@ -1655,6 +1708,8 @@ func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
 		root_obj.drag_moved.connect(func(): _on_card_drag_moved(root_obj))
 	if root_obj.has_signal("drag_started"):
 		root_obj.drag_started.connect(func(): _on_card_drag_started(root_obj))
+	if root_obj.has_signal("drag_scrolled"):
+		root_obj.drag_scrolled.connect(func(button_index): _on_tabletop_card_drag_scrolled(root_obj, button_index))
 	if root_obj.has_signal("right_clicked"):
 		root_obj.right_clicked.connect(func(): _on_card_right_clicked(root_obj))
 	if root_obj.has_signal("double_clicked"):
@@ -2630,6 +2685,7 @@ func _load_field_from_dict(layout_data: Dictionary):
 			node.custom_minimum_size = node.size
 			node.position = Vector2(comp_data.get("position_x", node.position.x), comp_data.get("position_y", node.position.y))
 			node.rotation_degrees = comp_data.get("rotation_degrees", 0.0)
+			node.name = "Component_" + str(comp_data.get("id"))
 			id_to_node[comp_data.get("id")] = node
 			
 	# 4. Second Pass: Reparent controls to subfields where parent_id is not -1
@@ -3181,6 +3237,8 @@ func _set_components_locked(node: Node, locked: bool):
 func _on_card_drag_ended(card: Control):
 	var cat = card.get_meta("component_category", "")
 	if cat == "deck":
+		if is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.broadcast_card_moved(card.name, card.position)
 		return
 		
 	var from_deck_viewer = card.get_meta("from_deck_viewer", false)
@@ -3312,8 +3370,22 @@ func _on_card_drag_ended(card: Control):
 		_clear_zone_highlight(prev_zone)
 		card.set_meta("current_hovered_zone", null)
 	_highlight_card(card, false)
+	
+	if is_instance_valid(realtime_client) and realtime_client.is_connected and is_instance_valid(card) and not card.get_meta("in_hand", false):
+		if was_in_hand:
+			realtime_client.send_broadcast("card_spawned", {
+				"card_name": card.name,
+				"card_data": card.get_meta("card_data", {}),
+				"x": card.position.x,
+				"y": card.position.y
+			})
+		else:
+			realtime_client.broadcast_card_moved(card.name, card.position)
 
 func _on_card_drag_moved(card: Control):
+	if is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.broadcast_card_moved(card.name, card.position)
+		
 	if not is_test_mode: return
 	
 	# ถ้า deck viewer เปิดอยู่เพราะการ์ดใบนี้ และการ์ดลากออกนอก panel → ปิด deck viewer
@@ -3395,6 +3467,11 @@ func _on_card_drag_started(card: Control):
 
 func _add_card_to_hand(card: Control):
 	card.set_meta("in_hand", true)
+	
+	if is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.send_broadcast("card_sent_to_hand", {
+			"card_name": card.name
+		})
 	
 	# บันทึกขนาดบนสนาม ก่อนที่จะเปลี่ยนอะไรทั้งนั้น
 	# ต้องทำก่อน update_base_scale เพราะ base_scale ยังเป็นค่าบนสนามอยู่
@@ -3602,7 +3679,10 @@ func _handle_card_dropped_on_zone(card: Control, zone: Control):
 			card.global_position = global_pos
 		# ไม่ต้องทำอะไรถ้าอยู่ใน field_canvas อยู่แล้ว
 
-func _set_card_face_down(card: Control, is_down: bool):
+func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
+	Global.play_sfx("res://SFX/Throw Card.ogg", -3.0, 1.4)
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.broadcast_card_flipped(card.name, is_down)
 	if is_down:
 		if not card.has_node("CardBack"):
 			var back = ColorRect.new()
@@ -3703,6 +3783,11 @@ func _on_deck_left_clicked(deck_obj: Control):
 	var card_path = draw_pile.pop_back()
 	deck_obj.set_meta("draw_pile", draw_pile)
 	_update_deck_count_label(deck_obj)
+	
+	if is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.send_broadcast("deck_draw", {
+			"deck_name": deck_obj.name
+		})
 	
 	var card_data = {}
 	if FileAccess.file_exists(card_path):
@@ -3823,7 +3908,8 @@ func _init_tabletop_viewers():
 	deck_viewer_dialog = PanelContainer.new()
 	deck_viewer_dialog.name = "DeckViewerPanel"
 	deck_viewer_dialog.custom_minimum_size = Vector2(760, 520)
-	deck_viewer_dialog.z_index = 90
+	deck_viewer_dialog.top_level = true
+	deck_viewer_dialog.z_index = 2000
 	deck_viewer_dialog.set_anchors_preset(Control.PRESET_CENTER)
 	deck_viewer_dialog.hide()
 	
@@ -3870,11 +3956,11 @@ func _init_tabletop_viewers():
 	dv_vbox.add_child(dv_sep)
 	
 	# Card grid scroll area
-	var deck_scroll = ScrollContainer.new()
-	deck_scroll.custom_minimum_size = Vector2(720, 360)
-	deck_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	deck_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	deck_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	deck_viewer_scroll = ScrollContainer.new()
+	deck_viewer_scroll.custom_minimum_size = Vector2(720, 360)
+	deck_viewer_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	deck_viewer_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	deck_viewer_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	
 	deck_viewer_grid = Control.new()
 	deck_viewer_grid.set_script(load("res://scripts/DeckViewerGrid.gd"))
@@ -3882,8 +3968,8 @@ func _init_tabletop_viewers():
 	deck_viewer_grid.columns = 4
 	deck_viewer_grid.h_separation = 15.0
 	deck_viewer_grid.v_separation = 15.0
-	deck_scroll.add_child(deck_viewer_grid)
-	dv_vbox.add_child(deck_scroll)
+	deck_viewer_scroll.add_child(deck_viewer_grid)
+	dv_vbox.add_child(deck_viewer_scroll)
 	
 	# Footer buttons
 	var dv_footer_sep = HSeparator.new()
@@ -3898,8 +3984,20 @@ func _init_tabletop_viewers():
 	var dv_ok_btn = Button.new()
 	dv_ok_btn.text = "OK"
 	dv_ok_btn.custom_minimum_size = Vector2(90, 32)
-	dv_ok_btn.pressed.connect(_on_deck_viewer_confirmed)
+	dv_ok_btn.pressed.connect(func():
+		Global.play_sfx("res://SFX/Throw Card.ogg", -6.0, 1.8)
+		_on_deck_viewer_confirmed()
+	)
 	dv_footer.add_child(dv_ok_btn)
+	
+	var dv_cancel_btn = Button.new()
+	dv_cancel_btn.text = "Cancel"
+	dv_cancel_btn.custom_minimum_size = Vector2(90, 32)
+	dv_cancel_btn.pressed.connect(func():
+		Global.play_sfx("res://SFX/Throw Card.ogg", -6.0, 1.4)
+		_on_deck_viewer_canceled()
+	)
+	dv_footer.add_child(dv_cancel_btn)
 	
 	dv_vbox.add_child(dv_footer)
 	
@@ -4001,12 +4099,16 @@ func _on_tabletop_popup_menu_id_pressed(id: int):
 		31: # Shuffle Zone Pile
 			_shuffle_zone_pile(context_tabletop_node)
 
-func _toggle_card_tap(card: Control):
+func _toggle_card_tap(card: Control, broadcast: bool = true):
 	var current_rot = card.rotation_degrees
 	var target_rot = 90.0 if abs(current_rot) < 45.0 else 0.0
 	
+	Global.play_sfx("res://SFX/Draw sfx.ogg", -5.0, 1.6)
 	var tween = create_tween()
 	tween.tween_property(card, "rotation_degrees", target_rot, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.broadcast_card_tapped(card.name, target_rot != 0.0)
 
 func _send_card_to_deck(card: Control, to_top: bool):
 	var closest_deck: Control = null
@@ -4025,7 +4127,7 @@ func _send_card_to_deck(card: Control, to_top: bool):
 	else:
 		print("No deck found on the tabletop to send the card to!")
 
-func _insert_card_into_deck(card: Control, deck: Control, to_top: bool):
+func _insert_card_into_deck(card: Control, deck: Control, to_top: bool, broadcast: bool = true):
 	var card_data = card.get_meta("card_data", {})
 	var card_path = card_data.get("file_path", "")
 	if card_path == "":
@@ -4040,6 +4142,13 @@ func _insert_card_into_deck(card: Control, deck: Control, to_top: bool):
 		deck.set_meta("draw_pile", draw_pile)
 		_update_deck_count_label(deck)
 		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.send_broadcast("card_inserted_into_deck", {
+				"card_name": card.name,
+				"deck_name": deck.name,
+				"to_top": to_top
+			})
+		
 		# อนิมเมจย่อการ์ดหายวาบเข้ากองเด็ค
 		var tween = create_tween()
 		tween.tween_property(card, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -4048,11 +4157,22 @@ func _insert_card_into_deck(card: Control, deck: Control, to_top: bool):
 				card.queue_free()
 		)
 
-func _shuffle_deck_programmatically(deck: Control):
+func _play_shuffle_sfx():
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 0.8)
+	await get_tree().create_timer(0.08).timeout
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 0.95)
+	await get_tree().create_timer(0.08).timeout
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 1.1)
+
+func _shuffle_deck_programmatically(deck: Control, broadcast: bool = true):
 	var draw_pile = deck.get_meta("draw_pile", [])
 	if draw_pile.size() > 1:
 		draw_pile.shuffle()
 		deck.set_meta("draw_pile", draw_pile)
+		_play_shuffle_sfx()
+		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.broadcast_deck_shuffled(deck.name)
 		
 		# เล่น Visual Effect กระพริบเบาๆ
 		var original_color = deck.modulate
@@ -4060,7 +4180,7 @@ func _shuffle_deck_programmatically(deck: Control):
 		tween.tween_property(deck, "modulate", Color(0.5, 1.5, 0.5, 1.0), 0.1)
 		tween.tween_property(deck, "modulate", original_color, 0.1)
 
-func _shuffle_zone_pile(zone: Control):
+func _shuffle_zone_pile(zone: Control, broadcast: bool = true):
 	var cards = []
 	for child in zone.get_children():
 		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
@@ -4076,6 +4196,13 @@ func _shuffle_zone_pile(zone: Control):
 		for i in range(cards.size()):
 			var c = cards[i]
 			c.position = (zone.size / 2.0) - (c.size / 2.0)
+			
+		_play_shuffle_sfx()
+		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.send_broadcast("zone_shuffled", {
+				"zone_name": zone.name
+			})
 			
 		var original_color = zone.color
 		var tween = create_tween()
@@ -4432,6 +4559,8 @@ func _on_deck_viewer_confirmed():
 	inserting_card_index = -1
 	deck_viewer_selected_index = -1
 	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
 	if is_instance_valid(deck_viewer_drag_preview):
 		deck_viewer_drag_preview.queue_free()
 	deck_viewer_drag_preview = null
@@ -4453,6 +4582,8 @@ func _on_deck_viewer_canceled():
 	inserting_card_index = -1
 	deck_viewer_selected_index = -1
 	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
 	if is_instance_valid(deck_viewer_drag_preview):
 		deck_viewer_drag_preview.queue_free()
 	deck_viewer_drag_preview = null
@@ -4587,12 +4718,18 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	
 	var btn_left = Button.new()
 	btn_left.text = "<"
-	btn_left.pressed.connect(func(): _move_deck_viewer_card(index, -1))
+	btn_left.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -8.0, 1.8)
+		_move_deck_viewer_card(index, -1)
+	)
 	hb_move.add_child(btn_left)
 	
 	var btn_right = Button.new()
 	btn_right.text = ">"
-	btn_right.pressed.connect(func(): _move_deck_viewer_card(index, 1))
+	btn_right.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -8.0, 1.8)
+		_move_deck_viewer_card(index, 1)
+	)
 	hb_move.add_child(btn_right)
 	
 	vb.add_child(hb_move)
@@ -4602,12 +4739,18 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	
 	var btn_hand = Button.new()
 	btn_hand.text = "Hand"
-	btn_hand.pressed.connect(func(): _pull_deck_viewer_card_to_hand(index))
+	btn_hand.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -3.0, 1.2)
+		_pull_deck_viewer_card_to_hand(index)
+	)
 	hb_actions.add_child(btn_hand)
 	
 	var btn_board = Button.new()
 	btn_board.text = "Board"
-	btn_board.pressed.connect(func(): _pull_deck_viewer_card_to_board(index))
+	btn_board.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -3.0, 1.2)
+		_pull_deck_viewer_card_to_board(index)
+	)
 	hb_actions.add_child(btn_board)
 	
 	vb.add_child(hb_actions)
@@ -4661,7 +4804,12 @@ func _reorder_deck_viewer_card(from_idx: int, to_idx: int):
 	deck_viewer_grid.update_layout(true, -1)
 
 func _get_drop_index_at_global_position(global_pos: Vector2) -> int:
-	var children = deck_viewer_grid.get_children()
+	var all_children = deck_viewer_grid.get_children()
+	var children = []
+	for c in all_children:
+		if c is Control and c.visible and not c.is_queued_for_deletion():
+			children.append(c)
+			
 	if children.is_empty():
 		return 0
 		
@@ -4719,50 +4867,40 @@ func _on_dv_card_drag_started(index: int):
 	deck_viewer_selected_index = index
 	deck_viewer_dragging_index = index
 	
+	deck_viewer_dragged_card_path = deck_viewer_cards[index]
+	
+	var original_item = deck_viewer_grid.get_child(index)
+	deck_viewer_dragged_item = original_item
+	
 	# Create drag preview (ภาพลอยตามเมาส์)
 	if is_instance_valid(deck_viewer_drag_preview):
 		deck_viewer_drag_preview.queue_free()
 	
-	var preview = TextureRect.new()
-	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	preview.custom_minimum_size = Vector2(100, 140)
-	preview.size = Vector2(100, 140)
+	var preview = original_item.duplicate()
+	preview.set_script(null)
+	_set_mouse_filter_ignore_recursive(preview)
 	
-	var item = deck_viewer_grid.get_child(index)
-	var tr = null
-	for child in item.get_children():
-		if child is VBoxContainer:
-			for subchild in child.get_children():
-				if subchild is TextureRect:
-					tr = subchild
-					break
-			break
-	if tr and tr.texture:
-		preview.texture = tr.texture
-	else:
-		var bg = ColorRect.new()
-		bg.color = Color(0.2, 0.2, 0.2, 0.8)
-		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-		preview.add_child(bg)
-		
-	# ลอยเหนือนิ้วมือหรือเมาส์เล็กน้อย
-	preview.position = get_viewport().get_mouse_position() - preview.size / 2.0
-	get_node("/root").add_child(preview)
+	preview.custom_minimum_size = original_item.custom_minimum_size
+	preview.size = original_item.custom_minimum_size
+	preview.top_level = true
+	preview.z_index = 2500
+	
+	add_child(preview)
+	preview.global_position = get_global_mouse_position() - preview.custom_minimum_size / 2.0
 	deck_viewer_drag_preview = preview
 	
-	# อัปเดต Layout ให้เว้นช่องว่างนี้ (ให้การ์ดข้างๆ เติมเต็ม)
-	deck_viewer_grid.update_layout(true, deck_viewer_dragging_index)
+	# นำข้อมูลการ์ดออกจากอาเรย์เพื่อคิดตำแหน่งการแทรกใหม่แบบแรกรอบ
+	deck_viewer_cards.remove_at(index)
 	
+	# ซ่อนโหนดการ์ดเดิม (ไม่ลบออกจาก Scene Tree เพื่อรักษา Input Capture) 
+	# แล้วเลื่อนการ์ดอื่นๆ ข้างๆ เข้ามาแทนที่
+	deck_viewer_grid.update_layout(true, index)
+
 func _on_dv_card_drag_moved(global_pos: Vector2):
 	if is_instance_valid(deck_viewer_drag_preview):
-		deck_viewer_drag_preview.position = global_pos - deck_viewer_drag_preview.size / 2.0
+		deck_viewer_drag_preview.global_position = global_pos - deck_viewer_drag_preview.custom_minimum_size / 2.0
 		
 	var target_idx = _get_drop_index_at_global_position(global_pos)
-	# ลากข้าม index ตัวเอง ต้องปรับ
-	if target_idx > deck_viewer_dragging_index:
-		target_idx -= 1
-	
 	deck_viewer_grid.set_insert_indicator(target_idx)
 
 func _on_dv_card_drag_ended(index: int):
@@ -4773,14 +4911,49 @@ func _on_dv_card_drag_ended(index: int):
 	var target_idx = deck_viewer_grid.insert_indicator_index
 	deck_viewer_grid.set_insert_indicator(-1)
 	
-	var from_idx = deck_viewer_dragging_index
-	deck_viewer_dragging_index = -1
+	if target_idx == -1:
+		target_idx = _get_drop_index_at_global_position(get_global_mouse_position())
+		
+	target_idx = clamp(target_idx, 0, deck_viewer_cards.size())
 	
-	if from_idx != -1 and target_idx != -1 and from_idx != target_idx:
-		_reorder_deck_viewer_card(from_idx, target_idx)
+	deck_viewer_cards.insert(target_idx, deck_viewer_dragged_card_path)
+	
+	# ดึงโหนดการ์ดเดิม ย้ายตำแหน่งในตาราง และแสดงให้เห็นอีกครั้ง
+	if is_instance_valid(deck_viewer_dragged_item):
+		deck_viewer_dragged_item.visible = true
+		deck_viewer_grid.move_child(deck_viewer_dragged_item, target_idx)
+		deck_viewer_dragged_item.position = deck_viewer_grid.get_local_mouse_position()
+	
+	_update_deck_viewer_labels()
+	deck_viewer_grid.update_layout(true)
+	
+	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
+
+func _on_dv_card_drag_scrolled(button_index: int):
+	if not is_instance_valid(deck_viewer_scroll): return
+	
+	var scroll_speed = 30.0
+	if button_index == MOUSE_BUTTON_WHEEL_UP:
+		deck_viewer_scroll.scroll_vertical -= scroll_speed
+	elif button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		deck_viewer_scroll.scroll_vertical += scroll_speed
+		
+	if is_instance_valid(deck_viewer_dragging_card):
+		_on_card_drag_moved(deck_viewer_dragging_card)
 	else:
-		# ยกเลิกการลาก กลับที่เดิม
-		deck_viewer_grid.update_layout(true, -1)
+		_on_dv_card_drag_moved(get_global_mouse_position())
+
+func _on_tabletop_card_drag_scrolled(card: Control, button_index: int):
+	if is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible and deck_viewer_dragging_card == card:
+		_on_dv_card_drag_scrolled(button_index)
+
+func _set_mouse_filter_ignore_recursive(node: Node):
+	if node is Control:
+		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_filter_ignore_recursive(child)
 
 func _notification(what: int):
 	pass
@@ -4911,3 +5084,60 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			_update_deck_viewer_labels()
 			if deck_viewer_grid.has_method("update_layout"):
 				deck_viewer_grid.update_layout(true)
+
+# --- ONLINE MULTIPLAYER REALTIME RECEIVERS ---
+func _on_remote_card_moved(card_name: String, pos: Vector2):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		node.position = pos
+
+func _on_remote_card_flipped(card_name: String, is_down: bool):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		_set_card_face_down(node, is_down, false)
+
+func _on_remote_card_tapped(card_name: String, tapped: bool):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		var current_rot = node.rotation_degrees
+		var current_tapped = abs(current_rot) >= 45.0
+		if current_tapped != tapped:
+			_toggle_card_tap(node, false)
+
+func _on_remote_deck_shuffled(deck_name: String):
+	var node = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(node):
+		_shuffle_deck_programmatically(node, false)
+
+func _on_remote_card_spawned(card_name: String, card_data: Dictionary, pos: Vector2):
+	var node = field_canvas.find_child(card_name, true, false)
+	if not is_instance_valid(node):
+		var new_card = spawn_card_object(card_data, true)
+		if new_card:
+			new_card.name = card_name
+			new_card.position = pos
+
+func _on_remote_card_sent_to_hand(card_name: String):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		node.queue_free()
+
+func _on_remote_card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool):
+	var card = field_canvas.find_child(card_name, true, false)
+	var deck = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(card) and is_instance_valid(deck):
+		_insert_card_into_deck(card, deck, to_top, false)
+
+func _on_remote_deck_drawn(deck_name: String):
+	var deck = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(deck):
+		var draw_pile = deck.get_meta("draw_pile", [])
+		if not draw_pile.is_empty():
+			draw_pile.pop_back()
+			deck.set_meta("draw_pile", draw_pile)
+			_update_deck_count_label(deck)
+
+func _on_remote_zone_shuffled(zone_name: String):
+	var zone = field_canvas.find_child(zone_name, true, false)
+	if is_instance_valid(zone):
+		_shuffle_zone_pile(zone, false)

@@ -61,6 +61,8 @@ func set_insert_indicator(index: int):
 	if insert_indicator_index != index:
 		insert_indicator_index = index
 		queue_redraw()
+		if index != -1:
+			Global.play_sfx("res://SFX/Draw sfx.ogg", -12.0, 2.0)
 
 func _draw():
 	if insert_indicator_index < 0: return

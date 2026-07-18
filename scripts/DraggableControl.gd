@@ -17,6 +17,7 @@ signal double_clicked
 signal drag_started
 signal drag_ended
 signal drag_moved
+signal drag_scrolled(button_index)
 
 var _click_start_pos = Vector2.ZERO
 var _is_double_clicking = false
@@ -108,6 +109,9 @@ func _gui_input(event):
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			if not event.pressed:
 				right_clicked.emit()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			if dragging:
+				drag_scrolled.emit(event.button_index)
 
 	if event is InputEventMouseMotion and dragging:
 		global_position = get_global_mouse_position() + drag_offset

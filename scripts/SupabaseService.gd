@@ -284,3 +284,29 @@ func fetch_all_fields(callback: Callable):
 
 func delete_field(uuid: String, callback: Callable):
 	request_supabase("/rest/v1/fields?id=eq." + uuid.uri_encode(), HTTPClient.METHOD_DELETE, null, Callable(), callback)
+
+# --- ROOMS CRUD ---
+func insert_room(room_name: String, description: String, password: String, field_data: Dictionary, deck_data: Dictionary, host_name: String, callback: Callable):
+	var body = {
+		"name": room_name,
+		"description": description,
+		"password": password if password != "" else null,
+		"field_data": field_data,
+		"deck_data": deck_data if not deck_data.is_empty() else null,
+		"host_player": host_name,
+		"status": "waiting"
+	}
+	var modifier = func(headers: PackedStringArray) -> PackedStringArray:
+		headers.append("Prefer: return=representation")
+		return headers
+	request_supabase("/rest/v1/rooms", HTTPClient.METHOD_POST, body, modifier, callback)
+
+func fetch_active_rooms(callback: Callable):
+	request_supabase("/rest/v1/rooms?status=eq.waiting&select=*", HTTPClient.METHOD_GET, null, Callable(), callback)
+
+func join_room(room_id: String, guest_name: String, callback: Callable):
+	var body = {
+		"guest_player": guest_name,
+		"status": "playing"
+	}
+	request_supabase("/rest/v1/rooms?id=eq." + room_id.uri_encode(), HTTPClient.METHOD_PATCH, body, Callable(), callback)

@@ -24,6 +24,12 @@ var selected_deck_path: String = ""
 var local_player_count: int = 1
 var local_active_player_idx: int = 0
 
+# Online Multiplayer state variables
+var online_room_id: String = ""
+var online_room_data: Dictionary = {}
+var online_player_role: String = "Host" # "Host" or "Guest"
+var online_player_name: String = "HostPlayer"
+
 
 var inspect_timer: Timer
 var target_inspect_card_data: Variant = null
@@ -68,7 +74,7 @@ func format_num(value) -> String:
 			return str(value)
 	return str(value)
 
-func play_sfx(stream_path: String, volume_db: float = 0.0):
+func play_sfx(stream_path: String, volume_db: float = 0.0, pitch_scale: float = 1.0):
 	var sfx = AudioStreamPlayer.new()
 	sfx.stream = load(stream_path)
 	if sfx.stream == null:
@@ -76,6 +82,7 @@ func play_sfx(stream_path: String, volume_db: float = 0.0):
 		sfx.queue_free()
 		return
 	sfx.volume_db = volume_db
+	sfx.pitch_scale = pitch_scale
 	add_child(sfx)
 	sfx.play()
 	sfx.finished.connect(sfx.queue_free)

@@ -96,6 +96,72 @@ func _on_online_mode_selected():
 	mode_selection_ui.hide()
 	header.show()
 	scroll_container.show()
+	_refresh_online_rooms()
+
+func _refresh_online_rooms():
+	for child in $ScrollContainer/VBoxContainer.get_children():
+		child.queue_free()
+		
+	var loading_lbl = Label.new()
+	loading_lbl.text = "Loading active rooms..."
+	loading_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	$ScrollContainer/VBoxContainer.add_child(loading_lbl)
+	
+	SupabaseService.fetch_active_rooms(func(status, data):
+		if not is_instance_valid(self): return
+		for child in $ScrollContainer/VBoxContainer.get_children():
+			child.queue_free()
+			
+		if status == 200 and typeof(data) == TYPE_ARRAY:
+			if data.is_empty():
+				var no_rooms_lbl = Label.new()
+				no_rooms_lbl.text = "No active rooms found. Create one!"
+				no_rooms_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				$ScrollContainer/VBoxContainer.add_child(no_rooms_lbl)
+				return
+				
+			for room in data:
+				var btn = Button.new()
+				btn.text = "Room: %s  |  Host: %s  |  Status: %s  [Join]" % [room.get("name", "Untitled"), room.get("host_player", "Unknown"), room.get("status", "waiting")]
+				
+				var btn_style = StyleBoxFlat.new()
+				btn_style.bg_color = Color(0.1, 0.1, 0.12, 0.7)
+				btn_style.set_corner_radius_all(8)
+				btn_style.set_border_width_all(1)
+				btn_style.border_color = Color(1.0, 1.0, 1.0, 0.1)
+				btn.add_theme_stylebox_override("normal", btn_style)
+				
+				btn.pressed.connect(func(): _on_join_room_clicked(room))
+				$ScrollContainer/VBoxContainer.add_child(btn)
+		else:
+			var err_lbl = Label.new()
+			err_lbl.text = "Error loading rooms from Supabase."
+			err_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			$ScrollContainer/VBoxContainer.add_child(err_lbl)
+	)
+
+func _on_join_room_clicked(room: Dictionary):
+	var guest_name = "Guest_" + str(randi() % 1000)
+	Global.online_room_id = room.get("id", "")
+	Global.online_room_data = room
+	Global.online_player_role = "Guest"
+	Global.online_player_name = guest_name
+	
+	Global.loaded_field_data = room.get("field_data", {})
+	Global.selected_deck_data = room.get("deck_data", {})
+	
+	SupabaseService.join_room(Global.online_room_id, guest_name, func(status, res):
+		if status == 200 or status == 204:
+			print("Joined Room successfully as Guest!")
+			Global.play_mode = true
+			Global.switch_scene("res://scenes/FieldCreator.tscn")
+		else:
+			var err = AcceptDialog.new()
+			err.title = "Join Failed"
+			err.dialog_text = "Failed to join room on Supabase."
+			add_child(err)
+			err.popup_centered()
+	)
 
 func _on_create_room_pressed():
 	# Show creator panel for online room
@@ -261,10 +327,45 @@ func _on_confirm_create_pressed():
 			err_dialog.popup_centered()
 			return
 			
-		print("Room Created! Loading field from Supabase: ", Global.loaded_field_data.get("name"))
-		creator_panel.hide()
-		Global.play_mode = true
-		Global.switch_scene("res://scenes/FieldCreator.tscn")
+		var room_name = $RoomCreatorPanel/VBoxContainer/RoomName.text
+		if room_name == "":
+			room_name = "Room_" + str(randi() % 1000)
+		var password = $RoomCreatorPanel/VBoxContainer/Password.text
+		var desc = $RoomCreatorPanel/VBoxContainer/Desc.text
+		var host_name = "Host_" + str(randi() % 1000)
+		
+		Global.online_player_role = "Host"
+		Global.online_player_name = host_name
+		
+		$RoomCreatorPanel/VBoxContainer/ConfirmBtn.disabled = true
+		$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Creating room..."
+		
+		SupabaseService.insert_room(room_name, desc, password, Global.loaded_field_data, Global.selected_deck_data, host_name, func(status, data):
+			if not is_instance_valid(self): return
+			$RoomCreatorPanel/VBoxContainer/ConfirmBtn.disabled = false
+			$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Create!"
+			
+			if status == 200 or status == 201:
+				var created_room = {}
+				if typeof(data) == TYPE_ARRAY and data.size() > 0:
+					created_room = data[0]
+				elif typeof(data) == TYPE_DICTIONARY:
+					created_room = data
+					
+				Global.online_room_id = created_room.get("id", "")
+				Global.online_room_data = created_room
+				
+				print("Room Created on Supabase! ID: ", Global.online_room_id)
+				creator_panel.hide()
+				Global.play_mode = true
+				Global.switch_scene("res://scenes/FieldCreator.tscn")
+			else:
+				var err_dialog = AcceptDialog.new()
+				err_dialog.title = "Error"
+				err_dialog.dialog_text = "Failed to create room on Supabase. (Status: " + str(status) + ")"
+				add_child(err_dialog)
+				err_dialog.popup_centered()
+		)
 	else:
 		if Global.loaded_field_path == "":
 			var err_dialog = AcceptDialog.new()

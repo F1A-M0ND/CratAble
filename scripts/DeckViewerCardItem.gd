@@ -32,8 +32,6 @@ func _gui_input(event: InputEvent):
 		if event.global_position.distance_to(_press_pos) > DRAG_THRESHOLD:
 			_drag_started = true
 			deck_viewer_ref._on_dv_card_drag_started(card_index)
+			_pressed = false
+			_drag_started = false
 			accept_event()
-	
-	if event is InputEventMouseMotion and _drag_started:
-		deck_viewer_ref._on_dv_card_drag_moved(event.global_position)
-		accept_event()
