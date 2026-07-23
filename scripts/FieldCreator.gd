@@ -62,7 +62,12 @@ var test_spawned_nodes: Array = []
 var current_changeling_card: Control = null
 
 var hand_scroll: Control  # เป็น Control ธรรมดา ไม่ clip overflow
+<<<<<<< Updated upstream
 var hand_zone: HBoxContainer
+=======
+var hand_zone: Control
+var opponent_hand_box: HBoxContainer
+>>>>>>> Stashed changes
 var drag_layer: Control  # layer สำหรับการ์ดที่กำลังลากจากมือ (อยู่เหนือสุดทุกอย่าง)
 
 var _hand_collapsed: bool = false
@@ -77,6 +82,61 @@ func _ready():
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
 	
+<<<<<<< Updated upstream
+=======
+	if Global.online_room_id != "":
+		var rt_script = load("res://scripts/SupabaseRealtime.gd")
+		if rt_script:
+			realtime_client = Node.new()
+			realtime_client.set_script(rt_script)
+			add_child(realtime_client)
+			realtime_client.card_moved.connect(_on_remote_card_moved)
+			realtime_client.card_flipped.connect(_on_remote_card_flipped)
+			realtime_client.card_tapped.connect(_on_remote_card_tapped)
+			realtime_client.deck_shuffled.connect(_on_remote_deck_shuffled)
+			realtime_client.card_spawned.connect(_on_remote_card_spawned)
+			realtime_client.card_sent_to_hand.connect(_on_remote_card_sent_to_hand)
+			realtime_client.card_inserted_into_deck.connect(_on_remote_card_inserted_into_deck)
+			realtime_client.deck_drawn.connect(_on_remote_deck_drawn)
+			realtime_client.zone_shuffled.connect(_on_remote_zone_shuffled)
+			
+			# Realtime custom signals
+			realtime_client.connection_established.connect(func():
+				print("Realtime Connection Established!")
+				# Send a join signal or broadcast who we are
+				realtime_client.send_broadcast("player_joined", {"player_name": Global.online_player_name, "role": Global.online_player_role})
+			)
+			
+			# Listen to other custom events
+			var ref_rt = realtime_client
+			ref_rt.process_mode = PROCESS_MODE_ALWAYS
+			# Handle other events dynamically by patching _handle_message handler
+			# Or we can handle it inside _handle_message by adding custom signals to SupabaseRealtime.gd, 
+			# but it is simpler to just connect to room and handle in _input or handle custom event broadcast.
+			
+			realtime_client.connect_to_room(Global.online_room_id, SupabaseService.SUPABASE_KEY)
+	
+	# Setup Load Button programmatically right after Save Button
+	var load_btn = Button.new()
+	load_btn.name = "LoadFieldBtn"
+	load_btn.text = "Load Field"
+	$HBoxContainer/LeftSide.add_child(load_btn)
+	$HBoxContainer/LeftSide.move_child(load_btn, $HBoxContainer/LeftSide/SaveFieldBtn.get_index() + 1)
+	load_btn.pressed.connect(_on_load_field_pressed)
+	
+	# Setup Field File Dialog
+	field_file_dialog = FileDialog.new()
+	field_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	field_file_dialog.filters = PackedStringArray(["*.json ; Field Layout Files"])
+	field_file_dialog.size = Vector2(600, 400)
+	field_file_dialog.use_native_dialog = true
+	field_file_dialog.file_selected.connect(_on_field_file_selected)
+	add_child(field_file_dialog)
+	_init_online_field_dialogs()
+	_init_opponent_hand()
+	SupabaseService.fetch_all_cards(Callable()) # cache all cards in memory
+	
+>>>>>>> Stashed changes
 	# Hand zone — ใช้ Control ธรรมดา (ไม่ clip) เพื่อให้การ์ดที่ขยายตอน hover โผล่เหนือขอบได้
 	hand_scroll = Control.new()
 	hand_scroll.name = "HandScroll"
@@ -2446,3 +2506,1359 @@ func _on_deck_left_clicked(deck_obj: Control):
 	card.scale = Vector2.ONE
 	hand_zone.add_child(card)
 	_update_hand_zone_sizing.call_deferred()
+<<<<<<< Updated upstream
+=======
+	
+	# Play flip animation midway during translation
+	var scale_tween = get_tree().create_tween()
+	scale_tween.tween_property(card, "scale:x", 0.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	scale_tween.tween_callback(func(): _set_card_face_down(card, false))
+	scale_tween.tween_property(card, "scale:x", 1.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+# ==========================================
+# In-Play Gameplay Operations & Callbacks
+# ==========================================
+
+func _init_tabletop_popup_menu():
+	tabletop_popup_menu = PopupMenu.new()
+	tabletop_popup_menu.id_pressed.connect(_on_tabletop_popup_menu_id_pressed)
+	add_child(tabletop_popup_menu)
+
+func _init_tabletop_viewers():
+	# 1. Deck Peeker Prompt Dialog
+	peeker_prompt_dialog = ConfirmationDialog.new()
+	peeker_prompt_dialog.title = "Look at Top Cards"
+	var hb = HBoxContainer.new()
+	var lbl = Label.new()
+	lbl.text = "Number of cards to peek:"
+	hb.add_child(lbl)
+	
+	peeker_prompt_spinbox = SpinBox.new()
+	peeker_prompt_spinbox.min_value = 1
+	peeker_prompt_spinbox.max_value = 100
+	peeker_prompt_spinbox.value = 3
+	hb.add_child(peeker_prompt_spinbox)
+	peeker_prompt_dialog.add_child(hb)
+	peeker_prompt_dialog.confirmed.connect(func():
+		if is_instance_valid(peeker_deck_target):
+			_open_deck_peeker_with_count(peeker_deck_target, int(peeker_prompt_spinbox.value))
+	)
+	add_child(peeker_prompt_dialog)
+
+	# 2. Deck Peeker Dialog
+	peeker_dialog = ConfirmationDialog.new()
+	peeker_dialog.title = "Deck Peeker"
+	peeker_dialog.min_size = Vector2i(700, 350)
+	
+	var peeker_scroll = ScrollContainer.new()
+	peeker_scroll.custom_minimum_size = Vector2(680, 280)
+	peeker_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	peeker_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	
+	peeker_cards_container = HBoxContainer.new()
+	peeker_cards_container.add_theme_constant_override("separation", 15)
+	peeker_scroll.add_child(peeker_cards_container)
+	peeker_dialog.add_child(peeker_scroll)
+	
+	peeker_dialog.confirmed.connect(_on_peeker_dialog_confirmed)
+	peeker_dialog.canceled.connect(_on_peeker_dialog_confirmed)
+	add_child(peeker_dialog)
+
+	# 3. Zone Pile Viewer Dialog
+	zone_viewer_dialog = ConfirmationDialog.new()
+	zone_viewer_dialog.title = "Zone Pile Viewer"
+	zone_viewer_dialog.min_size = Vector2i(600, 400)
+	
+	var zone_scroll = ScrollContainer.new()
+	zone_scroll.custom_minimum_size = Vector2(580, 330)
+	zone_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	zone_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	
+	zone_viewer_grid = GridContainer.new()
+	zone_viewer_grid.columns = 4
+	zone_viewer_grid.add_theme_constant_override("h_separation", 15)
+	zone_viewer_grid.add_theme_constant_override("v_separation", 15)
+	zone_scroll.add_child(zone_viewer_grid)
+	zone_viewer_dialog.add_child(zone_scroll)
+	add_child(zone_viewer_dialog)
+
+	# 4. Deck Viewer Panel (non-modal overlay — allows drag & drop to hand/field)
+	deck_viewer_dialog = PanelContainer.new()
+	deck_viewer_dialog.name = "DeckViewerPanel"
+	deck_viewer_dialog.custom_minimum_size = Vector2(760, 520)
+	deck_viewer_dialog.top_level = true
+	deck_viewer_dialog.z_index = 2000
+	deck_viewer_dialog.set_anchors_preset(Control.PRESET_CENTER)
+	deck_viewer_dialog.hide()
+	
+	var dv_style = StyleBoxFlat.new()
+	dv_style.bg_color = Color(0.1, 0.12, 0.18, 0.97)
+	dv_style.border_width_left = 2
+	dv_style.border_width_top = 2
+	dv_style.border_width_right = 2
+	dv_style.border_width_bottom = 2
+	dv_style.border_color = Color(0.35, 0.55, 0.9, 0.8)
+	dv_style.corner_radius_top_left = 8
+	dv_style.corner_radius_top_right = 8
+	dv_style.corner_radius_bottom_left = 8
+	dv_style.corner_radius_bottom_right = 8
+	deck_viewer_dialog.add_theme_stylebox_override("panel", dv_style)
+	
+	var dv_margin = MarginContainer.new()
+	dv_margin.add_theme_constant_override("margin_left", 12)
+	dv_margin.add_theme_constant_override("margin_top", 12)
+	dv_margin.add_theme_constant_override("margin_right", 12)
+	dv_margin.add_theme_constant_override("margin_bottom", 12)
+	deck_viewer_dialog.add_child(dv_margin)
+	
+	var dv_vbox = VBoxContainer.new()
+	dv_vbox.add_theme_constant_override("separation", 8)
+	dv_margin.add_child(dv_vbox)
+	
+	# Header
+	var dv_header = HBoxContainer.new()
+	var dv_title = Label.new()
+	dv_title.text = "Deck Viewer"
+	dv_title.add_theme_font_size_override("font_size", 18)
+	dv_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dv_header.add_child(dv_title)
+	
+	var dv_hint = Label.new()
+	dv_hint.text = "ลากการ์ดจัดเรียง / ลากออกไปสนามหรือมือ"
+	dv_hint.add_theme_font_size_override("font_size", 12)
+	dv_hint.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0, 0.7))
+	dv_header.add_child(dv_hint)
+	dv_vbox.add_child(dv_header)
+	
+	var dv_sep = HSeparator.new()
+	dv_vbox.add_child(dv_sep)
+	
+	# Card grid scroll area
+	deck_viewer_scroll = ScrollContainer.new()
+	deck_viewer_scroll.custom_minimum_size = Vector2(720, 360)
+	deck_viewer_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	deck_viewer_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	deck_viewer_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	
+	deck_viewer_grid = Control.new()
+	deck_viewer_grid.set_script(load("res://scripts/DeckViewerGrid.gd"))
+	deck_viewer_grid.deck_viewer_ref = self
+	deck_viewer_grid.columns = 4
+	deck_viewer_grid.h_separation = 15.0
+	deck_viewer_grid.v_separation = 15.0
+	deck_viewer_scroll.add_child(deck_viewer_grid)
+	dv_vbox.add_child(deck_viewer_scroll)
+	
+	# Footer buttons
+	var dv_footer_sep = HSeparator.new()
+	dv_vbox.add_child(dv_footer_sep)
+	
+	var dv_footer = HBoxContainer.new()
+	dv_footer.alignment = BoxContainer.ALIGNMENT_END
+	dv_footer.add_theme_constant_override("separation", 10)
+	
+
+	
+	var dv_ok_btn = Button.new()
+	dv_ok_btn.text = "OK"
+	dv_ok_btn.custom_minimum_size = Vector2(90, 32)
+	dv_ok_btn.pressed.connect(func():
+		Global.play_sfx("res://SFX/Throw Card.ogg", -6.0, 1.8)
+		_on_deck_viewer_confirmed()
+	)
+	dv_footer.add_child(dv_ok_btn)
+	
+	var dv_cancel_btn = Button.new()
+	dv_cancel_btn.text = "Cancel"
+	dv_cancel_btn.custom_minimum_size = Vector2(90, 32)
+	dv_cancel_btn.pressed.connect(func():
+		Global.play_sfx("res://SFX/Throw Card.ogg", -6.0, 1.4)
+		_on_deck_viewer_canceled()
+	)
+	dv_footer.add_child(dv_cancel_btn)
+	
+	dv_vbox.add_child(dv_footer)
+	
+	add_child(deck_viewer_dialog)
+
+func _on_card_right_clicked(card: Control):
+	if not is_test_mode: return
+	# การ์ดในมือจะไม่แสดงเมนูคลิกขวา
+	if card.get_meta("in_hand", false): return
+	_show_tabletop_context_menu(card, "card")
+
+func _on_card_double_clicked(card: Control):
+	if not is_test_mode: return
+	if card.get_meta("in_hand", false): return
+	_toggle_card_tap(card)
+
+func _on_deck_right_clicked(deck: Control):
+	if not is_test_mode: return
+	if not deck.get_meta("deck_confirmed", false): return
+	_show_tabletop_context_menu(deck, "deck")
+
+func _on_zone_right_clicked(zone: Control):
+	if not is_test_mode: return
+	_show_tabletop_context_menu(zone, "zone")
+
+func _show_tabletop_context_menu(node: Control, type: String):
+	context_tabletop_node = node
+	tabletop_popup_menu.clear()
+	# ลบ metadata เด็คที่ค้างไว้
+	tabletop_popup_menu.remove_meta("target_deck")
+	
+	if type == "card":
+		var current_rot = node.rotation_degrees
+		var is_tapped = abs(current_rot) > 45.0
+		tabletop_popup_menu.add_item("Untap" if is_tapped else "Tap (90°)", 10)
+		
+		var is_face_down = node.has_node("CardBack")
+		tabletop_popup_menu.add_item("Face Up" if is_face_down else "Face Down", 11)
+		
+		tabletop_popup_menu.add_item("Send to Hand", 12)
+		tabletop_popup_menu.add_item("Send to Deck (Top)", 13)
+		tabletop_popup_menu.add_item("Send to Deck (Bottom)", 14)
+		
+	elif type == "deck":
+		tabletop_popup_menu.add_item("Draw Card", 20)
+		tabletop_popup_menu.add_item("Shuffle Deck", 21)
+		tabletop_popup_menu.add_item("Look at Top Cards...", 22)
+		tabletop_popup_menu.add_item("View All Cards in Deck", 23)
+		
+	elif type == "zone":
+		var settings = node.get_meta("zone_settings", {})
+		if settings.get("purpose", 0) == 0: # Place
+			var card_count = 0
+			for child in node.get_children():
+				if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+					card_count += 1
+			tabletop_popup_menu.add_item("View Cards in Pile (%d)" % card_count, 30)
+			tabletop_popup_menu.add_item("Shuffle Pile", 31)
+			
+	if tabletop_popup_menu.item_count > 0:
+		tabletop_popup_menu.position = get_viewport().get_mouse_position()
+		tabletop_popup_menu.popup()
+
+func _on_tabletop_popup_menu_id_pressed(id: int):
+	if not is_instance_valid(context_tabletop_node): return
+	
+	match id:
+		10: # Tap/Untap
+			_toggle_card_tap(context_tabletop_node)
+		11: # Flip face
+			var is_face_down = context_tabletop_node.has_node("CardBack") and context_tabletop_node.get_node("CardBack").visible
+			_set_card_face_down(context_tabletop_node, not is_face_down)
+		12: # Send to Hand
+			_add_card_to_hand(context_tabletop_node)
+		13: # Send to Deck (Top)
+			var target_deck = tabletop_popup_menu.get_meta("target_deck", null)
+			if target_deck:
+				_insert_card_into_deck(context_tabletop_node, target_deck, true)
+			else:
+				_send_card_to_deck(context_tabletop_node, true)
+		14: # Send to Deck (Bottom)
+			var target_deck = tabletop_popup_menu.get_meta("target_deck", null)
+			if target_deck:
+				_insert_card_into_deck(context_tabletop_node, target_deck, false)
+			else:
+				_send_card_to_deck(context_tabletop_node, false)
+			
+		20: # Draw
+			_on_deck_left_clicked(context_tabletop_node)
+		21: # Shuffle
+			_shuffle_deck_programmatically(context_tabletop_node)
+		22: # Look at Top Cards
+			_open_deck_peeker(context_tabletop_node)
+		23: # View All Cards
+			_open_deck_viewer(context_tabletop_node)
+			
+		30: # View Cards
+			_open_zone_viewer(context_tabletop_node)
+		31: # Shuffle Zone Pile
+			_shuffle_zone_pile(context_tabletop_node)
+
+func _toggle_card_tap(card: Control, broadcast: bool = true):
+	var current_rot = card.rotation_degrees
+	var target_rot = 90.0 if abs(current_rot) < 45.0 else 0.0
+	
+	Global.play_sfx("res://SFX/Draw sfx.ogg", -5.0, 1.6)
+	var tween = create_tween()
+	tween.tween_property(card, "rotation_degrees", target_rot, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.broadcast_card_tapped(card.name, target_rot != 0.0)
+
+func _send_card_to_deck(card: Control, to_top: bool):
+	var closest_deck: Control = null
+	var min_dist = 999999.0
+	var card_gpos = card.global_position
+	
+	for child in field_canvas.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") == "deck":
+			var dist = child.global_position.distance_to(card_gpos)
+			if dist < min_dist:
+				min_dist = dist
+				closest_deck = child
+				
+	if closest_deck:
+		_insert_card_into_deck(card, closest_deck, to_top)
+	else:
+		print("No deck found on the tabletop to send the card to!")
+
+func _insert_card_into_deck(card: Control, deck: Control, to_top: bool, broadcast: bool = true):
+	var card_data = card.get_meta("card_data", {})
+	var card_path = card_data.get("file_path", "")
+	if card_path == "":
+		card_path = card_data.get("image_path", "")
+	
+	if card_path != "":
+		var draw_pile = deck.get_meta("draw_pile", [])
+		if to_top:
+			draw_pile.append(card_path)
+		else:
+			draw_pile.push_front(card_path)
+		deck.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(deck)
+		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.send_broadcast("card_inserted_into_deck", {
+				"card_name": card.name,
+				"deck_name": deck.name,
+				"to_top": to_top
+			})
+		
+		# อนิมเมจย่อการ์ดหายวาบเข้ากองเด็ค
+		var tween = create_tween()
+		tween.tween_property(card, "scale", Vector2.ZERO, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_callback(func():
+			if is_instance_valid(card):
+				card.queue_free()
+		)
+
+func _play_shuffle_sfx():
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 0.8)
+	await get_tree().create_timer(0.08).timeout
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 0.95)
+	await get_tree().create_timer(0.08).timeout
+	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 1.1)
+
+func _shuffle_deck_programmatically(deck: Control, broadcast: bool = true):
+	var draw_pile = deck.get_meta("draw_pile", [])
+	if draw_pile.size() > 1:
+		draw_pile.shuffle()
+		deck.set_meta("draw_pile", draw_pile)
+		_play_shuffle_sfx()
+		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.broadcast_deck_shuffled(deck.name)
+		
+		# เล่น Visual Effect กระพริบเบาๆ
+		var original_color = deck.modulate
+		var tween = create_tween()
+		tween.tween_property(deck, "modulate", Color(0.5, 1.5, 0.5, 1.0), 0.1)
+		tween.tween_property(deck, "modulate", original_color, 0.1)
+
+func _shuffle_zone_pile(zone: Control, broadcast: bool = true):
+	var cards = []
+	for child in zone.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards.append(child)
+			
+	if cards.size() > 1:
+		cards.shuffle()
+		for c in cards:
+			zone.remove_child(c)
+		for c in cards:
+			zone.add_child(c)
+			
+		for i in range(cards.size()):
+			var c = cards[i]
+			c.position = (zone.size / 2.0) - (c.size / 2.0)
+			
+		_play_shuffle_sfx()
+		
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.send_broadcast("zone_shuffled", {
+				"zone_name": zone.name
+			})
+			
+		var original_color = zone.color
+		var tween = create_tween()
+		tween.tween_property(zone, "color", Color(0.2, 0.8, 0.2, 0.6), 0.1)
+		tween.tween_property(zone, "color", original_color, 0.1)
+
+func _open_deck_peeker(deck: Control):
+	peeker_deck_target = deck
+	var draw_pile = deck.get_meta("draw_pile", [])
+	peeker_prompt_spinbox.max_value = max(1, draw_pile.size())
+	peeker_prompt_spinbox.value = min(3, draw_pile.size())
+	peeker_prompt_dialog.popup_centered()
+
+func _open_deck_peeker_with_count(deck: Control, count: int):
+	peeker_deck_target = deck
+	var draw_pile = deck.get_meta("draw_pile", [])
+	
+	peeker_held_cards.clear()
+	for i in range(min(count, draw_pile.size())):
+		peeker_held_cards.append(draw_pile.pop_back())
+	
+	deck.set_meta("draw_pile", draw_pile)
+	_update_deck_count_label(deck)
+	
+	_refresh_peeker_view()
+	peeker_dialog.popup_centered()
+
+func _load_card_data_from_path(card_path: String) -> Dictionary:
+	var card_data = {}
+	if FileAccess.file_exists(card_path):
+		var json_str = FileAccess.get_file_as_string(card_path)
+		var json = JSON.new()
+		if json.parse(json_str) == OK:
+			card_data = json.get_data()
+			card_data["file_path"] = card_path
+	elif SupabaseService.card_cache.has(card_path):
+		var row = SupabaseService.card_cache[card_path]
+		card_data = row.get("stats", {}).duplicate()
+		card_data["name"] = row.get("name", "Untitled")
+		card_data["image_path"] = row.get("image_url", "")
+		card_data["file_path"] = row.get("id", "")
+		card_data["id"] = row.get("id", "")
+	return card_data
+
+func _create_peeker_card_node(card_path: String, index: int) -> Control:
+	var item = PanelContainer.new()
+	item.custom_minimum_size = Vector2(130, 240)
+	
+	var vb = VBoxContainer.new()
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	item.add_child(vb)
+	
+	var tr = TextureRect.new()
+	tr.custom_minimum_size = Vector2(100, 140)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	vb.add_child(tr)
+	
+	var card_data = _load_card_data_from_path(card_path)
+	var card_name = card_data.get("name", "Unknown")
+	var img_path = card_data.get("image_path", "")
+	
+	var tex = null
+	if img_path != "":
+		if img_path.begins_with("http"):
+			SupabaseService.get_texture_or_load(img_path, func(loaded_tex):
+				if loaded_tex and is_instance_valid(tr):
+					tr.texture = loaded_tex
+			)
+		elif img_path.begins_with("res://"):
+			if ResourceLoader.exists(img_path):
+				tex = load(img_path)
+		else:
+			var img = Image.new()
+			if img.load(img_path) == OK:
+				tex = ImageTexture.create_from_image(img)
+				
+	if tex:
+		tr.texture = tex
+	elif not img_path.begins_with("http"):
+		var bg = ColorRect.new()
+		bg.color = Color(0.2, 0.2, 0.2, 0.8)
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.add_child(bg)
+	vb.add_child(tr)
+	
+	var name_lbl = Label.new()
+	name_lbl.text = card_name
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	vb.add_child(name_lbl)
+	
+	var hb_move = HBoxContainer.new()
+	hb_move.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_left = Button.new()
+	btn_left.text = "<"
+	btn_left.pressed.connect(func(): _move_peeker_card(index, -1))
+	hb_move.add_child(btn_left)
+	
+	var btn_right = Button.new()
+	btn_right.text = ">"
+	btn_right.pressed.connect(func(): _move_peeker_card(index, 1))
+	hb_move.add_child(btn_right)
+	
+	vb.add_child(hb_move)
+	
+	var hb_actions = HBoxContainer.new()
+	hb_actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_hand = Button.new()
+	btn_hand.text = "Hand"
+	btn_hand.pressed.connect(func(): _pull_peeker_card_to_hand(index))
+	hb_actions.add_child(btn_hand)
+	
+	var btn_board = Button.new()
+	btn_board.text = "Board"
+	btn_board.pressed.connect(func(): _pull_peeker_card_to_board(index))
+	hb_actions.add_child(btn_board)
+	
+	vb.add_child(hb_actions)
+	return item
+
+func _move_peeker_card(index: int, direction: int):
+	var new_index = index + direction
+	if new_index >= 0 and new_index < peeker_held_cards.size():
+		var temp = peeker_held_cards[index]
+		peeker_held_cards[index] = peeker_held_cards[new_index]
+		peeker_held_cards[new_index] = temp
+		_refresh_peeker_view()
+
+func _pull_peeker_card_to_hand(index: int):
+	var card_path = peeker_held_cards[index]
+	peeker_held_cards.remove_at(index)
+	_refresh_peeker_view()
+	
+	var card_data = _load_card_data_from_path(card_path)
+	if not card_data.is_empty():
+		var card = spawn_card_object(card_data, false)
+		var field_size = peeker_deck_target.size
+		card.custom_minimum_size = field_size
+		card.size = field_size
+		card.set_meta("field_size", field_size)
+		card.set_meta("field_scale", peeker_deck_target.scale)
+		card.set_meta("in_hand", true)
+		
+		card.position = hand_zone.get_global_transform().affine_inverse() * peeker_deck_target.global_position
+		_set_card_face_down(card, false)
+		hand_zone.add_child(card)
+		_update_hand_zone_sizing.call_deferred()
+
+func _pull_peeker_card_to_board(index: int):
+	var card_path = peeker_held_cards[index]
+	peeker_held_cards.remove_at(index)
+	_refresh_peeker_view()
+	
+	var card_data = _load_card_data_from_path(card_path)
+	if not card_data.is_empty():
+		var card = spawn_card_object(card_data, true)
+		var field_size = peeker_deck_target.size
+		var field_scale = peeker_deck_target.get("base_scale")
+		if field_scale == null: field_scale = peeker_deck_target.scale
+		card.custom_minimum_size = field_size
+		card.size = field_size
+		card.set_meta("field_size", field_size)
+		card.set_meta("field_scale", field_scale)
+		if card.has_method("update_base_scale"):
+			card.update_base_scale(field_scale)
+		else:
+			card.scale = field_scale
+		card.global_position = peeker_deck_target.global_position + Vector2(180, 0)
+		_set_card_face_down(card, false)
+
+func _refresh_peeker_view():
+	for child in peeker_cards_container.get_children():
+		child.queue_free()
+	for i in range(peeker_held_cards.size()):
+		var card_path = peeker_held_cards[i]
+		var card_node = _create_peeker_card_node(card_path, i)
+		peeker_cards_container.add_child(card_node)
+
+func _on_peeker_dialog_confirmed():
+	if is_instance_valid(peeker_deck_target):
+		var draw_pile = peeker_deck_target.get_meta("draw_pile", [])
+		while peeker_held_cards.size() > 0:
+			var card_path = peeker_held_cards.pop_back()
+			draw_pile.append(card_path)
+		peeker_deck_target.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(peeker_deck_target)
+
+func _open_zone_viewer(zone: Control):
+	zone_viewer_target = zone
+	_refresh_zone_viewer()
+	zone_viewer_dialog.popup_centered()
+
+func _refresh_zone_viewer():
+	for child in zone_viewer_grid.get_children():
+		child.queue_free()
+		
+	if not is_instance_valid(zone_viewer_target): return
+	
+	var cards_in_zone = []
+	for child in zone_viewer_target.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards_in_zone.append(child)
+			
+	for card in cards_in_zone:
+		var item = PanelContainer.new()
+		item.custom_minimum_size = Vector2(120, 200)
+		
+		var vb = VBoxContainer.new()
+		vb.alignment = BoxContainer.ALIGNMENT_CENTER
+		item.add_child(vb)
+		
+		var tr = TextureRect.new()
+		tr.custom_minimum_size = Vector2(90, 126)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		if card is TextureRect and card.texture:
+			tr.texture = card.texture
+		else:
+			var bg = ColorRect.new()
+			bg.color = Color(0.2, 0.2, 0.2, 0.8)
+			bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+			tr.add_child(bg)
+		vb.add_child(tr)
+		
+		var card_name = "Unknown Card"
+		var card_data = card.get_meta("card_data", {})
+		if card_data.has("name"):
+			card_name = card_data["name"]
+			
+		var name_lbl = Label.new()
+		name_lbl.text = card_name
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		vb.add_child(name_lbl)
+		
+		var hb = HBoxContainer.new()
+		hb.alignment = BoxContainer.ALIGNMENT_CENTER
+		
+		var btn_hand = Button.new()
+		btn_hand.text = "Hand"
+		btn_hand.pressed.connect(func():
+			_pull_card_from_zone_to_hand(card)
+		)
+		hb.add_child(btn_hand)
+		
+		var btn_board = Button.new()
+		btn_board.text = "Board"
+		btn_board.pressed.connect(func():
+			_pull_card_from_zone_to_board(card)
+		)
+		hb.add_child(btn_board)
+		vb.add_child(hb)
+		
+		zone_viewer_grid.add_child(item)
+
+func _pull_card_from_zone_to_hand(card: Control):
+	if is_instance_valid(card):
+		_add_card_to_hand(card)
+		_organize_remaining_zone_cards(zone_viewer_target)
+		_refresh_zone_viewer()
+
+func _pull_card_from_zone_to_board(card: Control):
+	if is_instance_valid(card):
+		if card.get_parent():
+			card.get_parent().remove_child(card)
+		field_canvas.add_child(card)
+		card.global_position = get_viewport().size / 2.0 - card.size / 2.0
+		_apply_card_size(card, field_canvas, null)
+		card.set_meta("in_hand", false)
+		
+		_organize_remaining_zone_cards(zone_viewer_target)
+		_refresh_zone_viewer()
+
+func _organize_remaining_zone_cards(zone: Control):
+	if not is_instance_valid(zone): return
+	var cards = []
+	for child in zone.get_children():
+		if child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
+			cards.append(child)
+	for c in cards:
+		c.position = (zone.size / 2.0) - (c.size / 2.0)
+
+func _close_deck_viewer_keep_card():
+	# ปิด deck viewer แต่ไม่แตะการ์ดที่ยังลากอยู่
+	# เอาการ์ดที่กำลัง insert ออกจาก deck_viewer_cards (ถ้ามี)
+	if inserting_card_index >= 0 and inserting_card_index < deck_viewer_cards.size():
+		deck_viewer_cards.remove_at(inserting_card_index)
+	
+	deck_viewer_inserting_card = null
+	deck_viewer_dragging_card = null
+	deck_viewer_has_entered = false
+	deck_viewer_target = null
+	deck_viewer_cards.clear()
+	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
+	
+	deck_viewer_dialog.hide()
+
+func _center_deck_viewer_panel():
+	deck_viewer_dialog.show()
+	await get_tree().process_frame
+	var viewport_size = get_viewport_rect().size
+	deck_viewer_dialog.position = (viewport_size - deck_viewer_dialog.size) / 2.0
+
+func _open_deck_viewer(deck: Control):
+	deck_viewer_target = deck
+	deck_viewer_inserting_card = null
+	inserting_card_index = -1
+	deck_viewer_cards = deck.get_meta("draw_pile", []).duplicate()
+	_refresh_deck_viewer()
+	_center_deck_viewer_panel()
+
+func _open_deck_viewer_for_insertion(deck: Control, card: Control):
+	deck_viewer_target = deck
+	deck_viewer_inserting_card = card
+	deck_viewer_dragging_card = card  # track การ์ดที่ยังลากอยู่
+	deck_viewer_has_entered = false   # รีเซ็ตสถานะการลากเมาส์เข้ามาในพาเนล
+	
+	# ไม่ซ่อนการ์ด — การ์ดยังลากอยู่ตามปกติ
+	
+	deck_viewer_cards = deck.get_meta("draw_pile", []).duplicate()
+	
+	var card_data = card.get_meta("card_data", {})
+	var card_path = card_data.get("file_path", "")
+	if card_path == "":
+		card_path = card_data.get("image_path", "")
+		
+	# ไม่เพิ่มการ์ดลงใน array จนกว่าจะปล่อยเมาส์
+	inserting_card_index = -1
+	
+	_refresh_deck_viewer()
+	# สมมติตำแหน่งเริ่มต้น
+	deck_viewer_grid.set_insert_indicator(deck_viewer_cards.size())
+	_center_deck_viewer_panel()
+
+func _on_deck_viewer_confirmed():
+	if is_instance_valid(deck_viewer_target):
+		deck_viewer_target.set_meta("draw_pile", deck_viewer_cards.duplicate())
+		_update_deck_count_label(deck_viewer_target)
+		if is_instance_valid(deck_viewer_inserting_card):
+			deck_viewer_inserting_card.queue_free()
+			
+	deck_viewer_inserting_card = null
+	deck_viewer_target = null
+	deck_viewer_cards.clear()
+	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
+	deck_viewer_dialog.hide()
+
+func _on_deck_viewer_canceled():
+	# ถ้ายังลากอยู่ ไม่ต้องทำอะไรกับการ์ด (มันยังลอยอยู่กับ mouse)
+	# ถ้าไม่ได้ลาก (เปิด viewer ด้วย right-click menu แล้ว cancel) ให้คืนการ์ดไปมือ
+	if is_instance_valid(deck_viewer_inserting_card):
+		if not deck_viewer_inserting_card.get("dragging"):
+			deck_viewer_inserting_card.show()
+			_add_card_to_hand(deck_viewer_inserting_card)
+		
+	deck_viewer_inserting_card = null
+	deck_viewer_dragging_card = null
+	deck_viewer_target = null
+	deck_viewer_cards.clear()
+	inserting_card_index = -1
+	deck_viewer_selected_index = -1
+	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	deck_viewer_drag_preview = null
+	deck_viewer_grid.set_insert_indicator(-1)
+
+func _refresh_deck_viewer():
+	for child in deck_viewer_grid.get_children():
+		child.queue_free()
+		
+	if not is_instance_valid(deck_viewer_target): return
+	
+	for i in range(deck_viewer_cards.size()):
+		var card_path = deck_viewer_cards[i]
+		var is_inserting = false
+		if is_instance_valid(deck_viewer_inserting_card) and i == inserting_card_index:
+			is_inserting = true
+			
+		var card_node = _create_deck_viewer_card_node(card_path, i, is_inserting)
+		deck_viewer_grid.add_child(card_node)
+		
+	if deck_viewer_grid.has_method("update_layout"):
+		deck_viewer_grid.update_layout(false)
+
+func _update_deck_viewer_labels():
+	var children = deck_viewer_grid.get_children()
+	var total_size = children.size()
+	for i in range(total_size):
+		var child = children[i]
+		if "card_index" in child:
+			child.card_index = i
+		var vb = child.get_node_or_null("VBox")
+		if vb:
+			var lbl = vb.get_node_or_null("OrderLabel")
+			if lbl is Label:
+				var text = "Card %d" % (i + 1)
+				if is_instance_valid(deck_viewer_inserting_card) and i == inserting_card_index:
+					text += " [NEW]"
+				if i == 0:
+					text += " (Bottom)"
+				elif i == total_size - 1:
+					text += " (Top)"
+				lbl.text = text
+
+func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: bool = false) -> Control:
+	var item = PanelContainer.new()
+	item.set_script(load("res://scripts/DeckViewerCardItem.gd"))
+	item.card_index = index
+	item.deck_viewer_ref = self
+	item.custom_minimum_size = Vector2(140, 260)
+	
+	if is_inserting or index == deck_viewer_selected_index:
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.25, 0.25, 0.1, 0.8) # Goldish tint
+		style.border_width_left = 3
+		style.border_width_top = 3
+		style.border_width_right = 3
+		style.border_width_bottom = 3
+		style.border_color = Color(1.0, 0.85, 0.2, 1.0) # Gold border
+		style.corner_radius_top_left = 6
+		style.corner_radius_top_right = 6
+		style.corner_radius_bottom_left = 6
+		style.corner_radius_bottom_right = 6
+		item.add_theme_stylebox_override("panel", style)
+		
+	var vb = VBoxContainer.new()
+	vb.name = "VBox"
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.mouse_filter = Control.MOUSE_FILTER_PASS
+	item.add_child(vb)
+	
+	var order_lbl = Label.new()
+	order_lbl.name = "OrderLabel"
+	order_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var total_size = deck_viewer_cards.size()
+	order_lbl.text = "Card %d" % (index + 1)
+	if is_inserting:
+		order_lbl.text += " [NEW]"
+	if index == 0:
+		order_lbl.text += " (Bottom)"
+	elif index == total_size - 1:
+		order_lbl.text += " (Top)"
+	order_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	order_lbl.add_theme_font_size_override("font_size", 12)
+	vb.add_child(order_lbl)
+	
+	var tr = TextureRect.new()
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tr.custom_minimum_size = Vector2(100, 140)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	vb.add_child(tr)
+	
+	var card_data = _load_card_data_from_path(card_path)
+	var card_name = card_data.get("name", "Unknown")
+	var img_path = card_data.get("image_path", "")
+	
+	var tex = null
+	if img_path != "":
+		if img_path.begins_with("http"):
+			SupabaseService.get_texture_or_load(img_path, func(loaded_tex):
+				if loaded_tex and is_instance_valid(tr):
+					tr.texture = loaded_tex
+			)
+		elif img_path.begins_with("res://"):
+			if ResourceLoader.exists(img_path):
+				tex = load(img_path)
+		else:
+			var img = Image.new()
+			if img.load(img_path) == OK:
+				tex = ImageTexture.create_from_image(img)
+				
+	if tex:
+		tr.texture = tex
+	elif not img_path.begins_with("http"):
+		var bg = ColorRect.new()
+		bg.color = Color(0.2, 0.2, 0.2, 0.8)
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tr.add_child(bg)
+		
+	var name_lbl = Label.new()
+	name_lbl.text = card_name
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_lbl.add_theme_font_size_override("font_size", 12)
+	vb.add_child(name_lbl)
+	
+	# Move buttons
+	var hb_move = HBoxContainer.new()
+	hb_move.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_left = Button.new()
+	btn_left.text = "<"
+	btn_left.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -8.0, 1.8)
+		_move_deck_viewer_card(index, -1)
+	)
+	hb_move.add_child(btn_left)
+	
+	var btn_right = Button.new()
+	btn_right.text = ">"
+	btn_right.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -8.0, 1.8)
+		_move_deck_viewer_card(index, 1)
+	)
+	hb_move.add_child(btn_right)
+	
+	vb.add_child(hb_move)
+	
+	var hb_actions = HBoxContainer.new()
+	hb_actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	
+	var btn_hand = Button.new()
+	btn_hand.text = "Hand"
+	btn_hand.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -3.0, 1.2)
+		_pull_deck_viewer_card_to_hand(index)
+	)
+	hb_actions.add_child(btn_hand)
+	
+	var btn_board = Button.new()
+	btn_board.text = "Board"
+	btn_board.pressed.connect(func():
+		Global.play_sfx("res://SFX/Draw sfx.ogg", -3.0, 1.2)
+		_pull_deck_viewer_card_to_board(index)
+	)
+	hb_actions.add_child(btn_board)
+	
+	vb.add_child(hb_actions)
+	return item
+
+func _move_deck_viewer_card(index: int, direction: int):
+	var new_index = index + direction
+	if new_index >= 0 and new_index < deck_viewer_cards.size():
+		var temp = deck_viewer_cards[index]
+		deck_viewer_cards[index] = deck_viewer_cards[new_index]
+		deck_viewer_cards[new_index] = temp
+		
+		# If we are moving the inserting card, update its index
+		if index == inserting_card_index:
+			inserting_card_index = new_index
+		elif new_index == inserting_card_index:
+			inserting_card_index = index
+			
+		_refresh_deck_viewer()
+
+func _reorder_deck_viewer_card(from_idx: int, to_idx: int):
+	to_idx = clamp(to_idx, 0, deck_viewer_cards.size())
+	if from_idx == to_idx:
+		return
+		
+	var item = deck_viewer_cards[from_idx]
+	deck_viewer_cards.remove_at(from_idx)
+	
+	var dest_idx = to_idx
+	if from_idx < to_idx:
+		dest_idx -= 1
+		
+	deck_viewer_cards.insert(dest_idx, item)
+	
+	# Update inserting_card_index
+	if from_idx == inserting_card_index:
+		inserting_card_index = dest_idx
+	elif inserting_card_index > from_idx and inserting_card_index <= dest_idx:
+		inserting_card_index -= 1
+	elif inserting_card_index < from_idx and inserting_card_index >= dest_idx:
+		inserting_card_index += 1
+		
+	# Move the actual child node in the UI to match the array without destroying all nodes
+	if from_idx < deck_viewer_grid.get_child_count():
+		var child_node = deck_viewer_grid.get_child(from_idx)
+		deck_viewer_grid.move_child(child_node, dest_idx)
+	
+	_update_deck_viewer_labels()
+	
+	# ปล่อยให้มันเล่น animate อัตโนมัติ (ข้าม skip_index = -1 เพื่อเปิดโชว์ใหม่)
+	deck_viewer_grid.update_layout(true, -1)
+
+func _get_drop_index_at_global_position(global_pos: Vector2) -> int:
+	var all_children = deck_viewer_grid.get_children()
+	var children = []
+	for c in all_children:
+		if c is Control and c.visible and not c.is_queued_for_deletion():
+			children.append(c)
+			
+	if children.is_empty():
+		return 0
+		
+	var columns = deck_viewer_grid.columns
+	var num_children = children.size()
+	var row_count = int(ceil(num_children / float(columns)))
+	
+	# 1. Detect which row the global_pos.y falls into
+	var target_row = 0
+	for r in range(row_count):
+		var start_idx = r * columns
+		if start_idx >= num_children:
+			break
+		var row_child = children[start_idx]
+		if not row_child is Control: continue
+		var rect = row_child.get_global_rect()
+		
+		# If there is a next row, check the boundary midpoint
+		var next_row_start_idx = (r + 1) * columns
+		if next_row_start_idx < num_children:
+			var next_row_child = children[next_row_start_idx]
+			if next_row_child is Control:
+				var next_rect = next_row_child.get_global_rect()
+				var midpoint_y = (rect.position.y + rect.size.y + next_rect.position.y) / 2.0
+				if global_pos.y < midpoint_y:
+					target_row = r
+					break
+			else:
+				if global_pos.y < rect.position.y + rect.size.y + 7.5: # 7.5 is half of v_separation (15)
+					target_row = r
+					break
+		else:
+			# Last row
+			target_row = r
+			break
+			
+	# 2. Within target_row, find the column based on global_pos.x
+	var row_start_idx = target_row * columns
+	var row_end_idx = min(num_children, (target_row + 1) * columns)
+	
+	for i in range(row_start_idx, row_end_idx):
+		var child = children[i]
+		if not child is Control: continue
+		var rect = child.get_global_rect()
+		if global_pos.x < rect.position.x + rect.size.x / 2.0:
+			return i
+			
+	return row_end_idx
+
+func _on_dv_card_clicked(index: int):
+	deck_viewer_selected_index = index
+	_refresh_deck_viewer()
+
+func _on_dv_card_drag_started(index: int):
+	deck_viewer_selected_index = index
+	deck_viewer_dragging_index = index
+	
+	deck_viewer_dragged_card_path = deck_viewer_cards[index]
+	
+	var original_item = deck_viewer_grid.get_child(index)
+	deck_viewer_dragged_item = original_item
+	
+	# Create drag preview (ภาพลอยตามเมาส์)
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+	
+	var preview = original_item.duplicate()
+	preview.set_script(null)
+	_set_mouse_filter_ignore_recursive(preview)
+	
+	preview.custom_minimum_size = original_item.custom_minimum_size
+	preview.size = original_item.custom_minimum_size
+	preview.top_level = true
+	preview.z_index = 2500
+	
+	add_child(preview)
+	preview.global_position = get_global_mouse_position() - preview.custom_minimum_size / 2.0
+	deck_viewer_drag_preview = preview
+	
+	# นำข้อมูลการ์ดออกจากอาเรย์เพื่อคิดตำแหน่งการแทรกใหม่แบบแรกรอบ
+	deck_viewer_cards.remove_at(index)
+	
+	# ซ่อนโหนดการ์ดเดิม (ไม่ลบออกจาก Scene Tree เพื่อรักษา Input Capture) 
+	# แล้วเลื่อนการ์ดอื่นๆ ข้างๆ เข้ามาแทนที่
+	deck_viewer_grid.update_layout(true, index)
+
+func _on_dv_card_drag_moved(global_pos: Vector2):
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.global_position = global_pos - deck_viewer_drag_preview.custom_minimum_size / 2.0
+		
+	var target_idx = _get_drop_index_at_global_position(global_pos)
+	deck_viewer_grid.set_insert_indicator(target_idx)
+
+func _on_dv_card_drag_ended(index: int):
+	if is_instance_valid(deck_viewer_drag_preview):
+		deck_viewer_drag_preview.queue_free()
+		deck_viewer_drag_preview = null
+		
+	var target_idx = deck_viewer_grid.insert_indicator_index
+	deck_viewer_grid.set_insert_indicator(-1)
+	
+	if target_idx == -1:
+		target_idx = _get_drop_index_at_global_position(get_global_mouse_position())
+		
+	target_idx = clamp(target_idx, 0, deck_viewer_cards.size())
+	
+	deck_viewer_cards.insert(target_idx, deck_viewer_dragged_card_path)
+	
+	# ดึงโหนดการ์ดเดิม ย้ายตำแหน่งในตาราง และแสดงให้เห็นอีกครั้ง
+	if is_instance_valid(deck_viewer_dragged_item):
+		deck_viewer_dragged_item.visible = true
+		deck_viewer_grid.move_child(deck_viewer_dragged_item, target_idx)
+		deck_viewer_dragged_item.position = deck_viewer_grid.get_local_mouse_position()
+	
+	_update_deck_viewer_labels()
+	deck_viewer_grid.update_layout(true)
+	
+	deck_viewer_dragging_index = -1
+	deck_viewer_dragged_card_path = ""
+	deck_viewer_dragged_item = null
+
+func _on_dv_card_drag_scrolled(button_index: int):
+	if not is_instance_valid(deck_viewer_scroll): return
+	
+	var scroll_speed = 30.0
+	if button_index == MOUSE_BUTTON_WHEEL_UP:
+		deck_viewer_scroll.scroll_vertical -= scroll_speed
+	elif button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		deck_viewer_scroll.scroll_vertical += scroll_speed
+		
+	if is_instance_valid(deck_viewer_dragging_card):
+		_on_card_drag_moved(deck_viewer_dragging_card)
+	else:
+		_on_dv_card_drag_moved(get_global_mouse_position())
+
+func _on_tabletop_card_drag_scrolled(card: Control, button_index: int):
+	if is_instance_valid(deck_viewer_dialog) and deck_viewer_dialog.visible and deck_viewer_dragging_card == card:
+		_on_dv_card_drag_scrolled(button_index)
+
+func _set_mouse_filter_ignore_recursive(node: Node):
+	if node is Control:
+		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_filter_ignore_recursive(child)
+
+func _notification(what: int):
+	pass
+
+
+func _pull_deck_viewer_card_to_hand(index: int):
+	var card_path = deck_viewer_cards[index]
+	deck_viewer_cards.remove_at(index)
+	
+	# Adjust inserting card index
+	if index == inserting_card_index:
+		if is_instance_valid(deck_viewer_inserting_card):
+			deck_viewer_inserting_card.queue_free()
+		deck_viewer_inserting_card = null
+		inserting_card_index = -1
+	elif index < inserting_card_index:
+		inserting_card_index -= 1
+		
+	_refresh_deck_viewer()
+	
+	var card_data = _load_card_data_from_path(card_path)
+	if not card_data.is_empty():
+		var card = spawn_card_object(card_data, false)
+		var field_size = deck_viewer_target.size
+		card.custom_minimum_size = field_size
+		card.size = field_size
+		card.set_meta("field_size", field_size)
+		card.set_meta("field_scale", deck_viewer_target.scale)
+		card.set_meta("in_hand", true)
+		
+		card.position = hand_zone.get_global_transform().affine_inverse() * deck_viewer_target.global_position
+		_set_card_face_down(card, false)
+		hand_zone.add_child(card)
+		_update_hand_zone_sizing.call_deferred()
+
+func _pull_deck_viewer_card_to_board(index: int):
+	var card_path = deck_viewer_cards[index]
+	deck_viewer_cards.remove_at(index)
+	
+	# Adjust inserting card index
+	if index == inserting_card_index:
+		if is_instance_valid(deck_viewer_inserting_card):
+			deck_viewer_inserting_card.queue_free()
+		deck_viewer_inserting_card = null
+		inserting_card_index = -1
+	elif index < inserting_card_index:
+		inserting_card_index -= 1
+		
+	_refresh_deck_viewer()
+	
+	var card_data = _load_card_data_from_path(card_path)
+	if not card_data.is_empty():
+		var card = spawn_card_object(card_data, true)
+		var field_size = deck_viewer_target.size
+		var field_scale = deck_viewer_target.get("base_scale")
+		if field_scale == null: field_scale = deck_viewer_target.scale
+		card.custom_minimum_size = field_size
+		card.size = field_size
+		card.set_meta("field_size", field_size)
+		card.set_meta("field_scale", field_scale)
+		if card.has_method("update_base_scale"):
+			card.update_base_scale(field_scale)
+		else:
+			card.scale = field_scale
+		card.global_position = deck_viewer_target.global_position + Vector2(180, 0)
+		_set_card_face_down(card, false)
+
+# ==========================================
+# Global Drop Data (Extracting from Deck Viewer)
+# ==========================================
+
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "deck_viewer_card":
+		return true
+	return false
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	if typeof(data) == TYPE_DICTIONARY and data.get("type") == "deck_viewer_card":
+		var index = data.get("index", -1)
+		if index >= 0 and index < deck_viewer_cards.size():
+			var card_path = deck_viewer_cards[index]
+			deck_viewer_cards.remove_at(index)
+			
+			var card_data = {}
+			if FileAccess.file_exists(card_path):
+				var json_str = FileAccess.get_file_as_string(card_path)
+				var json = JSON.new()
+				if json.parse(json_str) == OK:
+					card_data = json.get_data()
+					card_data["file_path"] = card_path
+			else:
+				if SupabaseService.card_cache.has(card_path):
+					var row = SupabaseService.card_cache[card_path]
+					card_data = row.get("stats", {}).duplicate()
+					card_data["name"] = row.get("name", "Untitled")
+					card_data["image_path"] = row.get("image_url", "")
+					card_data["file_path"] = row.get("id", "")
+					card_data["id"] = row.get("id", "")
+					
+			var new_card = spawn_card_object(card_data, false)
+			if new_card:
+				var field_size = Vector2(150, 210)
+				if is_instance_valid(deck_viewer_target):
+					field_size = deck_viewer_target.size
+					var field_scale = deck_viewer_target.get("base_scale")
+					if field_scale == null: field_scale = deck_viewer_target.scale
+					new_card.set_meta("field_size", field_size)
+					new_card.set_meta("field_scale", field_scale)
+					
+				new_card.custom_minimum_size = field_size
+				new_card.size = field_size
+				new_card.scale = Vector2.ONE
+				
+				# ตรวจสอบว่าดรอปในมือหรือไม่
+				if hand_scroll and hand_scroll.visible and hand_scroll.get_global_rect().has_point(get_global_mouse_position()):
+					new_card.set_meta("in_hand", true)
+					hand_zone.add_child(new_card)
+					_update_hand_zone_sizing.call_deferred()
+				else:
+					new_card.set_meta("in_hand", false)
+					field_canvas.add_child(new_card)
+					new_card.global_position = get_global_mouse_position() - (new_card.size / 2.0)
+					_apply_card_size(new_card, field_canvas, null)
+					
+			var child_node = deck_viewer_grid.get_child(index)
+			if child_node: child_node.queue_free()
+			
+			_update_deck_viewer_labels()
+			if deck_viewer_grid.has_method("update_layout"):
+				deck_viewer_grid.update_layout(true)
+
+# --- ONLINE MULTIPLAYER REALTIME RECEIVERS ---
+func _on_remote_card_moved(card_name: String, pos: Vector2):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		node.position = pos
+
+func _on_remote_card_flipped(card_name: String, is_down: bool):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		_set_card_face_down(node, is_down, false)
+
+func _on_remote_card_tapped(card_name: String, tapped: bool):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		var current_rot = node.rotation_degrees
+		var current_tapped = abs(current_rot) >= 45.0
+		if current_tapped != tapped:
+			_toggle_card_tap(node, false)
+
+func _on_remote_deck_shuffled(deck_name: String):
+	var node = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(node):
+		_shuffle_deck_programmatically(node, false)
+
+func _on_remote_card_spawned(card_name: String, card_data: Dictionary, pos: Vector2):
+	var node = self.find_child(card_name, true, false)
+	if is_instance_valid(node):
+		if node.get_parent() != field_canvas:
+			node.get_parent().remove_child(node)
+			field_canvas.add_child(node)
+			_apply_card_size(node, field_canvas, null)
+		node.position = pos
+	else:
+		var new_card = spawn_card_object(card_data, true)
+		if new_card:
+			new_card.name = card_name
+			new_card.position = pos
+
+func _on_remote_card_sent_to_hand(card_name: String):
+	var node = field_canvas.find_child(card_name, true, false)
+	if is_instance_valid(node) and is_instance_valid(opponent_hand_box):
+		if node.get_parent():
+			node.get_parent().remove_child(node)
+		opponent_hand_box.add_child(node)
+		_set_card_face_down(node, true, false)
+		node.custom_minimum_size = Vector2(70, 100)
+		node.scale = Vector2.ONE
+		node.rotation_degrees = 0
+		var htween = node.get("hover_tween")
+		if htween and htween is Tween: htween.kill()
+		node.set("is_hovering", false)
+	elif is_instance_valid(node):
+		node.queue_free()
+
+func _on_remote_card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool):
+	var card = field_canvas.find_child(card_name, true, false)
+	var deck = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(card) and is_instance_valid(deck):
+		_insert_card_into_deck(card, deck, to_top, false)
+
+func _on_remote_deck_drawn(deck_name: String):
+	var deck = field_canvas.find_child(deck_name, true, false)
+	if is_instance_valid(deck):
+		var draw_pile = deck.get_meta("draw_pile", [])
+		if not draw_pile.is_empty():
+			draw_pile.pop_back()
+			deck.set_meta("draw_pile", draw_pile)
+			_update_deck_count_label(deck)
+
+func _on_remote_zone_shuffled(zone_name: String):
+	var zone = field_canvas.find_child(zone_name, true, false)
+	if is_instance_valid(zone):
+		_shuffle_zone_pile(zone, false)
+
+func _init_opponent_hand():
+	var scroll = ScrollContainer.new()
+	scroll.name = "OpponentHandScroll"
+	scroll.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	scroll.custom_minimum_size = Vector2(0, 140)
+	scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	scroll.z_index = 10
+	
+	var bg = ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.5)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.add_child(bg)
+	
+	opponent_hand_box = HBoxContainer.new()
+	opponent_hand_box.name = "OpponentHandZone"
+	opponent_hand_box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	opponent_hand_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	opponent_hand_box.add_theme_constant_override("separation", 10)
+	scroll.add_child(opponent_hand_box)
+	
+	add_child(scroll)
+	
+	if Global.online_room_id == "":
+		scroll.hide()
+>>>>>>> Stashed changes
