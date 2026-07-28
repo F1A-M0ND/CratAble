@@ -310,3 +310,9 @@ func join_room(room_id: String, guest_name: String, callback: Callable):
 		"status": "playing"
 	}
 	request_supabase("/rest/v1/rooms?id=eq." + room_id.uri_encode(), HTTPClient.METHOD_PATCH, body, Callable(), callback)
+
+func update_room_status(room_id: String, status: String, callback: Callable = Callable()):
+	var body = {
+		"status": status
+	}
+	request_supabase("/rest/v1/rooms?id=eq." + room_id.uri_encode(), HTTPClient.METHOD_PATCH, body, Callable(), callback)

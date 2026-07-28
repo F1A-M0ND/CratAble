@@ -112,6 +112,10 @@ var deck_viewer_dragged_card_path: String = ""
 var deck_viewer_dragged_item: Control = null
 var deck_viewer_scroll: ScrollContainer = null
 var realtime_client: Node = null
+var opponent_hand_container: HBoxContainer = null
+var action_log_panel: PanelContainer = null
+var action_log_scroll: ScrollContainer = null
+var action_log_vbox: VBoxContainer = null
 var local_player_hands: Dictionary = {}
 var _save_dest_is_local: bool = false
 
@@ -136,12 +140,20 @@ func _ready():
 			realtime_client.card_inserted_into_deck.connect(_on_remote_card_inserted_into_deck)
 			realtime_client.deck_drawn.connect(_on_remote_deck_drawn)
 			realtime_client.zone_shuffled.connect(_on_remote_zone_shuffled)
+			realtime_client.opponent_hand_updated.connect(_on_opponent_hand_updated)
+			realtime_client.action_logged.connect(_on_remote_action_logged)
+			realtime_client.connection_closed.connect(_on_realtime_connection_closed)
+			realtime_client.player_joined.connect(func(p_name, role):
+				if p_name != Global.online_player_name:
+					update_local_hand_count()
+			)
 			
 			# Realtime custom signals
 			realtime_client.connection_established.connect(func():
 				print("Realtime Connection Established!")
 				# Send a join signal or broadcast who we are
 				realtime_client.send_broadcast("player_joined", {"player_name": Global.online_player_name, "role": Global.online_player_role})
+				broadcast_action_log("%s (%s) เข้าร่วมเกมแล้ว" % [Global.online_player_name, "Host" if Global.online_player_role == "Host" else "Guest"])
 			)
 			
 			# Listen to other custom events
@@ -152,6 +164,7 @@ func _ready():
 			# but it is simpler to just connect to room and handle in _input or handle custom event broadcast.
 			
 			realtime_client.connect_to_room(Global.online_room_id, SupabaseService.SUPABASE_KEY)
+			_setup_online_ui()
 	
 	# Setup Load Button programmatically right after Save Button
 	var load_btn = Button.new()
@@ -807,7 +820,10 @@ func _process(delta: float) -> void:
 		
 	if move_vec != Vector2.ZERO:
 		var speed = 800.0
-		field_canvas.position += move_vec.normalized() * speed * delta
+		var dir = move_vec.normalized()
+		if Global.online_player_role == "Guest":
+			dir = -dir
+		field_canvas.position += dir * speed * delta
 
 func _zoom_canvas(factor: float, mouse_pos: Vector2):
 	var old_zoom = field_zoom
@@ -887,6 +903,119 @@ func _init_zone_settings():
 	zone_settings_dialog.add_child(vbox)
 	zone_settings_dialog.confirmed.connect(_on_zone_settings_confirmed)
 	add_child(zone_settings_dialog)
+
+func _setup_online_ui():
+	# Create opponent hand visualizer HBoxContainer
+	opponent_hand_container = HBoxContainer.new()
+	opponent_hand_container.name = "OpponentHandContainer"
+	opponent_hand_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	opponent_hand_container.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	opponent_hand_container.offset_top = 15
+	opponent_hand_container.offset_bottom = 115
+	opponent_hand_container.custom_minimum_size.y = 100
+	opponent_hand_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tabletop_view.add_child(opponent_hand_container)
+	
+	# Create Activity Log panel
+	action_log_panel = PanelContainer.new()
+	action_log_panel.name = "ActionLogPanel"
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.4)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_right = 6
+	style.corner_radius_bottom_left = 6
+	action_log_panel.add_theme_stylebox_override("panel", style)
+	
+	action_log_panel.custom_minimum_size = Vector2(250, 130)
+	action_log_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	action_log_panel.offset_left = 10
+	action_log_panel.offset_bottom = -10
+	action_log_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	action_log_scroll = ScrollContainer.new()
+	action_log_scroll.mouse_filter = Control.MOUSE_FILTER_PASS
+	action_log_panel.add_child(action_log_scroll)
+	
+	action_log_vbox = VBoxContainer.new()
+	action_log_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	action_log_scroll.add_child(action_log_vbox)
+	tabletop_view.add_child(action_log_panel)
+	
+	# Initial update for local hand count
+	update_local_hand_count()
+
+func update_local_hand_count():
+	if not is_instance_valid(realtime_client) or not realtime_client.is_connected: return
+	var count = 0
+	if hand_zone:
+		for child in hand_zone.get_children():
+			if child.has_meta("component_category") and child.get_meta("component_category") == "card":
+				count += 1
+	realtime_client.send_broadcast("opponent_hand_updated", {
+		"player_name": Global.online_player_name,
+		"count": count
+	})
+
+func broadcast_action_log(text: String):
+	if is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.send_broadcast("action_logged", {
+			"text": text
+		})
+	_on_remote_action_logged(text)
+
+func _on_remote_action_logged(text: String):
+	if not is_instance_valid(action_log_vbox): return
+	var lbl = Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	action_log_vbox.add_child(lbl)
+	
+	# Auto scroll to bottom
+	await get_tree().process_frame
+	if is_instance_valid(action_log_scroll) and is_instance_valid(action_log_vbox):
+		action_log_scroll.scroll_vertical = int(action_log_vbox.size.y)
+
+func _on_opponent_hand_updated(player_name: String, count: int):
+	if player_name == Global.online_player_name: return
+	if not is_instance_valid(opponent_hand_container): return
+	
+	# Clear old cards
+	for child in opponent_hand_container.get_children():
+		child.queue_free()
+		
+	# Draw opponent's hand as mini face-down panels
+	for i in range(count):
+		var card_back = Panel.new()
+		card_back.custom_minimum_size = Vector2(50, 70)
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.15, 0.15, 0.25, 1.0)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(0.8, 0.8, 0.8, 1.0)
+		style.corner_radius_top_left = 4
+		style.corner_radius_top_right = 4
+		style.corner_radius_bottom_right = 4
+		style.corner_radius_bottom_left = 4
+		card_back.add_theme_stylebox_override("panel", style)
+		opponent_hand_container.add_child(card_back)
+
+func _on_realtime_connection_closed():
+	# Clean up room on disconnect if Host
+	if Global.online_player_role == "Host" and Global.online_room_id != "":
+		# Call API to update status to empty or deleted
+		SupabaseService.update_room_status(Global.online_room_id, "closed")
+	
+	# Alert user
+	var accept = AcceptDialog.new()
+	accept.title = "Disconnected"
+	accept.dialog_text = "การเชื่อมต่อกับเซิร์ฟเวอร์ห้องถูกปิดลงแล้ว"
+	add_child(accept)
+	accept.popup_centered()
+	accept.confirmed.connect(func(): _on_back_pressed())
 
 func _open_zone_settings(zone: Control):
 	current_editing_zone = zone
@@ -2615,6 +2744,9 @@ func _load_field_from_dict(layout_data: Dictionary):
 	field_canvas.size = Vector2(canvas_data.get("size_x", 1500), canvas_data.get("size_y", 1000))
 	field_canvas.custom_minimum_size = field_canvas.size
 	field_canvas.rotation_degrees = canvas_data.get("rotation_degrees", 0.0)
+	if Global.online_player_role == "Guest":
+		field_canvas.rotation_degrees += 180.0
+		field_canvas.pivot_offset = field_canvas.size / 2.0
 	field_canvas.set_meta("card_custom_width", canvas_data.get("card_custom_width", 0))
 	field_canvas.set_meta("card_custom_height", canvas_data.get("card_custom_height", 0))
 	field_canvas.set_meta("field_perms", canvas_data.get("field_perms", {"move": true, "play": true}))
@@ -2687,6 +2819,7 @@ func _load_field_from_dict(layout_data: Dictionary):
 			node.rotation_degrees = comp_data.get("rotation_degrees", 0.0)
 			node.name = "Component_" + str(comp_data.get("id"))
 			id_to_node[comp_data.get("id")] = node
+			_connect_draggable_signals(node)
 			
 	# 4. Second Pass: Reparent controls to subfields where parent_id is not -1
 	for comp_data in components_data:
@@ -2754,6 +2887,11 @@ func _load_field_from_dict(layout_data: Dictionary):
 			node.visible = not is_test_mode
 
 func _on_back_pressed():
+	if Global.online_room_id != "":
+		if Global.online_player_role == "Host":
+			SupabaseService.update_room_status(Global.online_room_id, "closed")
+		Global.online_room_id = ""
+		Global.online_player_role = ""
 	Global.main_menu_tab = "CUSTOM"
 	Global.switch_scene("res://scenes/MainMenu.tscn")
 
@@ -3237,8 +3375,14 @@ func _set_components_locked(node: Node, locked: bool):
 func _on_card_drag_ended(card: Control):
 	var cat = card.get_meta("component_category", "")
 	if cat == "deck":
+		var local_pos = card.position
+		local_pos.x = clamp(local_pos.x, 0.0, field_canvas.size.x - card.size.x)
+		local_pos.y = clamp(local_pos.y, 0.0, field_canvas.size.y - card.size.y)
+		card.position = local_pos
+		
 		if is_instance_valid(realtime_client) and realtime_client.is_connected:
-			realtime_client.broadcast_card_moved(card.name, card.position)
+			var canvas_local_pos = field_canvas.to_local(card.global_position)
+			realtime_client.broadcast_card_moved(card.name, canvas_local_pos)
 		return
 		
 	var from_deck_viewer = card.get_meta("from_deck_viewer", false)
@@ -3364,6 +3508,11 @@ func _on_card_drag_ended(card: Control):
 	if not handled:
 		# ถ้าวางบนสนามเปล่าๆ ให้การ์ดมีขนาดการ์ดมาตรฐาน (หรือ custom size ของ field)
 		_apply_card_size(card, field_canvas, null)
+		# Clamp position within field_canvas bounds
+		var local_pos = card.position
+		local_pos.x = clamp(local_pos.x, 0.0, field_canvas.size.x - card.size.x)
+		local_pos.y = clamp(local_pos.y, 0.0, field_canvas.size.y - card.size.y)
+		card.position = local_pos
 			
 	var prev_zone = card.get_meta("current_hovered_zone", null)
 	if prev_zone:
@@ -3372,19 +3521,28 @@ func _on_card_drag_ended(card: Control):
 	_highlight_card(card, false)
 	
 	if is_instance_valid(realtime_client) and realtime_client.is_connected and is_instance_valid(card) and not card.get_meta("in_hand", false):
+		var canvas_local_pos = field_canvas.to_local(card.global_position)
 		if was_in_hand:
+			var card_data = card.get_meta("card_data", {})
+			var card_path = card_data.get("file_path", "")
+			if card_path == "":
+				card_path = card_data.get("image_path", "")
 			realtime_client.send_broadcast("card_spawned", {
 				"card_name": card.name,
-				"card_data": card.get_meta("card_data", {}),
-				"x": card.position.x,
-				"y": card.position.y
+				"card_path": card_path,
+				"card_data": card_data,
+				"x": canvas_local_pos.x,
+				"y": canvas_local_pos.y
 			})
+			update_local_hand_count()
+			broadcast_action_log("%s เล่นการ์ด (%s) ลงสนาม" % [Global.online_player_name, card_data.get("name", "Unknown Card")])
 		else:
-			realtime_client.broadcast_card_moved(card.name, card.position)
+			realtime_client.broadcast_card_moved(card.name, canvas_local_pos)
 
 func _on_card_drag_moved(card: Control):
 	if is_instance_valid(realtime_client) and realtime_client.is_connected:
-		realtime_client.broadcast_card_moved(card.name, card.position)
+		var canvas_local_pos = field_canvas.to_local(card.global_position)
+		realtime_client.broadcast_card_moved(card.name, canvas_local_pos)
 		
 	if not is_test_mode: return
 	
@@ -3461,9 +3619,14 @@ func _on_card_drag_moved(card: Control):
 
 func _on_card_drag_started(card: Control):
 	Global.play_sfx("res://SFX/Draw sfx.ogg")
-	# ถ้าการ์ดอยู่บนมือ ไม่ต้องทำอะไร — ให้อยู่ใน hand_zone ระหว่าง drag
-	# (field size จะถูกคืนตอน drop ใน _on_card_drag_ended เหมือนกับที่ deck ทำ)
 	if card.get_meta("in_hand", false): return
+	
+	# Reparent to field_canvas so it can move freely across the whole green board
+	if card.get_parent() != field_canvas:
+		var g_pos = card.global_position
+		card.get_parent().remove_child(card)
+		field_canvas.add_child(card)
+		card.global_position = g_pos
 
 func _add_card_to_hand(card: Control):
 	card.set_meta("in_hand", true)
@@ -3495,6 +3658,7 @@ func _add_card_to_hand(card: Control):
 			hand_zone.add_child(card)
 			
 	_update_hand_zone_sizing.call_deferred()
+	update_local_hand_count()
 
 func _handle_hand_reorder(dragged_card: Control):
 	if not hand_zone: return
@@ -3683,6 +3847,7 @@ func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
 	Global.play_sfx("res://SFX/Throw Card.ogg", -3.0, 1.4)
 	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
 		realtime_client.broadcast_card_flipped(card.name, is_down)
+		broadcast_action_log("%s พลิกการ์ด (%s)" % [Global.online_player_name, "คว่ำ" if is_down else "หงาย"])
 	if is_down:
 		if not card.has_node("CardBack"):
 			var back = ColorRect.new()
@@ -3830,6 +3995,8 @@ func _on_deck_left_clicked(deck_obj: Control):
 	
 	hand_zone.add_child(card)
 	_update_hand_zone_sizing.call_deferred()
+	update_local_hand_count()
+	broadcast_action_log("%s จั่วการ์ด 1 ใบ" % Global.online_player_name)
 	
 	# Play flip animation midway during translation
 	var scale_tween = get_tree().create_tween()
@@ -4109,6 +4276,7 @@ func _toggle_card_tap(card: Control, broadcast: bool = true):
 	
 	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
 		realtime_client.broadcast_card_tapped(card.name, target_rot != 0.0)
+		broadcast_action_log("%s เอียงการ์ด (%s)" % [Global.online_player_name, "Tap" if target_rot != 0.0 else "Untap"])
 
 func _send_card_to_deck(card: Control, to_top: bool):
 	var closest_deck: Control = null
@@ -4148,6 +4316,8 @@ func _insert_card_into_deck(card: Control, deck: Control, to_top: bool, broadcas
 				"deck_name": deck.name,
 				"to_top": to_top
 			})
+		if broadcast:
+			broadcast_action_log("%s เอาการ์ดคืนเข้ากองเด็ค (%s)" % [Global.online_player_name, deck.name])
 		
 		# อนิมเมจย่อการ์ดหายวาบเข้ากองเด็ค
 		var tween = create_tween()
@@ -4173,6 +4343,9 @@ func _shuffle_deck_programmatically(deck: Control, broadcast: bool = true):
 		
 		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
 			realtime_client.broadcast_deck_shuffled(deck.name)
+		
+		if broadcast:
+			broadcast_action_log("%s สับกองเด็ค (%s)" % [Global.online_player_name, deck.name])
 		
 		# เล่น Visual Effect กระพริบเบาๆ
 		var original_color = deck.modulate
@@ -4203,6 +4376,9 @@ func _shuffle_zone_pile(zone: Control, broadcast: bool = true):
 			realtime_client.send_broadcast("zone_shuffled", {
 				"zone_name": zone.name
 			})
+			
+		if broadcast:
+			broadcast_action_log("%s สับกองการ์ดในโซน (%s)" % [Global.online_player_name, zone.name])
 			
 		var original_color = zone.color
 		var tween = create_tween()
@@ -5085,11 +5261,13 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			if deck_viewer_grid.has_method("update_layout"):
 				deck_viewer_grid.update_layout(true)
 
-# --- ONLINE MULTIPLAYER REALTIME RECEIVERS ---
 func _on_remote_card_moved(card_name: String, pos: Vector2):
+	print("[Realtime UI] Remote card moved: ", card_name, " to pos: ", pos)
 	var node = field_canvas.find_child(card_name, true, false)
 	if is_instance_valid(node):
 		node.position = pos
+	else:
+		print("[Realtime UI]   Warning: Card not found for move: ", card_name)
 
 func _on_remote_card_flipped(card_name: String, is_down: bool):
 	var node = field_canvas.find_child(card_name, true, false)
@@ -5109,13 +5287,36 @@ func _on_remote_deck_shuffled(deck_name: String):
 	if is_instance_valid(node):
 		_shuffle_deck_programmatically(node, false)
 
-func _on_remote_card_spawned(card_name: String, card_data: Dictionary, pos: Vector2):
+func _on_remote_card_spawned(card_name: String, card_path: String, pos: Vector2):
+	print("[Realtime UI] Remote card spawned: ", card_name, " path: ", card_path, " pos: ", pos)
 	var node = field_canvas.find_child(card_name, true, false)
 	if not is_instance_valid(node):
+		var card_data = {}
+		if card_path != "":
+			if FileAccess.file_exists(card_path):
+				var json_str = FileAccess.get_file_as_string(card_path)
+				var json = JSON.new()
+				if json.parse(json_str) == OK:
+					card_data = json.get_data()
+					card_data["file_path"] = card_path
+			elif SupabaseService.card_cache.has(card_path):
+				var row = SupabaseService.card_cache[card_path]
+				card_data = row.get("stats", {}).duplicate()
+				card_data["name"] = row.get("name", "Untitled")
+				card_data["image_path"] = row.get("image_url", "")
+				card_data["file_path"] = row.get("id", "")
+				card_data["id"] = row.get("id", "")
+			else:
+				card_data["image_url"] = card_path
+				card_data["name"] = "Card"
+				
 		var new_card = spawn_card_object(card_data, true)
 		if new_card:
 			new_card.name = card_name
 			new_card.position = pos
+			print("[Realtime UI]   Card spawned successfully: ", card_name, " pos: ", new_card.position)
+	else:
+		print("[Realtime UI]   Warning: Card already exists on spawn: ", card_name)
 
 func _on_remote_card_sent_to_hand(card_name: String):
 	var node = field_canvas.find_child(card_name, true, false)
@@ -5141,3 +5342,12 @@ func _on_remote_zone_shuffled(zone_name: String):
 	var zone = field_canvas.find_child(zone_name, true, false)
 	if is_instance_valid(zone):
 		_shuffle_zone_pile(zone, false)
+
+func _connect_draggable_signals(node: Control):
+	if not is_instance_valid(node): return
+	if node.has_signal("drag_moved") and not node.drag_moved.is_connected(_on_card_drag_moved):
+		node.drag_moved.connect(func(): _on_card_drag_moved(node))
+	if node.has_signal("drag_ended") and not node.drag_ended.is_connected(_on_card_drag_ended):
+		node.drag_ended.connect(func(): _on_card_drag_ended(node))
+	if node.has_signal("drag_started") and not node.drag_started.is_connected(_on_card_drag_started):
+		node.drag_started.connect(func(): _on_card_drag_started(node))

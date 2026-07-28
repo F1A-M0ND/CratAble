@@ -7,11 +7,14 @@ signal deck_shuffled(deck_name: String)
 signal connection_established()
 signal connection_closed()
 
-signal card_spawned(card_name: String, card_data: Dictionary, position: Vector2)
+signal card_spawned(card_name: String, card_path: String, position: Vector2)
 signal card_sent_to_hand(card_name: String)
 signal card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool)
 signal deck_drawn(deck_name: String)
 signal zone_shuffled(zone_name: String)
+signal opponent_hand_updated(player_name: String, count: int)
+signal action_logged(text: String)
+signal player_joined(player_name: String, role: String)
 
 var socket = WebSocketPeer.new()
 var is_connected = false
@@ -143,6 +146,7 @@ func _handle_message(text: String):
 		var payload_wrapper = msg.get("payload", {})
 		var broadcast_event = payload_wrapper.get("event", "")
 		var inner_payload = payload_wrapper.get("payload", {})
+		print("[Realtime] Received broadcast event: ", broadcast_event)
 		
 		match broadcast_event:
 			"card_moved":
@@ -163,10 +167,13 @@ func _handle_message(text: String):
 				deck_shuffled.emit(d_name)
 			"card_spawned":
 				var c_name = inner_payload.get("card_name", "")
-				var c_data = inner_payload.get("card_data", {})
+				var c_path = inner_payload.get("card_path", "")
+				if c_path == "":
+					var c_data = inner_payload.get("card_data", {})
+					c_path = c_data.get("file_path", c_data.get("image_path", ""))
 				var x = inner_payload.get("x", 0.0)
 				var y = inner_payload.get("y", 0.0)
-				card_spawned.emit(c_name, c_data, Vector2(x, y))
+				card_spawned.emit(c_name, c_path, Vector2(x, y))
 			"card_sent_to_hand":
 				var c_name = inner_payload.get("card_name", "")
 				card_sent_to_hand.emit(c_name)
@@ -181,3 +188,14 @@ func _handle_message(text: String):
 			"zone_shuffled":
 				var z_name = inner_payload.get("zone_name", "")
 				zone_shuffled.emit(z_name)
+			"opponent_hand_updated":
+				var p_name = inner_payload.get("player_name", "")
+				var count = inner_payload.get("count", 0)
+				opponent_hand_updated.emit(p_name, count)
+			"action_logged":
+				var txt = inner_payload.get("text", "")
+				action_logged.emit(txt)
+			"player_joined":
+				var p_name = inner_payload.get("player_name", "")
+				var role = inner_payload.get("role", "")
+				player_joined.emit(p_name, role)
