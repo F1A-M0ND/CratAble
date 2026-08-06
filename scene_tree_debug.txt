@@ -1,0 +1,173 @@
+root (Window)
+  Global (Node)
+    @Timer@6 (Timer)
+  CardInspector (CanvasLayer)
+    Background (ColorRect) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+    MainLayout (HBoxContainer) pos: (80.0, 80.0) gpos: (80.0, 80.0) size: (1760.0, 920.0) scale: (1.0, 1.0) vis: true
+      CardImage (TextureRect) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+      DetailsPanel (PanelContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (71.0, 60.0) scale: (1.0, 1.0) vis: true
+        Margin (MarginContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (71.0, 60.0) scale: (1.0, 1.0) vis: true
+          Scroll (ScrollContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (11.0, 0.0) scale: (1.0, 1.0) vis: true
+            DetailsVBox (VBoxContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (3.0, 122.0) scale: (1.0, 1.0) vis: true
+              NameLabel (Label) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (1.0, 58.0) scale: (1.0, 1.0) vis: true
+              HSeparator (HSeparator) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (3.0, 4.0) scale: (1.0, 1.0) vis: true
+              StatsGrid (GridContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+              TagsFlow (HFlowContainer) pos: (0.0, 0.0) gpos: (80.0, 80.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+    CloseBtn (Button) pos: (1850.0, 30.0) gpos: (1850.0, 30.0) size: (40.0, 47.0) scale: (1.0, 1.0) vis: true
+    FullscreenViewer (Control) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: false
+      DarkBg (ColorRect) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+      ZoomContainer (Control) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+        ZoomImage (TextureRect) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+      ViewerCloseBtn (Button) pos: (1820.0, 30.0) gpos: (1820.0, 30.0) size: (70.0, 42.0) scale: (1.0, 1.0) vis: true
+  SupabaseService (Node)
+  FieldCreator (Control) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+    Header (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 50.0) scale: (1.0, 1.0) vis: true
+      BackBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (101.0, 50.0) scale: (1.0, 1.0) vis: true
+      Title (Label) pos: (105.0, 13.0) gpos: (105.0, 13.0) size: (1815.0, 23.0) scale: (1.0, 1.0) vis: true
+      @Button@168 (Button) pos: (1756.0, 0.0) gpos: (1756.0, 0.0) size: (171.0, 50.0) scale: (1.0, 1.0) vis: false
+    HBoxContainer (HBoxContainer) pos: (0.0, 50.0) gpos: (0.0, 50.0) size: (1920.0, 1030.0) scale: (1.0, 1.0) vis: true
+      LeftSide (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (176.0, 336.0) scale: (1.0, 1.0) vis: false
+        Label (Label) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (116.0, 23.0) scale: (1.0, 1.0) vis: true
+        @HSeparator@169 (HSeparator) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (3.0, 4.0) scale: (1.0, 1.0) vis: true
+        @Label@170 (Label) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (91.0, 26.0) scale: (1.0, 1.0) vis: true
+        @Button@171 (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (151.0, 31.0) scale: (1.0, 1.0) vis: true
+        AssetContainer (Panel) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+          ItemList (ItemList) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+        @HSeparator@192 (HSeparator) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (3.0, 4.0) scale: (1.0, 1.0) vis: true
+        AddFieldZoneBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (122.0, 31.0) scale: (1.0, 1.0) vis: true
+        ImportAssetBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (176.0, 31.0) scale: (1.0, 1.0) vis: true
+        AddZoneBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (122.0, 31.0) scale: (1.0, 1.0) vis: true
+        AddDeckZoneBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (124.0, 31.0) scale: (1.0, 1.0) vis: true
+        AddDiceBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (112.0, 31.0) scale: (1.0, 1.0) vis: true
+        AddCounterBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (106.0, 31.0) scale: (1.0, 1.0) vis: true
+        SaveFieldBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (85.0, 31.0) scale: (1.0, 1.0) vis: true
+        LoadFieldBtn (Button) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (87.0, 31.0) scale: (1.0, 1.0) vis: true
+      RightSide (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (1920.0, 1030.0) scale: (1.0, 1.0) vis: true
+        TabletopPreview (Panel) pos: (0.0, 0.0) gpos: (0.0, 50.0) size: (1920.0, 1030.0) scale: (1.0, 1.0) vis: true
+          @ColorRect@197 (ColorRect) pos: (50.0, 50.0) gpos: (425.0, 350.0) size: (1500.0, 1000.0) scale: (0.5, 0.5) vis: true
+            @ReferenceRect@193 (ReferenceRect) pos: (0.0, 0.0) gpos: (425.0, 350.0) size: (1500.0, 1000.0) scale: (1.0, 1.0) vis: false
+            @Button@194 (Button) pos: (10.0, 10.0) gpos: (430.0, 355.0) size: (71.0, 31.0) scale: (1.0, 1.0) vis: false
+            @ColorRect@195 (ColorRect) pos: (1484.0, 984.0) gpos: (1167.0, 842.0) size: (16.0, 16.0) scale: (1.0, 1.0) vis: false
+            @ColorRect@196 (ColorRect) pos: (0.0, 984.0) gpos: (425.0, 842.0) size: (16.0, 16.0) scale: (1.0, 1.0) vis: false
+            Deck_Mock (Control) pos: (0.0, 0.0) gpos: (425.0, 350.0) size: (150.0, 210.0) scale: (1.0, 1.0) vis: true
+            Card_422141 (TextureRect) pos: (750.0, 500.0) gpos: (800.0, 600.0) size: (150.0, 210.0) scale: (1.0, 1.0) vis: true in_hand: false
+              @Label@463 (Label) pos: (0.0, 210.0) gpos: (800.0, 705.0) size: (150.0, 30.0) scale: (1.0, 1.0) vis: false
+              DragHighlight (ReferenceRect) pos: (0.0, 0.0) gpos: (800.0, 600.0) size: (150.0, 210.0) scale: (1.0, 1.0) vis: false
+              @ColorRect@464 (ColorRect) pos: (0.0, 194.0) gpos: (800.0, 697.0) size: (16.0, 16.0) scale: (1.0, 1.0) vis: false
+              @Button@465 (Button) pos: (138.0, -12.0) gpos: (869.0, 594.0) size: (24.0, 24.0) scale: (1.0, 1.0) vis: false
+    @FileDialog@147 (FileDialog)
+    @ConfirmationDialog@163 (ConfirmationDialog)
+      @VBoxContainer@160 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (341.0, 277.0) scale: (1.0, 1.0) vis: true
+        @Label@156 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (341.0, 23.0) scale: (1.0, 1.0) vis: true
+        @ItemList@159 (ItemList) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (0.0, 250.0) scale: (1.0, 1.0) vis: true
+    HandScroll (Control) pos: (0.0, 920.0) gpos: (0.0, 920.0) size: (1920.0, 160.0) scale: (1.0, 1.0) vis: true
+      HandBg (ColorRect) pos: (0.0, 0.0) gpos: (0.0, 920.0) size: (1920.0, 160.0) scale: (1.0, 1.0) vis: true
+      ResizeHandle (Control) pos: (0.0, 0.0) gpos: (0.0, 920.0) size: (1920.0, 8.0) scale: (1.0, 1.0) vis: true
+        @ColorRect@166 (ColorRect) pos: (0.0, 0.0) gpos: (0.0, 920.0) size: (1920.0, 8.0) scale: (1.0, 1.0) vis: true
+        @Label@167 (Label) pos: (0.0, 0.0) gpos: (0.0, 920.0) size: (1920.0, 12.0) scale: (1.0, 1.0) vis: true
+      CollapseBar (Button) pos: (0.0, 8.0) gpos: (0.0, 928.0) size: (1920.0, 24.0) scale: (1.0, 1.0) vis: true
+      HandZone (Control) pos: (0.0, 32.0) gpos: (0.0, 952.0) size: (1920.0, 128.0) scale: (1.0, 1.0) vis: true
+      HandHScroll (HScrollBar) pos: (0.0, 146.0) gpos: (0.0, 1066.0) size: (1920.0, 14.0) scale: (1.0, 1.0) vis: false
+    DragLayer (Control) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (1920.0, 1080.0) scale: (1.0, 1.0) vis: true
+    @PopupMenu@179 (PopupMenu)
+    @ConfirmationDialog@191 (ConfirmationDialog)
+      @ItemList@190 (ItemList) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (400.0, 300.0) scale: (1.0, 1.0) vis: true
+    @PopupMenu@205 (PopupMenu)
+    @ConfirmationDialog@220 (ConfirmationDialog)
+      @VBoxContainer@219 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (600.0, 400.0) scale: (1.0, 1.0) vis: true
+        @ScrollContainer@217 (ScrollContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (580.0, 350.0) scale: (1.0, 1.0) vis: true
+          @GridContainer@216 (GridContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@218 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (143.0, 31.0) scale: (1.0, 1.0) vis: true
+          ShuffleCheck (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (143.0, 31.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@258 (ConfirmationDialog)
+      @VBoxContainer@257 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (361.0, 171.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@231 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (123.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@229 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (51.0, 23.0) scale: (1.0, 1.0) vis: true
+          @LineEdit@230 (LineEdit) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (68.5, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@239 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (265.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@232 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (85.0, 23.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@235 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@238 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@244 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (182.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@240 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (92.0, 23.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@243 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@248 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (334.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@245 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (98.0, 23.0) scale: (1.0, 1.0) vis: true
+          @CheckBox@246 (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (119.0, 31.0) scale: (1.0, 1.0) vis: true
+          @CheckBox@247 (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (109.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@256 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (361.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@249 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (181.0, 23.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@252 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@255 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@310 (ConfirmationDialog)
+      @VBoxContainer@309 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (248.0, 171.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@277 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (201.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@267 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (84.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@276 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (113.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@288 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (151.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@278 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (69.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@287 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (78.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@299 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (165.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@289 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (45.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@298 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (116.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@302 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (212.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@300 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (91.0, 23.0) scale: (1.0, 1.0) vis: true
+          @CheckBox@301 (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (117.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@308 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (248.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@303 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.0, 23.0) scale: (1.0, 1.0) vis: true
+          @CheckBox@304 (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (68.0, 31.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@307 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@367 (ConfirmationDialog)
+      @VBoxContainer@366 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (244.0, 206.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@321 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (155.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@319 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (51.0, 23.0) scale: (1.0, 1.0) vis: true
+          @LineEdit@320 (LineEdit) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (100.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@332 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (177.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@322 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (83.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@331 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (90.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@337 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (199.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@333 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (109.0, 23.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@336 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@343 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (244.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@338 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (85.0, 23.0) scale: (1.0, 1.0) vis: true
+          @CheckBox@339 (CheckBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (65.0, 31.0) scale: (1.0, 1.0) vis: true
+          @SpinBox@342 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@354 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (212.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@344 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (95.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@353 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (113.0, 31.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@365 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (142.0, 31.0) scale: (1.0, 1.0) vis: true
+          @Label@355 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (71.0, 23.0) scale: (1.0, 1.0) vis: true
+          @OptionButton@364 (OptionButton) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (67.0, 31.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@379 (ConfirmationDialog)
+      @VBoxContainer@378 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (138.0, 58.0) scale: (1.0, 1.0) vis: true
+        @Label@376 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (138.0, 23.0) scale: (1.0, 1.0) vis: true
+        @LineEdit@377 (LineEdit) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (68.5, 31.0) scale: (1.0, 1.0) vis: true
+    @PopupMenu@387 (PopupMenu)
+    @ConfirmationDialog@399 (ConfirmationDialog)
+      @VBoxContainer@398 (VBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (128.0, 58.0) scale: (1.0, 1.0) vis: true
+        @Label@396 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (128.0, 23.0) scale: (1.0, 1.0) vis: true
+        @LineEdit@397 (LineEdit) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (68.5, 31.0) scale: (1.0, 1.0) vis: true
+    @PopupMenu@407 (PopupMenu)
+    @ConfirmationDialog@421 (ConfirmationDialog)
+      @HBoxContainer@420 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (287.0, 31.0) scale: (1.0, 1.0) vis: true
+        @Label@416 (Label) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (197.0, 23.0) scale: (1.0, 1.0) vis: true
+        @SpinBox@419 (SpinBox) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (86.5, 31.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@434 (ConfirmationDialog)
+      @ScrollContainer@433 (ScrollContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (680.0, 280.0) scale: (1.0, 1.0) vis: true
+        @HBoxContainer@432 (HBoxContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+    @ConfirmationDialog@447 (ConfirmationDialog)
+      @ScrollContainer@446 (ScrollContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (580.0, 330.0) scale: (1.0, 1.0) vis: true
+        @GridContainer@445 (GridContainer) pos: (0.0, 0.0) gpos: (0.0, 0.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+    DeckViewerPanel (PanelContainer) pos: (960.0, 540.0) gpos: (960.0, 540.0) size: (760.0, 520.0) scale: (1.0, 1.0) vis: false
+      @MarginContainer@448 (MarginContainer) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (744.0, 482.0) scale: (1.0, 1.0) vis: true
+        @VBoxContainer@449 (VBoxContainer) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (720.0, 458.0) scale: (1.0, 1.0) vis: true
+          @HBoxContainer@452 (HBoxContainer) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (331.0, 26.0) scale: (1.0, 1.0) vis: true
+            @Label@450 (Label) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (107.0, 26.0) scale: (1.0, 1.0) vis: true
+            @Label@451 (Label) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (220.0, 17.0) scale: (1.0, 1.0) vis: true
+          @HSeparator@453 (HSeparator) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (3.0, 4.0) scale: (1.0, 1.0) vis: true
+          @ScrollContainer@457 (ScrollContainer) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (720.0, 360.0) scale: (1.0, 1.0) vis: true
+            @Control@456 (Control) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (0.0, 0.0) scale: (1.0, 1.0) vis: true
+          @HSeparator@458 (HSeparator) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (3.0, 4.0) scale: (1.0, 1.0) vis: true
+          @HBoxContainer@461 (HBoxContainer) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (190.0, 32.0) scale: (1.0, 1.0) vis: true
+            @Button@459 (Button) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (90.0, 32.0) scale: (1.0, 1.0) vis: true
+            @Button@460 (Button) pos: (0.0, 0.0) gpos: (960.0, 540.0) size: (90.0, 32.0) scale: (1.0, 1.0) vis: true

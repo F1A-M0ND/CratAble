@@ -452,6 +452,11 @@ func _ready():
 	_init_tabletop_popup_menu()
 	_init_tabletop_viewers()
 	
+	
+	
+	if "--auto-test" in OS.get_cmdline_args():
+		_run_auto_test_mode()
+		
 	if Global.play_mode:
 		# Configure UI and signals for Play Mode
 		$HBoxContainer/LeftSide.hide()
@@ -3374,6 +3379,8 @@ func _set_components_locked(node: Node, locked: bool):
 
 func _on_card_drag_ended(card: Control):
 	var cat = card.get_meta("component_category", "")
+	if is_instance_valid(realtime_client):
+		realtime_client.log_to_file("[Drag Ended] Started for card: " + card.name + " cat: " + cat)
 	if cat == "deck":
 		var local_pos = card.position
 		local_pos.x = clamp(local_pos.x, 0.0, field_canvas.size.x - card.size.x)
@@ -3381,11 +3388,13 @@ func _on_card_drag_ended(card: Control):
 		card.position = local_pos
 		
 		if is_instance_valid(realtime_client) and realtime_client.is_connected:
-			var canvas_local_pos = field_canvas.to_local(card.global_position)
+			var canvas_local_pos = field_canvas.get_global_transform().affine_inverse() * card.global_position
 			realtime_client.broadcast_card_moved(card.name, canvas_local_pos)
 		return
 		
 	var from_deck_viewer = card.get_meta("from_deck_viewer", false)
+	if is_instance_valid(realtime_client):
+		realtime_client.log_to_file("[Drag Ended]   is_test_mode: " + str(is_test_mode) + " from_deck_viewer: " + str(from_deck_viewer))
 	if not is_test_mode and not from_deck_viewer: return
 	if card.has_meta("from_deck_viewer"):
 		card.remove_meta("from_deck_viewer")
@@ -3514,14 +3523,16 @@ func _on_card_drag_ended(card: Control):
 		local_pos.y = clamp(local_pos.y, 0.0, field_canvas.size.y - card.size.y)
 		card.position = local_pos
 			
-	var prev_zone = card.get_meta("current_hovered_zone", null)
+	var prev_zone = null
+	if card.has_meta("current_hovered_zone"):
+		prev_zone = card.get_meta("current_hovered_zone")
 	if prev_zone:
 		_clear_zone_highlight(prev_zone)
 		card.set_meta("current_hovered_zone", null)
 	_highlight_card(card, false)
 	
 	if is_instance_valid(realtime_client) and realtime_client.is_connected and is_instance_valid(card) and not card.get_meta("in_hand", false):
-		var canvas_local_pos = field_canvas.to_local(card.global_position)
+		var canvas_local_pos = field_canvas.get_global_transform().affine_inverse() * card.global_position
 		if was_in_hand:
 			var card_data = card.get_meta("card_data", {})
 			var card_path = card_data.get("file_path", "")
@@ -3530,7 +3541,6 @@ func _on_card_drag_ended(card: Control):
 			realtime_client.send_broadcast("card_spawned", {
 				"card_name": card.name,
 				"card_path": card_path,
-				"card_data": card_data,
 				"x": canvas_local_pos.x,
 				"y": canvas_local_pos.y
 			})
@@ -3541,7 +3551,7 @@ func _on_card_drag_ended(card: Control):
 
 func _on_card_drag_moved(card: Control):
 	if is_instance_valid(realtime_client) and realtime_client.is_connected:
-		var canvas_local_pos = field_canvas.to_local(card.global_position)
+		var canvas_local_pos = field_canvas.get_global_transform().affine_inverse() * card.global_position
 		realtime_client.broadcast_card_moved(card.name, canvas_local_pos)
 		
 	if not is_test_mode: return
@@ -3619,14 +3629,6 @@ func _on_card_drag_moved(card: Control):
 
 func _on_card_drag_started(card: Control):
 	Global.play_sfx("res://SFX/Draw sfx.ogg")
-	if card.get_meta("in_hand", false): return
-	
-	# Reparent to field_canvas so it can move freely across the whole green board
-	if card.get_parent() != field_canvas:
-		var g_pos = card.global_position
-		card.get_parent().remove_child(card)
-		field_canvas.add_child(card)
-		card.global_position = g_pos
 
 func _add_card_to_hand(card: Control):
 	card.set_meta("in_hand", true)
@@ -3754,7 +3756,9 @@ func _update_hand_zone_sizing():
 		if card.get("dragging"):
 			continue
 			
-		var prev_tween = card.get_meta("hand_tween", null)
+		var prev_tween = null
+		if card.has_meta("hand_tween"):
+			prev_tween = card.get_meta("hand_tween")
 		if prev_tween and prev_tween.is_valid():
 			prev_tween.kill()
 			
@@ -3930,7 +3934,7 @@ func _create_deck_out_overlay() -> Control:
 	overlay.add_child(lbl)
 	return overlay
 
-func _on_deck_left_clicked(deck_obj: Control):
+func _on_deck_left_clicked(deck_obj: Control, broadcast: bool = true):
 	print("[Deck Click] Left clicked deck: ", deck_obj.name)
 	if not is_test_mode:
 		print("[Deck Click]   Ignored: is_test_mode is false")
@@ -3949,7 +3953,7 @@ func _on_deck_left_clicked(deck_obj: Control):
 	deck_obj.set_meta("draw_pile", draw_pile)
 	_update_deck_count_label(deck_obj)
 	
-	if is_instance_valid(realtime_client) and realtime_client.is_connected:
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
 		realtime_client.send_broadcast("deck_draw", {
 			"deck_name": deck_obj.name
 		})
@@ -5262,12 +5266,14 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 				deck_viewer_grid.update_layout(true)
 
 func _on_remote_card_moved(card_name: String, pos: Vector2):
-	print("[Realtime UI] Remote card moved: ", card_name, " to pos: ", pos)
+	if is_instance_valid(realtime_client):
+		realtime_client.log_to_file("[Realtime UI] Remote card moved: " + card_name + " to pos: " + str(pos))
 	var node = field_canvas.find_child(card_name, true, false)
 	if is_instance_valid(node):
 		node.position = pos
 	else:
-		print("[Realtime UI]   Warning: Card not found for move: ", card_name)
+		if is_instance_valid(realtime_client):
+			realtime_client.log_to_file("[Realtime UI]   Warning: Card not found for move: " + card_name)
 
 func _on_remote_card_flipped(card_name: String, is_down: bool):
 	var node = field_canvas.find_child(card_name, true, false)
@@ -5288,7 +5294,8 @@ func _on_remote_deck_shuffled(deck_name: String):
 		_shuffle_deck_programmatically(node, false)
 
 func _on_remote_card_spawned(card_name: String, card_path: String, pos: Vector2):
-	print("[Realtime UI] Remote card spawned: ", card_name, " path: ", card_path, " pos: ", pos)
+	if is_instance_valid(realtime_client):
+		realtime_client.log_to_file("[Realtime UI] Remote card spawned: " + card_name + " path: " + card_path + " pos: " + str(pos))
 	var node = field_canvas.find_child(card_name, true, false)
 	if not is_instance_valid(node):
 		var card_data = {}
@@ -5314,9 +5321,11 @@ func _on_remote_card_spawned(card_name: String, card_path: String, pos: Vector2)
 		if new_card:
 			new_card.name = card_name
 			new_card.position = pos
-			print("[Realtime UI]   Card spawned successfully: ", card_name, " pos: ", new_card.position)
+			if is_instance_valid(realtime_client):
+				realtime_client.log_to_file("[Realtime UI]   Card spawned successfully: " + card_name + " pos: " + str(new_card.position))
 	else:
-		print("[Realtime UI]   Warning: Card already exists on spawn: ", card_name)
+		if is_instance_valid(realtime_client):
+			realtime_client.log_to_file("[Realtime UI]   Warning: Card already exists on spawn: " + card_name)
 
 func _on_remote_card_sent_to_hand(card_name: String):
 	var node = field_canvas.find_child(card_name, true, false)
@@ -5351,3 +5360,81 @@ func _connect_draggable_signals(node: Control):
 		node.drag_ended.connect(func(): _on_card_drag_ended(node))
 	if node.has_signal("drag_started") and not node.drag_started.is_connected(_on_card_drag_started):
 		node.drag_started.connect(func(): _on_card_drag_started(node))
+
+func _print_tree_recursive(node: Node, indent: String, file: FileAccess):
+	if not is_instance_valid(node): return
+	var details = ""
+	if node is Control:
+		details = " pos: " + str(node.position) + " gpos: " + str(node.global_position) + " size: " + str(node.size) + " scale: " + str(node.scale) + " vis: " + str(node.visible)
+		if node.has_meta("in_hand"):
+			details += " in_hand: " + str(node.get_meta("in_hand"))
+	elif node is CanvasItem:
+		details = " vis: " + str(node.visible)
+	file.store_line(indent + node.name + " (" + node.get_class() + ")" + details)
+	for child in node.get_children():
+		_print_tree_recursive(child, indent + "  ", file)
+
+func _run_auto_test_mode():
+	print("[Auto Test] Starting automated test...")
+	Global.play_mode = true
+	is_test_mode = true
+	
+	# Mock realtime_client
+	var mock_rt = Node.new()
+	var mock_script = GDScript.new()
+	mock_script.source_code = "extends Node\nvar is_connected = true\nfunc send_broadcast(event_name, payload):\n\tprint(\"[Mock Realtime] send_broadcast: \", event_name, \" payload: \", payload)\nfunc broadcast_card_moved(card_name, pos):\n\tprint(\"[Mock Realtime] broadcast_card_moved: \", card_name, \" pos: \", pos)\nfunc log_to_file(txt):\n\tprint(\"[Mock Realtime] log: \", txt)\n"
+	mock_script.reload()
+	mock_rt.set_script(mock_script)
+	realtime_client = mock_rt
+	
+	# Wait for a frame to let UI initialize
+	await get_tree().process_frame
+	await get_tree().create_timer(1.0).timeout
+	
+	# Spawn a mock deck
+	var mock_deck = Control.new()
+	mock_deck.name = "Deck_Mock"
+	mock_deck.set_meta("component_category", "deck")
+	mock_deck.set_meta("deck_confirmed", true)
+	mock_deck.set_meta("draw_pile", ["res://cards/Blade_Fairy.json", "res://cards/Blade_Fairy.json", "res://cards/Blade_Fairy.json"])
+	mock_deck.size = Vector2(150, 210)
+	field_canvas.add_child(mock_deck)
+	
+	# Draw a card!
+	_on_deck_left_clicked(mock_deck)
+	await get_tree().create_timer(1.0).timeout
+	
+	# Find the drawn card in hand
+	var cards_in_hand = hand_zone.get_children()
+	if cards_in_hand.size() > 0:
+		var card = cards_in_hand[0]
+		print("[Auto Test] Found card in hand: ", card.name)
+		
+		# 1. Drag and drop it back to hand zone
+		_on_card_drag_started(card)
+		await get_tree().create_timer(0.5).timeout
+		print("[Auto Test] Dropping back to hand...")
+		var hand_center = hand_scroll.get_global_rect().get_center()
+		get_viewport().warp_mouse(hand_center)
+		await get_tree().process_frame
+		_on_card_drag_ended(card)
+		await get_tree().create_timer(1.0).timeout
+		
+		# 2. Drag it out of hand onto the board
+		print("[Auto Test] Dragging out of hand onto board...")
+		_on_card_drag_started(card)
+		await get_tree().create_timer(0.5).timeout
+		var board_center = field_canvas.get_global_rect().get_center()
+		get_viewport().warp_mouse(board_center)
+		card.global_position = board_center
+		await get_tree().process_frame
+		_on_card_drag_ended(card)
+		
+	# Wait 2 seconds, then dump the tree and quit
+	await get_tree().create_timer(2.0).timeout
+	var file = FileAccess.open("res://scene_tree_debug.txt", FileAccess.WRITE)
+	if file:
+		_print_tree_recursive(get_tree().root, "", file)
+		file.close()
+	print("[Auto Test] Dumped scene tree to res://scene_tree_debug.txt. Quitting.")
+	get_tree().quit()

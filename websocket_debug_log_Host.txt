@@ -1,0 +1,345 @@
+--- New WebSocket Session Started ---
+21:09:24 [Host] - Connecting to Supabase Realtime: wss://oprwntnvhqxuhztuakdx.supabase.co/realtime/v1/websocket?apikey=sb_publishable_tF_5v38zwfSWh3S0Dh1Nwg_KRgzF-ay&vsn=1.0.0
+21:09:24 [Host] - WebSocket Connected! Joining channel: realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027
+21:09:24 [Host] - Sending broadcast: player_joined payload: { "player_name": "Host_122", "role": "Host" }
+21:09:24 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 (Host) เข้าร่วมเกมแล้ว" }
+21:09:24 [Host] - Incoming Raw: {"ref":"1","event":"phx_reply","payload":{"status":"ok","response":{"postgres_changes":[]}},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:24 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Host_122","role":"Host"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:24 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 (Host) เข้าร่วมเกมแล้ว"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:27 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Guest_879","role":"Guest"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:27 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_122", "count": 0 }
+21:09:27 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_879 (Guest) เข้าร่วมเกมแล้ว"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:27 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_122"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:29 [Host] - [Drag Ended] Started for card: Deck_385916 cat: deck
+21:09:29 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 566.222412109375, "y": 87.6323852539063 }
+21:09:29 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":566.222412109375,"y":87.6323852539063},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:29 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (566.2224, 87.63239)
+21:09:30 [Host] - [Drag Ended] Started for card: Deck_385916 cat: deck
+21:09:30 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 562.472412109375, "y": 82.3823852539063 }
+21:09:30 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":562.472412109375,"y":82.3823852539063},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:30 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (562.4724, 82.38239)
+21:09:31 [Host] - [Drag Ended] Started for card: Deck_385916 cat: deck
+21:09:31 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 558.722412109375, "y": 77.1323852539063 }
+21:09:31 [Host] - Sending broadcast: deck_draw payload: { "deck_name": &"Deck_385916" }
+21:09:31 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_126746", "is_down": true }
+21:09:31 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 พลิกการ์ด (คว่ำ)" }
+21:09:31 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_122", "count": 1 }
+21:09:31 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 จั่วการ์ด 1 ใบ" }
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":558.722412109375,"y":77.1323852539063},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (558.7224, 77.13239)
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_385916"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_126746","is_down":true},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_126746", "is_down": false }
+21:09:31 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 พลิกการ์ด (หงาย)" }
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Host_122"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_126746","is_down":false},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:31 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 972.159423828125, "y": 1183.80004882813 }
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 972.159423828125, "y": 1155.69580078125 }
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 1131.60668945313 }
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 1031.23486328125 }
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 962.982177734375 }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":972.159423828125,"y":1183.80004882813},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (972.1594, 1183.8)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 810.4169921875 }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":972.159423828125,"y":1155.69580078125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (972.1594, 1155.696)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":1131.60668945313},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 1131.607)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 609.673583984375 }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":1031.23486328125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 1031.235)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":962.982177734375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 962.9822)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":810.4169921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 810.417)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 525.361328125 }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":609.673583984375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 609.6736)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 976.167724609375, "y": 513.316650390625 }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":525.361328125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 525.3613)
+21:09:32 [Host] - [Realtime UI]   Warning: Card not found for move: Card_126746
+21:09:32 [Host] - [Drag Ended] Started for card: Card_126746 cat: card
+21:09:32 [Host] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+21:09:32 [Host] - Sending broadcast: card_spawned payload: { "card_name": &"Card_126746", "card_path": "9fbcc1dc-1a0a-48ad-85c2-63ac5fdb39a1", "x": 944.050048828125, "y": 531.33837890625 }
+21:09:32 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_122", "count": 0 }
+21:09:32 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 เล่นการ์ด (UntitledCard) ลงสนาม" }
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":976.167724609375,"y":513.316650390625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (976.1677, 513.3167)
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_126746","card_path":"9fbcc1dc-1a0a-48ad-85c2-63ac5fdb39a1","x":944.050048828125,"y":531.33837890625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - [Realtime UI] Remote card spawned: Card_126746 path: 9fbcc1dc-1a0a-48ad-85c2-63ac5fdb39a1 pos: (944.05, 531.3384)
+21:09:32 [Host] - [Realtime UI]   Warning: Card already exists on spawn: Card_126746
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_122"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:32 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:33 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 904.275634765625, "y": 508.066650390625 }
+21:09:33 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 784.025146484375, "y": 504.0517578125 }
+21:09:33 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 623.691162109375, "y": 479.962646484375 }
+21:09:33 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 555.549072265625, "y": 459.88818359375 }
+21:09:33 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":904.275634765625,"y":508.066650390625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:33 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (904.2756, 508.0667)
+21:09:33 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 459.348876953125, "y": 427.769287109375 }
+21:09:33 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":784.025146484375,"y":504.0517578125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:33 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (784.0251, 504.0518)
+21:09:33 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":623.691162109375,"y":479.962646484375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:33 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (623.6912, 479.9626)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":555.549072265625,"y":459.88818359375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (555.5491, 459.8882)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":459.348876953125,"y":427.769287109375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (459.3489, 427.7693)
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 447.323974609375, "y": 423.75439453125 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 427.281982421875, "y": 423.75439453125 }
+21:09:34 [Host] - [Drag Ended] Started for card: Card_126746 cat: card
+21:09:34 [Host] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 427.906982421875, "y": 424.62939453125 }
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":447.323974609375,"y":423.75439453125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (447.324, 423.7544)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":427.281982421875,"y":423.75439453125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (427.282, 423.7544)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":427.906982421875,"y":424.62939453125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (427.907, 424.6294)
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 424.156982421875, "y": 467.557861328125 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 424.156982421875, "y": 575.959228515625 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 408.123779296875, "y": 652.24169921875 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 404.115478515625, "y": 688.375732421875 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 400.107177734375, "y": 728.5244140625 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 392.090576171875, "y": 740.56884765625 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 392.090576171875, "y": 748.5986328125 }
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":424.156982421875,"y":467.557861328125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (424.157, 467.5579)
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 384.073486328125, "y": 748.5986328125 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 364.031982421875, "y": 776.702880859375 }
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 360.023681640625, "y": 784.732421875 }
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":424.156982421875,"y":575.959228515625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (424.157, 575.9592)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":408.123779296875,"y":652.24169921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (408.1238, 652.2417)
+21:09:34 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 343.989990234375, "y": 800.7919921875 }
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":404.115478515625,"y":688.375732421875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (404.1155, 688.3757)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":400.107177734375,"y":728.5244140625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (400.1072, 728.5244)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":392.090576171875,"y":740.56884765625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (392.0906, 740.5688)
+21:09:34 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":392.090576171875,"y":748.5986328125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:34 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (392.0906, 748.5986)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":384.073486328125,"y":748.5986328125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (384.0735, 748.5986)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":364.031982421875,"y":776.702880859375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (364.032, 776.7029)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":360.023681640625,"y":784.732421875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (360.0237, 784.7324)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 35.346923828125, "y": 764.658203125 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":343.989990234375,"y":800.7919921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (343.99, 800.792)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":35.346923828125,"y":764.658203125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (35.34692, 764.6582)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 35.346923828125, "y": 756.62841796875 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 35.346923828125, "y": 704.43505859375 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 35.346923828125, "y": 636.182373046875 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 51.380615234375, "y": 575.959228515625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":35.346923828125,"y":756.62841796875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (35.34692, 756.6284)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 79.439208984375, "y": 503.691650390625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":35.346923828125,"y":704.43505859375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (35.34692, 704.4351)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":35.346923828125,"y":636.182373046875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (35.34692, 636.1824)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 167.622802734375, "y": 395.2900390625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":51.380615234375,"y":575.959228515625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (51.38062, 575.9592)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":79.439208984375,"y":503.691650390625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (79.43921, 503.6917)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 211.714599609375, "y": 347.111572265625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":167.622802734375,"y":395.2900390625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (167.6228, 395.29)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 259.814697265625, "y": 319.007568359375 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 267.831298828125, "y": 314.99267578125 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 275.848388671875, "y": 306.962890625 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 287.873291015625, "y": 298.933349609375 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":211.714599609375,"y":347.111572265625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (211.7146, 347.1116)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 331.965087890625, "y": 270.8291015625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":259.814697265625,"y":319.007568359375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (259.8147, 319.0076)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":267.831298828125,"y":314.99267578125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (267.8313, 314.9927)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 452.215576171875, "y": 242.72509765625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":275.848388671875,"y":306.962890625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (275.8484, 306.9629)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":287.873291015625,"y":298.933349609375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (287.8733, 298.9333)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":331.965087890625,"y":270.8291015625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (331.9651, 270.8291)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 684.699951171875, "y": 230.680419921875 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":452.215576171875,"y":242.72509765625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (452.2156, 242.7251)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 728.791748046875, "y": 230.680419921875 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 748.833740234375, "y": 230.680419921875 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 752.842041015625, "y": 234.6953125 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":684.699951171875,"y":230.680419921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (684.7, 230.6804)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 776.891845703125, "y": 234.6953125 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 784.908935546875, "y": 242.72509765625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":728.791748046875,"y":230.680419921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (728.7917, 230.6804)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":748.833740234375,"y":230.680419921875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (748.8337, 230.6804)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 788.917236328125, "y": 242.72509765625 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":752.842041015625,"y":234.6953125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (752.842, 234.6953)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":776.891845703125,"y":234.6953125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (776.8918, 234.6953)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":784.908935546875,"y":242.72509765625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (784.9089, 242.7251)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 788.917236328125, "y": 298.933349609375 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":788.917236328125,"y":242.72509765625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (788.9172, 242.7251)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 788.917236328125, "y": 319.007568359375 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 784.908935546875, "y": 323.0224609375 }
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 776.891845703125, "y": 331.05224609375 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":788.917236328125,"y":298.933349609375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (788.9172, 298.9333)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 752.842041015625, "y": 351.12646484375 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":788.917236328125,"y":319.007568359375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (788.9172, 319.0076)
+21:09:35 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 724.783447265625, "y": 371.200927734375 }
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":784.908935546875,"y":323.0224609375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:35 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (784.9089, 323.0225)
+21:09:35 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":776.891845703125,"y":331.05224609375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (776.8918, 331.0522)
+21:09:36 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 720.775146484375, "y": 375.2158203125 }
+21:09:36 [Host] - [Drag Ended] Started for card: Card_126746 cat: card
+21:09:36 [Host] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+21:09:36 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_126746", "x": 724.525146484375, "y": 380.4658203125 }
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":752.842041015625,"y":351.12646484375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (752.842, 351.1265)
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":724.783447265625,"y":371.200927734375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (724.7834, 371.2009)
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":720.775146484375,"y":375.2158203125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (720.7751, 375.2158)
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_126746","x":724.525146484375,"y":380.4658203125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Card_126746 to pos: (724.5251, 380.4658)
+21:09:36 [Host] - [Drag Ended] Started for card: Deck_385916 cat: deck
+21:09:36 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 554.972412109375, "y": 71.8823852539063 }
+21:09:36 [Host] - Sending broadcast: deck_draw payload: { "deck_name": &"Deck_385916" }
+21:09:36 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_441825", "is_down": true }
+21:09:36 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 พลิกการ์ด (คว่ำ)" }
+21:09:36 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_122", "count": 1 }
+21:09:36 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 จั่วการ์ด 1 ใบ" }
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":554.972412109375,"y":71.8823852539063},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (554.9724, 71.88239)
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_385916"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_441825","is_down":true},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Host_122"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_441825", "is_down": false }
+21:09:36 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 พลิกการ์ด (หงาย)" }
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_441825","is_down":false},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:36 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 980.176513671875, "y": 1175.77026367188 }
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 992.201416015625, "y": 1131.60668945313 }
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1008.23510742188, "y": 1063.35400390625 }
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1008.23510742188, "y": 983.056640625 }
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1008.23510742188, "y": 902.75927734375 }
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1012.24340820313, "y": 766.253662109375 }
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":980.176513671875,"y":1175.77026367188},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (980.1765, 1175.77)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":992.201416015625,"y":1131.60668945313},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (992.2014, 1131.607)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1008.23510742188,"y":1063.35400390625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1008.235, 1063.354)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1064.35180664063, "y": 485.212646484375 }
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1008.23510742188,"y":983.056640625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1008.235, 983.0566)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1008.23510742188,"y":902.75927734375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1008.235, 902.7593)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1012.24340820313,"y":766.253662109375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1012.243, 766.2537)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - Sending broadcast: card_moved payload: { "card_name": "Card_441825", "x": 1088.40209960938, "y": 388.855712890625 }
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1064.35180664063,"y":485.212646484375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1064.352, 485.2126)
+21:09:37 [Host] - [Realtime UI]   Warning: Card not found for move: Card_441825
+21:09:37 [Host] - [Drag Ended] Started for card: Card_441825 cat: card
+21:09:37 [Host] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+21:09:37 [Host] - Sending broadcast: card_spawned payload: { "card_name": &"Card_441825", "card_path": "37a1755e-7ff9-4095-b94f-3b775c6e77fd", "x": 996.158935546875, "y": 258.3271484375 }
+21:09:37 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_122", "count": 0 }
+21:09:37 [Host] - Sending broadcast: action_logged payload: { "text": "Host_122 เล่นการ์ด (UntitledCard) ลงสนาม" }
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_441825","x":1088.40209960938,"y":388.855712890625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:37 [Host] - [Realtime UI] Remote card moved: Card_441825 to pos: (1088.402, 388.8557)
+21:09:37 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_441825","card_path":"37a1755e-7ff9-4095-b94f-3b775c6e77fd","x":996.158935546875,"y":258.3271484375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:38 [Host] - [Realtime UI] Remote card spawned: Card_441825 path: 37a1755e-7ff9-4095-b94f-3b775c6e77fd pos: (996.1589, 258.3271)
+21:09:38 [Host] - [Realtime UI]   Warning: Card already exists on spawn: Card_441825
+21:09:38 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_122"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:38 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_122 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 543.205810546875, "y": 66.6323852539063 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 539.197021484375, "y": 78.6769409179688 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 531.180419921875, "y": 94.7363891601563 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 523.163818359375, "y": 122.840515136719 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 515.147216796875, "y": 150.944641113281 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 503.122314453125, "y": 195.108215332031 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 491.096923828125, "y": 239.271789550781 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":543.205810546875,"y":66.6323852539063},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (543.2058, 66.63239)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":539.197021484375,"y":78.6769409179688},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (539.197, 78.67694)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":531.180419921875,"y":94.7363891601563},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (531.1804, 94.73639)
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 438.988525390625, "y": 347.673095703125 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":523.163818359375,"y":122.840515136719},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (523.1638, 122.8405)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":515.147216796875,"y":150.944641113281},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (515.1472, 150.9446)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":503.122314453125,"y":195.108215332031},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (503.1223, 195.1082)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":491.096923828125,"y":239.271789550781},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (491.0969, 239.2718)
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 334.771240234375, "y": 512.282958984375 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":438.988525390625,"y":347.673095703125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (438.9885, 347.6731)
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 326.754638671875, "y": 532.357177734375 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 318.738037109375, "y": 536.3720703125 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 318.738037109375, "y": 544.40185546875 }
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 314.729736328125, "y": 556.446533203125 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":334.771240234375,"y":512.282958984375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (334.7712, 512.283)
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 286.671142578125, "y": 592.580322265625 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":326.754638671875,"y":532.357177734375},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (326.7546, 532.3572)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":318.738037109375,"y":536.3720703125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (318.738, 536.3721)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":318.738037109375,"y":544.40185546875},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (318.738, 544.4019)
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 278.654541015625, "y": 612.654541015625 }
+21:09:47 [Host] - [Drag Ended] Started for card: Deck_385916 cat: deck
+21:09:47 [Host] - Sending broadcast: card_moved payload: { "card_name": "Deck_385916", "x": 278.654541015625, "y": 612.654541015625 }
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":314.729736328125,"y":556.446533203125},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (314.7297, 556.4465)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":286.671142578125,"y":592.580322265625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (286.6711, 592.5803)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":278.654541015625,"y":612.654541015625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (278.6545, 612.6545)
+21:09:47 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_385916","x":278.654541015625,"y":612.654541015625},"type":"broadcast"},"topic":"realtime:room_76111543-0a1f-4117-ab16-6cd00fac4027"}
+21:09:47 [Host] - [Realtime UI] Remote card moved: Deck_385916 to pos: (278.6545, 612.6545)
+21:09:54 [Host] - Incoming Raw: {"ref":"110","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+21:10:24 [Host] - Incoming Raw: {"ref":"111","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+21:10:54 [Host] - Incoming Raw: {"ref":"112","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+21:11:24 [Host] - Incoming Raw: {"ref":"113","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+21:11:54 [Host] - Incoming Raw: {"ref":"114","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+21:12:24 [Host] - Incoming Raw: {"ref":"115","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}

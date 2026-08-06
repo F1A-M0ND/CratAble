@@ -95,8 +95,8 @@ func _gui_input(event):
 				pivot_offset = size / 2.0
 				z_index = 1000
 				move_to_front()
-				drag_started.emit()
 				drag_offset = global_position - get_global_mouse_position()
+				drag_started.emit()
 			else:
 				if dragging:
 					dragging = false

@@ -1,0 +1,29 @@
+--- New WebSocket Session Started ---
+20:24:51 [Guest] - Connecting to Supabase Realtime: wss://oprwntnvhqxuhztuakdx.supabase.co/realtime/v1/websocket?apikey=sb_publishable_tF_5v38zwfSWh3S0Dh1Nwg_KRgzF-ay&vsn=1.0.0
+20:24:51 [Guest] - WebSocket Connected! Joining channel: realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74
+20:24:51 [Guest] - Sending broadcast: player_joined payload: { "player_name": "Guest_832", "role": "Guest" }
+20:24:51 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_832 (Guest) เข้าร่วมเกมแล้ว" }
+20:24:51 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Guest_832","role":"Guest"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:51 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_703", "count": 0 }
+_changes":[]}},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:51 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Guest_832","role":"Guest"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+-7ab9-4765-a58b-715a08a79f74"}
+20:24:51 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_832 (Guest) เข้าร่วมเกมแล้ว"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:52 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_703"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:52 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_703"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Host] - Sending broadcast: deck_draw payload: { "deck_name": &"Deck_872091" }
+20:24:55 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_295135", "is_down": true }
+20:24:55 [Host] - Sending broadcast: action_logged payload: { "text": "Host_703 พลิกการ์ด (คว่ำ)" }
+20:24:55 [Host] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Host_703", "count": 1 }
+20:24:55 [Host] - Sending broadcast: action_logged payload: { "text": "Host_703 จั่วการ์ด 1 ใบ" }
+20:24:55 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_872091"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_295135","is_down":true},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_703 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Host_703"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_703 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+
+20:24:55 [Host] - Sending broadcast: card_flipped payload: { "card_name": "Card_295135", "is_down": false }
+20:24:55 [Host] - Sending broadcast: action_logged payload: { "text": "Host_703 พลิกการ์ด (หงาย)" }
+20:24:55 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_295135","is_down":false},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+20:24:55 [Host] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_703 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_9b3bb3b1-7ab9-4765-a58b-715a08a79f74"}
+

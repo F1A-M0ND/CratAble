@@ -24,21 +24,39 @@ var channel_name = ""
 var heartbeat_timer: Timer
 var ref_id = 1
 
+func log_to_file(text: String):
+	print(text)
+	var path = "res://websocket_debug_log_" + Global.online_player_role + ".txt"
+	var f = FileAccess.open(path, FileAccess.READ_WRITE)
+	if not f:
+		f = FileAccess.open(path, FileAccess.WRITE)
+	if f:
+		f.seek_end()
+		f.store_line(str(Time.get_time_string_from_system()) + " [" + Global.online_player_role + "] - " + text)
+		f.close()
+
 func connect_to_room(room_uuid: String, key: String):
 	room_id = room_uuid
 	apikey = key
 	channel_name = "realtime:room_" + room_id
 	
 	var url = SupabaseService.SUPABASE_URL.replace("https://", "wss://") + "/realtime/v1/websocket?apikey=" + apikey + "&vsn=1.0.0"
-	print("Connecting to Supabase Realtime: ", url)
+	log_to_file("Connecting to Supabase Realtime: " + url)
 	var err = socket.connect_to_url(url)
 	if err != OK:
-		print("Failed to start connection to websocket URL")
+		log_to_file("Failed to start connection to websocket URL")
 		return
 		
 	set_process(true)
 
 func _ready():
+	# Clear previous log file on startup
+	var path = "res://websocket_debug_log_" + Global.online_player_role + ".txt"
+	var f = FileAccess.open(path, FileAccess.WRITE)
+	if f:
+		f.store_line("--- New WebSocket Session Started ---")
+		f.close()
+
 	set_process(false)
 	heartbeat_timer = Timer.new()
 	heartbeat_timer.wait_time = 30.0
@@ -53,7 +71,7 @@ func _process(delta):
 	if state == WebSocketPeer.STATE_OPEN:
 		if not is_connected:
 			is_connected = true
-			print("WebSocket Connected! Joining channel: ", channel_name)
+			log_to_file("WebSocket Connected! Joining channel: " + channel_name)
 			_join_channel()
 			heartbeat_timer.start()
 			connection_established.emit()
@@ -67,7 +85,7 @@ func _process(delta):
 		if is_connected:
 			is_connected = false
 			heartbeat_timer.stop()
-			print("WebSocket Closed!")
+			log_to_file("WebSocket Closed!")
 			connection_closed.emit()
 			set_process(false)
 
@@ -75,7 +93,18 @@ func _join_channel():
 	var join_msg = {
 		"topic": channel_name,
 		"event": "phx_join",
-		"payload": {},
+		"payload": {
+			"access_token": apikey,
+			"config": {
+				"broadcast": {
+					"ack": false,
+					"self": true
+				},
+				"presence": {
+					"key": ""
+				}
+			}
+		},
 		"ref": str(ref_id)
 	}
 	ref_id += 1
@@ -105,13 +134,15 @@ func send_broadcast(event_name: String, payload: Dictionary):
 		"ref": str(ref_id)
 	}
 	ref_id += 1
+	log_to_file("Sending broadcast: " + event_name + " payload: " + str(payload))
 	socket.send_text(JSON.stringify(msg))
 
-func broadcast_card_moved(card_name: String, global_pos: Vector2):
+func broadcast_card_moved(card_name: String, parent_name: String, local_pos: Vector2):
 	send_broadcast("card_moved", {
 		"card_name": card_name,
-		"x": global_pos.x,
-		"y": global_pos.y
+		"parent_name": parent_name,
+		"x": local_pos.x,
+		"y": local_pos.y
 	})
 
 func broadcast_card_flipped(card_name: String, is_down: bool):
@@ -132,6 +163,7 @@ func broadcast_deck_shuffled(deck_name: String):
 	})
 
 func _handle_message(text: String):
+	log_to_file("Incoming Raw: " + text)
 	var json = JSON.new()
 	if json.parse(text) != OK: return
 	var msg = json.get_data()
