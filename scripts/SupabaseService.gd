@@ -292,7 +292,7 @@ func insert_room(room_name: String, description: String, password: String, field
 		"description": description,
 		"password": password if password != "" else null,
 		"field_data": field_data,
-		"deck_data": deck_data if not deck_data.is_empty() else null,
+		"deck_data": deck_data,
 		"host_player": host_name,
 		"status": "waiting"
 	}

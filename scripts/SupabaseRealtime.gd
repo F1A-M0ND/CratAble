@@ -16,6 +16,16 @@ signal opponent_hand_updated(player_name: String, count: int)
 signal action_logged(text: String)
 signal player_joined(player_name: String, role: String)
 
+# --- New Sync Signals ---
+signal zone_spawned(zone_type: String, zone_name: String, position: Vector2, size: Vector2)
+signal deck_spawned(deck_name: String, deck_data: Dictionary, position: Vector2)
+signal dice_spawned(dice_name: String, position: Vector2)
+signal dice_rolled(dice_name: String, result: int)
+signal counter_spawned(counter_name: String, position: Vector2)
+signal counter_updated(counter_name: String, value: int)
+signal request_field_state(requester_id: String)
+signal sync_field_state(state: Dictionary)
+
 var socket = WebSocketPeer.new()
 var is_connected = false
 var room_id = ""
@@ -137,10 +147,9 @@ func send_broadcast(event_name: String, payload: Dictionary):
 	log_to_file("Sending broadcast: " + event_name + " payload: " + str(payload))
 	socket.send_text(JSON.stringify(msg))
 
-func broadcast_card_moved(card_name: String, parent_name: String, local_pos: Vector2):
+func broadcast_card_moved(card_name: String, local_pos: Vector2):
 	send_broadcast("card_moved", {
 		"card_name": card_name,
-		"parent_name": parent_name,
 		"x": local_pos.x,
 		"y": local_pos.y
 	})
@@ -231,3 +240,19 @@ func _handle_message(text: String):
 				var p_name = inner_payload.get("player_name", "")
 				var role = inner_payload.get("role", "")
 				player_joined.emit(p_name, role)
+			"zone_spawned":
+				zone_spawned.emit(inner_payload.get("zone_type", ""), inner_payload.get("zone_name", ""), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)), Vector2(inner_payload.get("w", 150), inner_payload.get("h", 210)))
+			"deck_spawned":
+				deck_spawned.emit(inner_payload.get("deck_name", ""), inner_payload.get("deck_data", {}), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)))
+			"dice_spawned":
+				dice_spawned.emit(inner_payload.get("dice_name", ""), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)))
+			"dice_rolled":
+				dice_rolled.emit(inner_payload.get("dice_name", ""), inner_payload.get("result", 1))
+			"counter_spawned":
+				counter_spawned.emit(inner_payload.get("counter_name", ""), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)))
+			"counter_updated":
+				counter_updated.emit(inner_payload.get("counter_name", ""), inner_payload.get("value", 0))
+			"request_field_state":
+				request_field_state.emit(inner_payload.get("requester_id", ""))
+			"sync_field_state":
+				sync_field_state.emit(inner_payload.get("state", {}))

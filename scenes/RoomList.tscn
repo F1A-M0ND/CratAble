@@ -91,10 +91,6 @@ layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Describe..."
 
-[node name="AssetBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
-layout_mode = 2
-text = "Asset: [Select/Import]"
-
 [node name="FieldBtn" type="Button" parent="RoomCreatorPanel/VBoxContainer"]
 layout_mode = 2
 text = "Field: [Select]"

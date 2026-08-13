@@ -13,16 +13,11 @@ extends Control
 @onready var btn2 = $RoomCreatorPanel/VBoxContainer/PlayerCountContainer/Btn2
 @onready var count_spin = $RoomCreatorPanel/VBoxContainer/PlayerCountContainer/CountSpin
 
-var deck_file_dialog: FileDialog
 var field_file_dialog: FileDialog
 
 var is_online_mode: bool = false
 
 # Online cache and popups
-var online_deck_popup: ConfirmationDialog
-var online_deck_list: ItemList
-var online_decks_cache = []
-
 var online_field_popup: ConfirmationDialog
 var online_field_list: ItemList
 var online_fields_cache = []
@@ -33,7 +28,6 @@ func _ready():
 	$RoomCreatorPanel/VBoxContainer/CancelBtn.pressed.connect(_on_close_creator_pressed)
 	
 	# Connect Selection buttons in creator panel
-	$RoomCreatorPanel/VBoxContainer/AssetBtn.pressed.connect(_on_select_deck_pressed)
 	$RoomCreatorPanel/VBoxContainer/FieldBtn.pressed.connect(_on_select_field_pressed)
 	
 	local_card.pressed.connect(_on_local_mode_selected)
@@ -77,7 +71,6 @@ func _on_local_mode_selected():
 	# Reset/Setup creator panel for local play
 	$RoomCreatorPanel/VBoxContainer/Title.text = "Local Play Setup"
 	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Start Local Game"
-	$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Select Local Deck"
 	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "Select Local Field"
 	
 	# Hide Password, Desc, and RoomName for local mode
@@ -147,8 +140,11 @@ func _on_join_room_clicked(room: Dictionary):
 	Global.online_player_role = "Guest"
 	Global.online_player_name = guest_name
 	
-	Global.loaded_field_data = room.get("field_data", {})
-	Global.selected_deck_data = room.get("deck_data", {})
+	var fd = room.get("field_data")
+	Global.loaded_field_data = fd if typeof(fd) == TYPE_DICTIONARY else {}
+	
+	var dd = room.get("deck_data")
+	Global.selected_deck_data = dd if typeof(dd) == TYPE_DICTIONARY else {}
 	
 	SupabaseService.join_room(Global.online_room_id, guest_name, func(status, res):
 		if status == 200 or status == 204:
@@ -167,7 +163,6 @@ func _on_create_room_pressed():
 	# Show creator panel for online room
 	$RoomCreatorPanel/VBoxContainer/Title.text = "Room Creator"
 	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Create!"
-	$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Select Deck"
 	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "Select Field"
 	
 	# Show inputs for online mode
@@ -196,15 +191,6 @@ func _on_close_creator_pressed():
 		Global.selected_deck_path = ""
 
 func _init_local_dialogs():
-	deck_file_dialog = FileDialog.new()
-	deck_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	deck_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	deck_file_dialog.filters = PackedStringArray(["*.json ; Deck Files"])
-	deck_file_dialog.size = Vector2(600, 400)
-	deck_file_dialog.use_native_dialog = true
-	deck_file_dialog.file_selected.connect(_on_local_deck_selected)
-	add_child(deck_file_dialog)
-	
 	field_file_dialog = FileDialog.new()
 	field_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	field_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -214,32 +200,12 @@ func _init_local_dialogs():
 	field_file_dialog.file_selected.connect(_on_local_field_selected)
 	add_child(field_file_dialog)
 
-func _on_local_deck_selected(path: String):
-	Global.selected_deck_path = path
-	Global.selected_deck_data = {} # Clear online
-	$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Deck: " + path.get_file()
-
 func _on_local_field_selected(path: String):
 	Global.loaded_field_path = path
 	Global.loaded_field_data = {} # Clear online
 	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "Field: " + path.get_file()
 
 func _init_online_dialogs():
-	online_deck_popup = ConfirmationDialog.new()
-	online_deck_popup.title = "Select Online Deck"
-	online_deck_popup.min_size = Vector2i(500, 400)
-	var vbox_d = VBoxContainer.new()
-	var lbl_d = Label.new()
-	lbl_d.text = "Select a deck from Supabase:"
-	vbox_d.add_child(lbl_d)
-	online_deck_list = ItemList.new()
-	online_deck_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	online_deck_list.custom_minimum_size = Vector2(0, 250)
-	vbox_d.add_child(online_deck_list)
-	online_deck_popup.add_child(vbox_d)
-	online_deck_popup.confirmed.connect(_on_online_deck_confirmed)
-	add_child(online_deck_popup)
-	
 	online_field_popup = ConfirmationDialog.new()
 	online_field_popup.title = "Select Online Field Layout"
 	online_field_popup.min_size = Vector2i(500, 400)
@@ -254,29 +220,6 @@ func _init_online_dialogs():
 	online_field_popup.add_child(vbox_f)
 	online_field_popup.confirmed.connect(_on_online_field_confirmed)
 	add_child(online_field_popup)
-
-func _on_select_deck_pressed():
-	if is_online_mode:
-		$RoomCreatorPanel/VBoxContainer/AssetBtn.disabled = true
-		$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Loading decks..."
-		SupabaseService.fetch_all_decks(func(status, data):
-			$RoomCreatorPanel/VBoxContainer/AssetBtn.disabled = false
-			$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Select Deck"
-			if status == 200 and typeof(data) == TYPE_ARRAY:
-				online_decks_cache = data
-				online_deck_list.clear()
-				for deck in data:
-					online_deck_list.add_item(deck.get("name", "Untitled Deck"))
-				online_deck_popup.popup_centered()
-			else:
-				var err = AcceptDialog.new()
-				err.title = "Error"
-				err.dialog_text = "Failed to load decks from database."
-				add_child(err)
-				err.popup_centered()
-		)
-	else:
-		deck_file_dialog.popup_centered()
 
 func _on_select_field_pressed():
 	if is_online_mode:
@@ -300,14 +243,6 @@ func _on_select_field_pressed():
 		)
 	else:
 		field_file_dialog.popup_centered()
-
-func _on_online_deck_confirmed():
-	var selected = online_deck_list.get_selected_items()
-	if selected.size() > 0:
-		var idx = selected[0]
-		var deck = online_decks_cache[idx]
-		Global.selected_deck_data = deck
-		$RoomCreatorPanel/VBoxContainer/AssetBtn.text = "Deck: " + deck.get("name", "Untitled")
 
 func _on_online_field_confirmed():
 	var selected = online_field_list.get_selected_items()
@@ -580,7 +515,7 @@ func _apply_creator_panel_styles():
 	btn_pressed.border_color = Color(1.0, 1.0, 1.0, 0.3)
 	btn_pressed.set_corner_radius_all(8)
 
-	var selection_btns = [$RoomCreatorPanel/VBoxContainer/AssetBtn, $RoomCreatorPanel/VBoxContainer/FieldBtn]
+	var selection_btns = [$RoomCreatorPanel/VBoxContainer/FieldBtn]
 	for btn in selection_btns:
 		btn.add_theme_stylebox_override("normal", btn_normal)
 		btn.add_theme_stylebox_override("hover", btn_hover)
@@ -638,7 +573,6 @@ func _apply_creator_panel_styles():
 
 	# 10. Connect hover scale micro-animations for all buttons
 	var all_btns = [
-		$RoomCreatorPanel/VBoxContainer/AssetBtn,
 		$RoomCreatorPanel/VBoxContainer/FieldBtn,
 		$RoomCreatorPanel/VBoxContainer/ConfirmBtn,
 		$RoomCreatorPanel/VBoxContainer/CancelBtn,

@@ -148,12 +148,23 @@ func _ready():
 					update_local_hand_count()
 			)
 			
+			realtime_client.zone_spawned.connect(_on_remote_zone_spawned)
+			realtime_client.deck_spawned.connect(_on_remote_deck_spawned)
+			realtime_client.dice_spawned.connect(_on_remote_dice_spawned)
+			realtime_client.dice_rolled.connect(_on_remote_dice_rolled)
+			realtime_client.counter_spawned.connect(_on_remote_counter_spawned)
+			realtime_client.counter_updated.connect(_on_remote_counter_updated)
+			realtime_client.request_field_state.connect(_on_remote_request_field_state)
+			realtime_client.sync_field_state.connect(_on_remote_sync_field_state)
+			
 			# Realtime custom signals
 			realtime_client.connection_established.connect(func():
 				print("Realtime Connection Established!")
 				# Send a join signal or broadcast who we are
 				realtime_client.send_broadcast("player_joined", {"player_name": Global.online_player_name, "role": Global.online_player_role})
 				broadcast_action_log("%s (%s) เข้าร่วมเกมแล้ว" % [Global.online_player_name, "Host" if Global.online_player_role == "Host" else "Guest"])
+				if Global.online_player_role == "Guest":
+					realtime_client.send_broadcast("request_field_state", {"requester_id": Global.online_player_name})
 			)
 			
 			# Listen to other custom events
@@ -1564,7 +1575,7 @@ func _setup_deck_changeling(deck_obj: Control):
 		_confirm_deck_programmatically(deck_obj)
 	)
 
-func _confirm_deck_programmatically(deck_obj: Control):
+func _confirm_deck_programmatically(deck_obj: Control, broadcast: bool = true):
 	deck_obj.set_meta("deck_confirmed", true)
 	var deck_data = deck_obj.get_meta("deck_data", {})
 	
@@ -1618,6 +1629,15 @@ func _confirm_deck_programmatically(deck_obj: Control):
 		
 	deck_obj.set_meta("draw_pile", draw_pile)
 	_update_deck_count_label(deck_obj)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * deck_obj.global_position
+		realtime_client.send_broadcast("deck_spawned", {
+			"deck_name": deck_obj.name,
+			"deck_data": deck_data,
+			"x": canvas_pos.x,
+			"y": canvas_pos.y
+		})
 
 func _show_other_import_dialog():
 	var file_dialog = FileDialog.new()
@@ -2044,7 +2064,7 @@ func _add_rotate_handle(target_node: Control):
 			handle.accept_event()
 	)
 
-func _spawn_zone(zone_type: String):
+func _spawn_zone(zone_type: String, broadcast: bool = true) -> Control:
 	# สร้างพื้นที่วางการ์ดแบบโปร่งใส
 	var zone = ColorRect.new()
 	if zone_type == "Card Zone":
@@ -2111,9 +2131,21 @@ func _spawn_zone(zone_type: String):
 	_add_resize_handle(zone, Vector2(100, 100))
 	_add_rotate_handle(zone)
 	field_canvas.add_child(zone)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * zone.global_position
+		realtime_client.send_broadcast("zone_spawned", {
+			"zone_type": zone_type,
+			"zone_name": zone.name,
+			"x": canvas_pos.x,
+			"y": canvas_pos.y,
+			"w": zone.size.x,
+			"h": zone.size.y
+		})
+		
 	return zone
 
-func _on_add_dice_pressed() -> Control:
+func _on_add_dice_pressed(broadcast: bool = true) -> Control:
 	# สร้างคอนเทนเนอร์หลักสำหรับลูกเต๋าเพื่อให้ลากได้
 	var root_obj = Control.new()
 	root_obj.position = Vector2(300, 100)
@@ -2148,6 +2180,11 @@ func _on_add_dice_pressed() -> Control:
 	dice_btn.pressed.connect(func():
 		var result = randi() % 6 + 1
 		dice_btn.text = "D6: " + str(result)
+		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			realtime_client.send_broadcast("dice_rolled", {
+				"dice_name": root_obj.name,
+				"result": result
+			})
 		var tween = get_tree().create_tween()
 		tween.tween_property(root_obj, "position", root_obj.position + Vector2(0, -10), 0.1)
 		tween.tween_property(root_obj, "position", root_obj.position, 0.1)
@@ -2156,10 +2193,19 @@ func _on_add_dice_pressed() -> Control:
 	root_obj.add_child(dice_btn)
 	root_obj.set_meta("component_category", "dice")
 	_add_delete_button(root_obj)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * root_obj.global_position
+		realtime_client.send_broadcast("dice_spawned", {
+			"dice_name": root_obj.name,
+			"x": canvas_pos.x,
+			"y": canvas_pos.y
+		})
+
 	field_canvas.add_child(root_obj)
 	return root_obj
 
-func _on_add_counter_pressed():
+func _on_add_counter_pressed(broadcast: bool = true) -> Control:
 	# สร้างตัวนับแต้ม (Token) ที่สามารถลากได้
 	var root_obj = Control.new()
 	root_obj.position = Vector2(400, 100)
@@ -2168,6 +2214,7 @@ func _on_add_counter_pressed():
 	root_obj.set_script(load("res://scripts/TabletopCounter.gd"))
 	
 	root_obj.set_meta("component_category", "counter")
+	root_obj.set_meta("counter_value", 0)
 	if root_obj.has_signal("right_clicked"):
 		root_obj.right_clicked.connect(func(): _on_component_right_clicked(root_obj))
 		
@@ -2195,7 +2242,7 @@ func _on_add_counter_pressed():
 	root_obj.add_child(margin_c)
 	
 	var val_label = Label.new()
-	val_label.name = "Label"
+	val_label.name = "ValueLabel"
 	val_label.text = "0"
 	val_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	val_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -2226,6 +2273,15 @@ func _on_add_counter_pressed():
 	_add_delete_button(root_obj)
 	_add_resize_handle(root_obj, Vector2(60, 60))
 	_add_rotate_handle(root_obj)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * root_obj.global_position
+		realtime_client.send_broadcast("counter_spawned", {
+			"counter_name": root_obj.name,
+			"x": canvas_pos.x,
+			"y": canvas_pos.y
+		})
+
 	field_canvas.add_child(root_obj)
 	return root_obj
 
@@ -3043,7 +3099,7 @@ func _on_field_settings_confirmed():
 	current_editing_field.set_meta("card_custom_height", field_card_h.value)
 	_update_all_cards_size(current_editing_field, current_editing_field)
 
-func _spawn_sub_field():
+func _spawn_sub_field(broadcast: bool = true) -> Control:
 	var sub_field = ColorRect.new()
 	sub_field.color = Color(0.15, 0.3, 0.2, 0.5)
 	sub_field.size = Vector2(600, 400)
@@ -3086,6 +3142,18 @@ func _spawn_sub_field():
 	_add_rotate_handle(sub_field)
 	
 	field_canvas.add_child(sub_field)
+	
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * sub_field.global_position
+		realtime_client.send_broadcast("zone_spawned", {
+			"zone_type": "Field Zone",
+			"zone_name": sub_field.name,
+			"x": canvas_pos.x,
+			"y": canvas_pos.y,
+			"w": sub_field.size.x,
+			"h": sub_field.size.y
+		})
+
 	return sub_field
 
 func _on_component_right_clicked(node: Control):
@@ -3891,7 +3959,8 @@ func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
 			card.get_node("CardBack").hide()
 
 func _update_deck_count_label(deck_obj: Control):
-	var draw_pile = deck_obj.get_meta("draw_pile", [])
+	var draw_pile = deck_obj.get_meta("draw_pile")
+	if typeof(draw_pile) != TYPE_ARRAY: draw_pile = []
 	var is_out = draw_pile.is_empty()
 	var count_text = str(draw_pile.size()) + " Cards"
 	# อัปเดต CountLabel ใน overlay (ก่อนยืนยัน)
@@ -3943,7 +4012,8 @@ func _on_deck_left_clicked(deck_obj: Control, broadcast: bool = true):
 		print("[Deck Click]   Ignored: deck_confirmed is false")
 		return
 	
-	var draw_pile = deck_obj.get_meta("draw_pile", [])
+	var draw_pile = deck_obj.get_meta("draw_pile")
+	if typeof(draw_pile) != TYPE_ARRAY: draw_pile = []
 	if draw_pile.is_empty():
 		print("[Deck Click]   Ignored: draw_pile is empty")
 		return
@@ -4520,7 +4590,7 @@ func _pull_peeker_card_to_hand(index: int):
 	_refresh_peeker_view()
 	
 	var card_data = _load_card_data_from_path(card_path)
-	if not card_data.is_empty():
+	if typeof(card_data) == TYPE_DICTIONARY and not card_data.is_empty():
 		var card = spawn_card_object(card_data, false)
 		var field_size = peeker_deck_target.size
 		card.custom_minimum_size = field_size
@@ -4540,7 +4610,7 @@ func _pull_peeker_card_to_board(index: int):
 	_refresh_peeker_view()
 	
 	var card_data = _load_card_data_from_path(card_path)
-	if not card_data.is_empty():
+	if typeof(card_data) == TYPE_DICTIONARY and not card_data.is_empty():
 		var card = spawn_card_object(card_data, true)
 		var field_size = peeker_deck_target.size
 		var field_scale = peeker_deck_target.get("base_scale")
@@ -5155,7 +5225,7 @@ func _pull_deck_viewer_card_to_hand(index: int):
 	_refresh_deck_viewer()
 	
 	var card_data = _load_card_data_from_path(card_path)
-	if not card_data.is_empty():
+	if typeof(card_data) == TYPE_DICTIONARY and not card_data.is_empty():
 		var card = spawn_card_object(card_data, false)
 		var field_size = deck_viewer_target.size
 		card.custom_minimum_size = field_size
@@ -5185,7 +5255,7 @@ func _pull_deck_viewer_card_to_board(index: int):
 	_refresh_deck_viewer()
 	
 	var card_data = _load_card_data_from_path(card_path)
-	if not card_data.is_empty():
+	if typeof(card_data) == TYPE_DICTIONARY and not card_data.is_empty():
 		var card = spawn_card_object(card_data, true)
 		var field_size = deck_viewer_target.size
 		var field_scale = deck_viewer_target.get("base_scale")
@@ -5351,6 +5421,136 @@ func _on_remote_zone_shuffled(zone_name: String):
 	var zone = field_canvas.find_child(zone_name, true, false)
 	if is_instance_valid(zone):
 		_shuffle_zone_pile(zone, false)
+
+func _on_remote_zone_spawned(zone_type: String, zone_name: String, pos: Vector2, size: Vector2):
+	var zone
+	if zone_type == "Field Zone":
+		zone = _spawn_sub_field()
+	else:
+		zone = _spawn_zone(zone_type)
+	zone.name = zone_name
+	zone.position = pos
+	zone.size = size
+	if zone.has_node("DragHighlight"):
+		zone.get_node("DragHighlight").size = size
+
+func _on_remote_deck_spawned(deck_name: String, deck_data: Dictionary, pos: Vector2):
+	var deck = spawn_deck_object(deck_data)
+	deck.name = deck_name
+	deck.position = pos
+	_confirm_deck_programmatically(deck, false)
+
+func _on_remote_dice_spawned(dice_name: String, pos: Vector2):
+	var dice = _on_add_dice_pressed(false)
+	dice.name = dice_name
+	dice.position = pos
+
+func _on_remote_dice_rolled(dice_name: String, result: int):
+	var dice = field_canvas.find_child(dice_name, true, false)
+	if is_instance_valid(dice):
+		var btn = dice.get_child(1) # dice_btn
+		if btn is Button:
+			btn.text = "D6: " + str(result)
+
+func _on_remote_counter_spawned(counter_name: String, pos: Vector2):
+	var counter = _on_add_counter_pressed(false)
+	counter.name = counter_name
+	counter.position = pos
+
+func _on_remote_counter_updated(counter_name: String, value: int):
+	var counter = field_canvas.find_child(counter_name, true, false)
+	if is_instance_valid(counter):
+		var val_lbl = counter.find_child("ValueLabel", true, false)
+		if val_lbl:
+			val_lbl.text = str(value)
+			counter.set_meta("counter_value", value)
+
+func _on_remote_request_field_state(requester_id: String):
+	if Global.online_player_role == "Host":
+		var state = _capture_current_field_state()
+		realtime_client.send_broadcast("sync_field_state", {"state": state})
+
+func _capture_current_field_state() -> Dictionary:
+	var canvas_settings = {
+		"size_x": field_canvas.size.x,
+		"size_y": field_canvas.size.y,
+		"rotation_degrees": field_canvas.rotation_degrees,
+		"card_custom_width": field_canvas.get_meta("card_custom_width", 0),
+		"card_custom_height": field_canvas.get_meta("card_custom_height", 0),
+		"field_perms": field_canvas.get_meta("field_perms", {"move": true, "play": true})
+	}
+	
+	var components = []
+	_gather_components(field_canvas, components)
+	
+	var node_to_id = {}
+	for i in range(components.size()):
+		node_to_id[components[i]] = i
+		
+	var components_layout = []
+	for i in range(components.size()):
+		var node = components[i]
+		var cat = node.get_meta("component_category", "")
+		var parent_id = -1
+		var parent = node.get_parent()
+		if parent in node_to_id:
+			parent_id = node_to_id[parent]
+			
+		var comp_data = {
+			"id": i,
+			"parent_id": parent_id,
+			"category": cat,
+			"position_x": node.position.x,
+			"position_y": node.position.y,
+			"size_x": node.size.x,
+			"size_y": node.size.y,
+			"rotation_degrees": node.rotation_degrees
+		}
+		
+		if cat == "zone":
+			comp_data["zone_type"] = node.get_meta("zone_type", "Card Zone")
+			comp_data["zone_settings"] = node.get_meta("zone_settings", {}).duplicate()
+		elif cat == "counter":
+			comp_data["counter_name"] = node.counter_name if "counter_name" in node else ""
+			comp_data["name_position"] = node.name_position if "name_position" in node else 0
+			comp_data["default_value"] = node.get_meta("counter_value", 0) # Use current value
+			comp_data["name_auto_scale"] = node.name_auto_scale if "name_auto_scale" in node else true
+			comp_data["name_custom_size"] = node.name_custom_size if "name_custom_size" in node else 14
+			comp_data["is_vertical"] = node.is_vertical if "is_vertical" in node else false
+		elif cat == "field":
+			comp_data["field_name"] = node.get_meta("field_name", "Sub Field")
+			comp_data["field_perms"] = node.get_meta("field_perms", {"move": true, "play": true}).duplicate()
+			comp_data["card_custom_width"] = node.get_meta("card_custom_width", 0)
+			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
+		elif cat == "dice":
+			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
+			if dice_btn and dice_btn is Button:
+				comp_data["dice_text"] = dice_btn.text
+			else:
+				comp_data["dice_text"] = "D6: -"
+		elif cat == "image":
+			comp_data["image_path"] = node.get_meta("image_path", "")
+		elif cat == "card":
+			comp_data["card_data"] = node.get_meta("card_data", {}).duplicate()
+			comp_data["is_face_down"] = node.get_meta("is_face_down", false)
+		elif cat == "deck":
+			comp_data["deck_data"] = node.get_meta("deck_data", {}).duplicate()
+			comp_data["shuffle_at_start"] = node.get_meta("shuffle_at_start", false)
+			comp_data["draw_pile"] = node.get_meta("draw_pile", []).duplicate()
+			comp_data["deck_confirmed"] = node.get_meta("deck_confirmed", false)
+			
+		components_layout.append(comp_data)
+		
+	return {
+		"canvas_settings": canvas_settings,
+		"components_layout": components_layout
+	}
+
+func _on_remote_sync_field_state(state: Dictionary):
+	if Global.online_player_role == "Guest":
+		Global.loaded_field_data = state
+		_load_field_from_dict(state)
+
 
 func _connect_draggable_signals(node: Control):
 	if not is_instance_valid(node): return
