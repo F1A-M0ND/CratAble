@@ -150,7 +150,7 @@ func _on_join_room_clicked(room: Dictionary):
 		if status == 200 or status == 204:
 			print("Joined Room successfully as Guest!")
 			Global.play_mode = true
-			Global.switch_scene("res://scenes/FieldCreator.tscn")
+			Global.switch_scene("res://SCENE/Main.tscn")
 		else:
 			var err = AcceptDialog.new()
 			err.title = "Join Failed"
@@ -293,7 +293,7 @@ func _on_confirm_create_pressed():
 				print("Room Created on Supabase! ID: ", Global.online_room_id)
 				creator_panel.hide()
 				Global.play_mode = true
-				Global.switch_scene("res://scenes/FieldCreator.tscn")
+				Global.switch_scene("res://SCENE/Main.tscn")
 			else:
 				var err_dialog = AcceptDialog.new()
 				err_dialog.title = "Error"
@@ -317,7 +317,7 @@ func _on_confirm_create_pressed():
 		
 		creator_panel.hide()
 		Global.play_mode = true
-		Global.switch_scene("res://scenes/FieldCreator.tscn")
+		Global.switch_scene("res://SCENE/Main.tscn")
 
 func _apply_card_styles():
 	var cards = [local_card, online_card]

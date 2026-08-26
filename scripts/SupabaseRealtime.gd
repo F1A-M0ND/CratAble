@@ -1,13 +1,13 @@
 extends Node
 
-signal card_moved(card_name: String, position: Vector2)
+signal card_moved(card_name: String, parent_name: String, position: Vector2)
 signal card_flipped(card_name: String, is_down: bool)
-signal card_tapped(card_name: String, tapped: bool)
+signal card_tapped(card_name: String, target_rot: float)
 signal deck_shuffled(deck_name: String)
 signal connection_established()
 signal connection_closed()
 
-signal card_spawned(card_name: String, card_path: String, position: Vector2)
+signal card_spawned(card_name: String, card_path: String, parent_name: String, position: Vector2, rot: float)
 signal card_sent_to_hand(card_name: String)
 signal card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool)
 signal deck_drawn(deck_name: String)
@@ -147,11 +147,18 @@ func send_broadcast(event_name: String, payload: Dictionary):
 	log_to_file("Sending broadcast: " + event_name + " payload: " + str(payload))
 	socket.send_text(JSON.stringify(msg))
 
-func broadcast_card_moved(card_name: String, local_pos: Vector2):
+func broadcast_card_moved(card_name: String, parent_name: String, local_pos: Vector2):
 	send_broadcast("card_moved", {
 		"card_name": card_name,
+		"parent_name": parent_name,
 		"x": local_pos.x,
 		"y": local_pos.y
+	})
+
+func broadcast_counter_updated(counter_name: String, value: int):
+	send_broadcast("counter_updated", {
+		"counter_name": counter_name,
+		"value": value
 	})
 
 func broadcast_card_flipped(card_name: String, is_down: bool):
@@ -160,10 +167,10 @@ func broadcast_card_flipped(card_name: String, is_down: bool):
 		"is_down": is_down
 	})
 
-func broadcast_card_tapped(card_name: String, tapped: bool):
+func broadcast_card_tapped(card_name: String, target_rot: float):
 	send_broadcast("card_tapped", {
 		"card_name": card_name,
-		"tapped": tapped
+		"rot": target_rot
 	})
 
 func broadcast_deck_shuffled(deck_name: String):
@@ -192,17 +199,18 @@ func _handle_message(text: String):
 		match broadcast_event:
 			"card_moved":
 				var c_name = inner_payload.get("card_name", "")
+				var p_name = inner_payload.get("parent_name", "")
 				var x = inner_payload.get("x", 0.0)
 				var y = inner_payload.get("y", 0.0)
-				card_moved.emit(c_name, Vector2(x, y))
+				card_moved.emit(c_name, p_name, Vector2(x, y))
 			"card_flipped":
 				var c_name = inner_payload.get("card_name", "")
 				var is_down = inner_payload.get("is_down", false)
 				card_flipped.emit(c_name, is_down)
 			"card_tapped":
 				var c_name = inner_payload.get("card_name", "")
-				var tapped = inner_payload.get("tapped", false)
-				card_tapped.emit(c_name, tapped)
+				var rot = inner_payload.get("rot", 90.0 if inner_payload.get("tapped", false) else 0.0)
+				card_tapped.emit(c_name, float(rot))
 			"deck_shuffled":
 				var d_name = inner_payload.get("deck_name", "")
 				deck_shuffled.emit(d_name)
@@ -212,9 +220,11 @@ func _handle_message(text: String):
 				if c_path == "":
 					var c_data = inner_payload.get("card_data", {})
 					c_path = c_data.get("file_path", c_data.get("image_path", ""))
+				var p_name = inner_payload.get("parent_name", "")
 				var x = inner_payload.get("x", 0.0)
 				var y = inner_payload.get("y", 0.0)
-				card_spawned.emit(c_name, c_path, Vector2(x, y))
+				var rot = inner_payload.get("rot", 0.0)
+				card_spawned.emit(c_name, c_path, p_name, Vector2(x, y), float(rot))
 			"card_sent_to_hand":
 				var c_name = inner_payload.get("card_name", "")
 				card_sent_to_hand.emit(c_name)

@@ -123,17 +123,62 @@ var _save_dest_is_local: bool = false
 
 func _ready():
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
-	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
+	$HBoxContainer/LeftSide/SaveFieldBtn.hide()
 	
-	# Field Creator is purely offline. Multiplayer logic moved to MainTabletop.gd
+	if Global.online_room_id != "":
+		var rt_script = load("res://scripts/SupabaseRealtime.gd")
+		if rt_script:
+			realtime_client = Node.new()
+			realtime_client.set_script(rt_script)
+			add_child(realtime_client)
+			realtime_client.card_moved.connect(_on_remote_card_moved)
+			realtime_client.card_flipped.connect(_on_remote_card_flipped)
+			realtime_client.card_tapped.connect(_on_remote_card_tapped)
+			realtime_client.deck_shuffled.connect(_on_remote_deck_shuffled)
+			realtime_client.card_spawned.connect(_on_remote_card_spawned)
+			realtime_client.card_sent_to_hand.connect(_on_remote_card_sent_to_hand)
+			realtime_client.card_inserted_into_deck.connect(_on_remote_card_inserted_into_deck)
+			realtime_client.deck_drawn.connect(_on_remote_deck_drawn)
+			realtime_client.zone_shuffled.connect(_on_remote_zone_shuffled)
+			realtime_client.counter_updated.connect(_on_remote_counter_updated)
+			realtime_client.opponent_hand_updated.connect(_on_opponent_hand_updated)
+			realtime_client.action_logged.connect(_on_remote_action_logged)
+			realtime_client.connection_closed.connect(_on_realtime_connection_closed)
+			realtime_client.player_joined.connect(func(p_name, role):
+				if p_name != Global.online_player_name:
+					update_local_hand_count()
+			)
+			
+			realtime_client.zone_spawned.connect(_on_remote_zone_spawned)
+			realtime_client.deck_spawned.connect(_on_remote_deck_spawned)
+			realtime_client.dice_spawned.connect(_on_remote_dice_spawned)
+			realtime_client.dice_rolled.connect(_on_remote_dice_rolled)
+			realtime_client.counter_spawned.connect(_on_remote_counter_spawned)
+			realtime_client.counter_updated.connect(_on_remote_counter_updated)
+			realtime_client.request_field_state.connect(_on_remote_request_field_state)
+			realtime_client.sync_field_state.connect(_on_remote_sync_field_state)
+			
+			# Realtime custom signals
+			realtime_client.connection_established.connect(func():
+				print("Realtime Connection Established!")
+				# Send a join signal or broadcast who we are
+				realtime_client.send_broadcast("player_joined", {"player_name": Global.online_player_name, "role": Global.online_player_role})
+				broadcast_action_log("%s (%s) เข้าร่วมเกมแล้ว" % [Global.online_player_name, "Host" if Global.online_player_role == "Host" else "Guest"])
+				if Global.online_player_role == "Guest":
+					realtime_client.send_broadcast("request_field_state", {"requester_id": Global.online_player_name})
+			)
+			
+			# Listen to other custom events
+			var ref_rt = realtime_client
+			ref_rt.process_mode = PROCESS_MODE_ALWAYS
+			# Handle other events dynamically by patching _handle_message handler
+			# Or we can handle it inside _handle_message by adding custom signals to SupabaseRealtime.gd, 
+			# but it is simpler to just connect to room and handle in _input or handle custom event broadcast.
+			
+			realtime_client.connect_to_room(Global.online_room_id, SupabaseService.SUPABASE_KEY)
+			_setup_online_ui()
 	
-	# Setup Load Button programmatically right after Save Button
-	var load_btn = Button.new()
-	load_btn.name = "LoadFieldBtn"
-	load_btn.text = "Load Field"
-	$HBoxContainer/LeftSide.add_child(load_btn)
-	$HBoxContainer/LeftSide.move_child(load_btn, $HBoxContainer/LeftSide/SaveFieldBtn.get_index() + 1)
-	load_btn.pressed.connect(_on_load_field_pressed)
+	# No manual loading in Main Game
 	
 	# Setup Field File Dialog
 	field_file_dialog = FileDialog.new()
@@ -420,20 +465,20 @@ func _ready():
 	if "--auto-test" in OS.get_cmdline_args():
 		_run_auto_test_mode()
 		
-	if Global.play_mode:
-		# Configure UI and signals for Play Mode
-		$HBoxContainer/LeftSide.hide()
-		$Header/BackBtn.text = "< Exit Lobby"
-		if $Header/BackBtn.pressed.is_connected(_on_back_pressed):
-			$Header/BackBtn.pressed.disconnect(_on_back_pressed)
-		$Header/BackBtn.pressed.connect(func():
-			Global.play_mode = false
-			Global.main_menu_tab = "PLAY"
-			Global.switch_scene("res://scenes/MainMenu.tscn")
-		)
-		
-		# Call deferred to trigger Play Mode settings
-		call_deferred("_enter_game_play_mode")
+	# Configure UI and signals for Play Mode
+	if $HBoxContainer.has_node("LeftSide"):
+		$HBoxContainer/LeftSide.queue_free()
+	$Header/BackBtn.text = "< Exit Lobby"
+	if $Header/BackBtn.pressed.is_connected(_on_back_pressed):
+		$Header/BackBtn.pressed.disconnect(_on_back_pressed)
+	$Header/BackBtn.pressed.connect(func():
+		Global.play_mode = false
+		Global.main_menu_tab = "PLAY"
+		Global.switch_scene("res://scenes/MainMenu.tscn")
+	)
+	
+	# Call deferred to trigger Play Mode settings
+	call_deferred("_enter_game_play_mode")
 
 func _enter_game_play_mode():
 	is_test_mode = false # force reset state
@@ -3410,7 +3455,8 @@ func _toggle_test_mode():
 				if default_lbl:
 					default_lbl.show()
 		
-	$HBoxContainer/LeftSide.visible = not is_test_mode
+	if $HBoxContainer.has_node("LeftSide"):
+		$HBoxContainer/LeftSide.visible = not is_test_mode
 	
 	# ซ่อน/แสดง UI สำหรับ Editor
 	var editor_nodes = get_tree().get_nodes_in_group("editor_only")
@@ -4044,8 +4090,9 @@ func _on_deck_left_clicked(deck_obj: Control, broadcast: bool = true):
 	_update_deck_count_label(deck_obj)
 	
 	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		var d_id = deck_obj.get_meta("component_id", deck_obj.name)
 		realtime_client.send_broadcast("deck_draw", {
-			"deck_name": deck_obj.name
+			"deck_name": d_id
 		})
 	
 	var card_data = {}
@@ -4426,9 +4473,10 @@ func _insert_card_into_deck(card: Control, deck: Control, to_top: bool, broadcas
 		_update_deck_count_label(deck)
 		
 		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			var d_id = deck.get_meta("component_id", deck.name)
 			realtime_client.send_broadcast("card_inserted_into_deck", {
 				"card_name": card.name,
-				"deck_name": deck.name,
+				"deck_name": d_id,
 				"to_top": to_top
 			})
 		if broadcast:
@@ -4457,7 +4505,8 @@ func _shuffle_deck_programmatically(deck: Control, broadcast: bool = true):
 		_play_shuffle_sfx()
 		
 		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
-			realtime_client.broadcast_deck_shuffled(deck.name)
+			var d_id = deck.get_meta("component_id", deck.name)
+			realtime_client.broadcast_deck_shuffled(d_id)
 		
 		if broadcast:
 			broadcast_action_log("%s สับกองเด็ค (%s)" % [Global.online_player_name, deck.name])
@@ -4488,8 +4537,9 @@ func _shuffle_zone_pile(zone: Control, broadcast: bool = true):
 		_play_shuffle_sfx()
 		
 		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+			var z_id = zone.get_meta("component_id", zone.name)
 			realtime_client.send_broadcast("zone_shuffled", {
-				"zone_name": zone.name
+				"zone_name": z_id
 			})
 			
 		if broadcast:
@@ -5384,7 +5434,7 @@ func _on_remote_card_moved(card_name: String, parent_name: String, pos: Vector2)
 		var target_parent = _find_component(parent_name)
 		if not is_instance_valid(target_parent):
 			target_parent = field_canvas
-		
+			
 		if is_instance_valid(target_parent) and node.get_parent() != target_parent:
 			var prev_parent = node.get_parent()
 			if prev_parent:
@@ -5462,7 +5512,7 @@ func _on_remote_card_spawned(card_name: String, card_path: String, parent_name: 
 			new_card.position = pos
 			
 			# Adjust size
-			var cat = target_parent.get_meta("component_category", "") if is_instance_valid(target_parent) and target_parent.has_meta("component_category") else ""
+			var cat = target_parent.get_meta("component_category", "") if target_parent.has_meta("component_category") else ""
 			if cat == "zone":
 				_apply_card_size(new_card, field_canvas, target_parent)
 			else:

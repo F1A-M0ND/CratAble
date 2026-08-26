@@ -1,52 +1,97 @@
-[gd_scene format=3 uid="uid://blviyrsji2l81"]
+[gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" uid="uid://bhr5kgvg1q3rg" path="res://SCRIPS/CardManager.gd" id="1_6y71g"]
-[ext_resource type="PackedScene" uid="uid://sg742xrcydm" path="res://SCENE/CardSlot.tscn" id="3_yes2a"]
-[ext_resource type="Script" uid="uid://bxl1hi5aq0qyc" path="res://SCRIPS/CardSlot.gd" id="4_aw7fc"]
-[ext_resource type="PackedScene" uid="uid://clst741iuhm1f" path="res://SCENE/Deck.tscn" id="5_7plmq"]
-[ext_resource type="Script" uid="uid://6hfbonk0kur7" path="res://SCRIPS/PlayerHand.gd" id="5_tt5b6"]
-[ext_resource type="Script" uid="uid://mo8fmj6raycb" path="res://SCRIPS/Deck.gd" id="6_ajt44"]
-[ext_resource type="Script" uid="uid://brfd170hx3vxc" path="res://SCRIPS/InputManager.gd" id="7_2dsg0"]
+[ext_resource type="Script" path="res://scripts/MainTabletop.gd" id="1_field"]
 
-[node name="Main" type="Node2D" unique_id=2063222668]
+[node name="FieldCreator" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_field")
 
-[node name="CardManager" type="Node2D" parent="." unique_id=1338770811]
-script = ExtResource("1_6y71g")
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 50.0
+grow_horizontal = 2
 
-[node name="CardSlot" parent="." unique_id=1771542860 instance=ExtResource("3_yes2a")]
-position = Vector2(603, 580)
-script = ExtResource("4_aw7fc")
+[node name="BackBtn" type="Button" parent="Header"]
+layout_mode = 2
+text = "< Back"
 
-[node name="CardSlot2" parent="." unique_id=1666689525 instance=ExtResource("3_yes2a")]
-position = Vector2(764, 580)
-script = ExtResource("4_aw7fc")
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Tabletop Simulator (Online)"
+horizontal_alignment = 1
 
-[node name="CardSlot3" parent="." unique_id=1295827228 instance=ExtResource("3_yes2a")]
-position = Vector2(925, 580)
-script = ExtResource("4_aw7fc")
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 50.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="CardSlot4" parent="." unique_id=1779981412 instance=ExtResource("3_yes2a")]
-position = Vector2(1085, 580)
-script = ExtResource("4_aw7fc")
+[node name="LeftSide" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
+theme_override_constants/separation = 0
 
-[node name="CardSlot5" parent="." unique_id=1201858307 instance=ExtResource("3_yes2a")]
-position = Vector2(1243, 580)
-script = ExtResource("4_aw7fc")
+[node name="Label" type="Label" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Assets Toolbox"
 
-[node name="PlayerHand" type="Node2D" parent="." unique_id=2064873761]
-script = ExtResource("5_tt5b6")
+[node name="AssetContainer" type="Panel" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+size_flags_vertical = 3
 
-[node name="Deck" parent="." unique_id=187881821 instance=ExtResource("5_7plmq")]
-position = Vector2(150, 890)
-script = ExtResource("6_ajt44")
+[node name="ItemList" type="ItemList" parent="HBoxContainer/LeftSide/AssetContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="InputManager" type="Node2D" parent="." unique_id=1943496682]
-script = ExtResource("7_2dsg0")
+[node name="AddFieldZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Field Zone"
 
-[node name="BackButton" type="Button" parent="."]
-offset_left = 30.0
-offset_top = 30.0
-offset_right = 210.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 24
-text = "Back to Lobby"
+[node name="ImportAssetBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Import Asset + Spawn"
+
+[node name="AddZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Card Zone"
+
+[node name="AddDeckZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Deck Zone"
+
+[node name="AddDiceBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Dice (D6)"
+
+[node name="AddCounterBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Add Counter"
+
+[node name="SaveFieldBtn" type="Button" parent="HBoxContainer/LeftSide"]
+layout_mode = 2
+text = "Save Field"
+
+[node name="RightSide" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TabletopPreview" type="Panel" parent="HBoxContainer/RightSide"]
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3

@@ -1,10 +1,426 @@
 --- New WebSocket Session Started ---
-20:03:35 [Guest] - Connecting to Supabase Realtime: wss://oprwntnvhqxuhztuakdx.supabase.co/realtime/v1/websocket?apikey=sb_publishable_tF_5v38zwfSWh3S0Dh1Nwg_KRgzF-ay&vsn=1.0.0
-20:03:36 [Guest] - WebSocket Connected! Joining channel: realtime:room_c411910a-6de7-4c2c-b263-494373eb7a53
-20:03:36 [Guest] - Sending broadcast: player_joined payload: { "player_name": "Guest_680", "role": "Guest" }
-20:03:36 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_680 (Guest) เข้าร่วมเกมแล้ว" }
-20:03:36 [Guest] - Incoming Raw: {"ref":"1","event":"phx_reply","payload":{"status":"ok","response":{"postgres_changes":[]}},"topic":"realtime:room_c411910a-6de7-4c2c-b263-494373eb7a53"}
-20:03:36 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Guest_680","role":"Guest"},"type":"broadcast"},"topic":"realtime:room_c411910a-6de7-4c2c-b263-494373eb7a53"}
-20:03:36 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_680 (Guest) เข้าร่วมเกมแล้ว"},"type":"broadcast"},"topic":"realtime:room_c411910a-6de7-4c2c-b263-494373eb7a53"}
-20:03:36 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_987"},"type":"broadcast"},"topic":"realtime:room_c411910a-6de7-4c2c-b263-494373eb7a53"}
-20:04:03 [Guest] - [Drag Ended] Started for card: Deck_764320 cat: deck
+11:40:04 [Guest] - Connecting to Supabase Realtime: wss://oprwntnvhqxuhztuakdx.supabase.co/realtime/v1/websocket?apikey=sb_publishable_tF_5v38zwfSWh3S0Dh1Nwg_KRgzF-ay&vsn=1.0.0
+11:40:05 [Guest] - WebSocket Connected! Joining channel: realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4
+11:40:05 [Guest] - Sending broadcast: player_joined payload: { "player_name": "Guest_780", "role": "Guest" }
+11:40:05 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 (Guest) เข้าร่วมเกมแล้ว" }
+11:40:05 [Guest] - Sending broadcast: request_field_state payload: { "requester_id": "Guest_780" }
+11:40:05 [Guest] - Incoming Raw: {"ref":"1","event":"phx_reply","payload":{"status":"ok","response":{"postgres_changes":[]}},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"player_joined","payload":{"player_name":"Guest_780","role":"Guest"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 (Guest) เข้าร่วมเกมแล้ว"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"request_field_state","payload":{"requester_id":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Host_4"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"sync_field_state","payload":{"state":{"canvas_settings":{"card_custom_height":0.0,"card_custom_width":0.0,"field_perms":{"move":true,"play":true},"rotation_degrees":0.0,"size_x":1.5e3,"size_y":1000.00024414063},"components_layout":[{"category":"zone","component_id":"Component_0.0","id":0,"parent_id":-1,"position_x":100.0,"position_y":100.0,"rotation_degrees":0.0,"size_x":150.0,"size_y":210.0,"zone_settings":{"allow_move":true,"face":0.0,"has_max_cards":false,"max_cards":1.0,"purpose":0.0},"zone_type":"Card Zone"},{"category":"zone","component_id":"Component_1.0","id":1,"parent_id":-1,"position_x":328.347015380859,"position_y":99.2511520385742,"rotation_degrees":0.0,"size_x":150.000030517578,"size_y":210.0,"zone_settings":{"allow_move":true,"face":0.0,"has_max_cards":false,"max_cards":1.0,"purpose":0.0},"zone_type":"Card Zone"},{"category":"zone","component_id":"Component_2.0","id":2,"parent_id":-1,"position_x":551.331909179688,"position_y":94.7483749389648,"rotation_degrees":0.0,"size_x":150.0,"size_y":210.0,"zone_settings":{"allow_move":true,"face":0.0,"has_max_cards":false,"max_cards":1.0,"purpose":1.0},"zone_type":"Deck Zone"},{"category":"dice","component_id":"Component_3.0","dice_text":"D6: -","id":3,"parent_id":-1,"position_x":102.642333984375,"position_y":414.797912597656,"rotation_degrees":0.0,"size_x":79.9999694824219,"size_y":80.0},{"category":"counter","component_id":"Component_4.0","counter_name":"","default_value":0,"id":4,"is_vertical":false,"name_auto_scale":true,"name_custom_size":14,"name_position":0,"parent_id":-1,"position_x":104.523559570313,"position_y":529.000183105469,"rotation_degrees":0.0,"size_x":120.0,"size_y":50.0}]}},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Sending broadcast: zone_spawned payload: { "zone_type": "Card Zone", "zone_name": &"Zone_40344_799", "x": 100.0, "y": 100.0, "w": 150.0, "h": 210.0 }
+11:40:05 [Guest] - Sending broadcast: zone_spawned payload: { "zone_type": "Card Zone", "zone_name": &"Zone_51967_666", "x": 100.0, "y": 100.0, "w": 150.0, "h": 210.0 }
+11:40:05 [Guest] - Sending broadcast: zone_spawned payload: { "zone_type": "Deck Zone", "zone_name": &"Zone_60955_703", "x": 100.0, "y": 100.0, "w": 150.0, "h": 210.0 }
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"zone_spawned","payload":{"h":210.0,"w":150.0,"x":100.0,"y":100.0,"zone_name":"Zone_40344_799","zone_type":"Card Zone"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"zone_spawned","payload":{"h":210.0,"w":150.0,"x":100.0,"y":100.0,"zone_name":"Zone_51967_666","zone_type":"Card Zone"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:05 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"zone_spawned","payload":{"h":210.0,"w":150.0,"x":100.0,"y":100.0,"zone_name":"Zone_60955_703","zone_type":"Deck Zone"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Sending broadcast: deck_spawned payload: { "deck_name": &"Deck_6700_355", "deck_data": { "groups": [{ "max": 60.0, "min": 40.0, "name": "Main Deck", "cards": { "37a1755e-7ff9-4095-b94f-3b775c6e77fd": 10.0, "9fbcc1dc-1a0a-48ad-85c2-63ac5fdb39a1": 10.0, "e2e90dbd-d8cd-4e3b-818d-23b070e1f55a": 10.0 }, "shuffle_at_start": false }], "deck_name": "New Deck", "db_id": "22bdd24a-2a9d-49e3-b8ef-988c8e758dcf" }, "x": 547.581970214844, "y": 89.4984130859375 }
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_spawned","payload":{"deck_data":{"db_id":"22bdd24a-2a9d-49e3-b8ef-988c8e758dcf","deck_name":"New Deck","groups":[{"cards":{"37a1755e-7ff9-4095-b94f-3b775c6e77fd":10.0,"9fbcc1dc-1a0a-48ad-85c2-63ac5fdb39a1":10.0,"e2e90dbd-d8cd-4e3b-818d-23b070e1f55a":10.0},"max":60.0,"min":40.0,"name":"Main Deck","shuffle_at_start":false}]},"deck_name":"Deck_6700_355","x":547.581970214844,"y":89.4984130859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - [Drag Ended] Started for card: Deck_6700_356 cat: deck
+11:40:17 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Deck_6700_355", "parent_name": "FieldCanvas", "x": 547.581970214844, "y": 89.4984130859375 }
+11:40:17 [Guest] - Sending broadcast: deck_draw payload: { "deck_name": "Deck_6700_355" }
+11:40:17 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_692538_824", "is_down": true }
+11:40:17 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (คว่ำ)" }
+11:40:17 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 1 }
+11:40:17 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 จั่วการ์ด 1 ใบ" }
+11:40:17 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_692538_824", "is_down": false }
+11:40:17 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (หงาย)" }
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.581970214844,"y":89.4984130859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.582, 89.49841)
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_6700_355"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_692538_824","is_down":true},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:17 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_692538_824","is_down":false},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - [Drag Ended] Started for card: Deck_6700_356 cat: deck
+11:40:18 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Deck_6700_355", "parent_name": "FieldCanvas", "x": 547.581970214844, "y": 89.4984130859375 }
+11:40:18 [Guest] - Sending broadcast: deck_draw payload: { "deck_name": "Deck_6700_355" }
+11:40:18 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_379086_245", "is_down": true }
+11:40:18 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (คว่ำ)" }
+11:40:18 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 2 }
+11:40:18 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 จั่วการ์ด 1 ใบ" }
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.581970214844,"y":89.4984130859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.582, 89.49841)
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_6700_355"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_379086_245","is_down":true},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":2,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_379086_245", "is_down": false }
+11:40:18 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (หงาย)" }
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_379086_245","is_down":false},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:18 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - [Drag Ended] Started for card: Deck_6700_356 cat: deck
+11:40:19 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Deck_6700_355", "parent_name": "FieldCanvas", "x": 547.581970214844, "y": 89.4984130859375 }
+11:40:19 [Guest] - Sending broadcast: deck_draw payload: { "deck_name": "Deck_6700_355" }
+11:40:19 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_173773_735", "is_down": true }
+11:40:19 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (คว่ำ)" }
+11:40:19 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 3 }
+11:40:19 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 จั่วการ์ด 1 ใบ" }
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.581970214844,"y":89.4984130859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.582, 89.49841)
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_6700_355"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_173773_735","is_down":true},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":3,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Sending broadcast: card_flipped payload: { "card_name": "Card_173773_735", "is_down": false }
+11:40:19 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 พลิกการ์ด (หงาย)" }
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_173773_735","is_down":false},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:19 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 919.285705566406, "y": 2.98513031005859 }
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 933.314758300781, "y": -63.2602310180664 }
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 951.352355957031, "y": -115.453590393066 }
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 975.402648925781, "y": -151.587371826172 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":919.285705566406,"y":2.98513031005859},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (919.2857, 2.98513)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 1021.49859619141, "y": -211.810394287109 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":933.314758300781,"y":-63.2602310180664},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (933.3148, -63.26023)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":951.352355957031,"y":-115.453590393066},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (951.3524, -115.4536)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 1101.66552734375, "y": -314.189666748047 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":975.402648925781,"y":-151.587371826172},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (975.4026, -151.5874)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":1021.49859619141,"y":-211.810394287109},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (1021.499, -211.8104)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 1116.62268066406, "y": -355.434509277344 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":1101.66552734375,"y":-314.189666748047},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (1101.666, -314.1897)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 1072.3291015625, "y": -390.254180908203 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":1116.62268066406,"y":-355.434509277344},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (1116.623, -355.4345)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 851.143615722656, "y": -490.843841552734 }
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 704.476257324219, "y": -531.888061523438 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":1072.3291015625,"y":-390.254180908203},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (1072.329, -390.2542)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 444.186279296875, "y": -606.607666015625 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":851.143615722656,"y":-490.843841552734},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (851.1436, -490.8438)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":704.476257324219,"y":-531.888061523438},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (704.4763, -531.8881)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "HandZone", "x": 422.81103515625, "y": -613.287780761719 }
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":444.186279296875,"y":-606.607666015625},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (444.1863, -606.6077)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"HandZone","x":422.81103515625,"y":-613.287780761719},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:20 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: HandZone to pos: (422.811, -613.2878)
+11:40:20 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_379086_245
+11:40:20 [Guest] - [Drag Ended] Started for card: Card_379086_245 cat: card
+11:40:20 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:20 [Guest] - Sending broadcast: card_spawned payload: { "card_name": &"Card_379086_245", "card_path": "e2e90dbd-d8cd-4e3b-818d-23b070e1f55a", "parent_name": "FieldCanvas", "x": 964.4833984375, "y": 440.596557617188, "rot": 180.0 }
+11:40:20 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 2 }
+11:40:20 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม" }
+11:40:21 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_379086_245","card_path":"e2e90dbd-d8cd-4e3b-818d-23b070e1f55a","parent_name":"FieldCanvas","rot":180.0,"x":964.4833984375,"y":440.596557617188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:21 [Guest] - [Realtime UI] Remote card spawned: Card_379086_245 path: e2e90dbd-d8cd-4e3b-818d-23b070e1f55a parent: FieldCanvas pos: (964.4834, 440.5966) rot: 180.0
+11:40:21 [Guest] - [Realtime UI]   Warning: Card already exists on spawn: Card_379086_245
+11:40:21 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":2,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:21 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:22 [Guest] - [Drag Ended] Started for card: Card_379086_245 cat: card
+11:40:22 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:22 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 964.4833984375, "y": 440.596557617188 }
+11:40:22 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":964.4833984375,"y":440.596557617188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:22 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (964.4834, 440.5966)
+11:40:23 [Guest] - [Drag Ended] Started for card: Card_379086_245 cat: card
+11:40:23 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:23 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 964.4833984375, "y": 440.596557617188 }
+11:40:23 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":964.4833984375,"y":440.596557617188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:23 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (964.4834, 440.5966)
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.581970214844,"y":89.4984130859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.582, 89.49841)
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_6700_355"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_260469_403","is_down":true},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Host_4"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_260469_403","is_down":false},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.582092285156,"y":93.1483383178711},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:25 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.5821, 93.14834)
+11:40:25 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Deck_6700_355","parent_name":"FieldCanvas","x":547.582092285156,"y":93.1483383178711},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - [Realtime UI] Remote card moved: Deck_6700_355 parent: FieldCanvas to pos: (547.5821, 93.14834)
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"deck_draw","payload":{"deck_name":"Deck_6700_355"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_796195_939","is_down":true},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 พลิกการ์ด (คว่ำ)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":2,"player_name":"Host_4"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 จั่วการ์ด 1 ใบ"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_flipped","payload":{"card_name":"Card_796195_939","is_down":false},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:26 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 พลิกการ์ด (หงาย)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":999.285705566406,"y":-9.05954742431641},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (999.2857, -9.059547)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":999.285705566406,"y":-37.1635513305664},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (999.2857, -37.16355)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":997.281555175781,"y":-103.408912658691},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (997.2816, -103.4089)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":995.245849609375,"y":-146.40771484375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (995.2458, -146.4077)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":995.585144042969,"y":-214.185394287109},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (995.5851, -214.1854)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":950.385131835938,"y":-430.121826171875},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (950.3851, -430.1218)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":942.979553222656,"y":-437.683715820313},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (942.9796, -437.6837)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"HandZone","x":951.083862304688,"y":-428.345153808594},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: HandZone to pos: (951.0839, -428.3452)
+11:40:27 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_796195_939
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_796195_939","card_path":"e2e90dbd-d8cd-4e3b-818d-23b070e1f55a","parent_name":"FieldCanvas","rot":0.0,"x":991.101135253906,"y":331.747222900391},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - [Realtime UI] Remote card spawned: Card_796195_939 path: e2e90dbd-d8cd-4e3b-818d-23b070e1f55a parent: FieldCanvas pos: (991.1011, 331.7472) rot: 0.0
+11:40:27 [Guest] - [Realtime UI]   Card spawned successfully: Card_796195_939 pos: (991.1011, 331.7472)
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Host_4"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:27 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Host_4 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":958.371887207031,"y":0.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (958.3719, 0.0)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":983.879577636719,"y":0.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (983.8796, 0.0)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1034.27001953125,"y":0.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1034.27, 0.0)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1048.220703125,"y":0.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1048.221, 0.0)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1087.67919921875,"y":28.9148254394531},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1087.679, 28.91483)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1090.6982421875,"y":323.680328369141},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1090.698, 323.6803)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1093.71728515625,"y":446.901336669922},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1093.717, 446.9013)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1093.09228515625,"y":482.525177001953},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1093.092, 482.5252)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1093.09228515625,"y":489.824981689453},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1093.092, 489.825)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1094.03552246094,"y":498.445037841797},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1094.036, 498.445)
+11:40:29 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1093.71728515625,"y":446.901336669922},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:29 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1093.717, 446.9013)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1093.71728515625,"y":414.052154541016},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1093.717, 414.0522)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1090.0732421875,"y":410.402252197266},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1090.073, 410.4023)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1079.14135742188,"y":370.253570556641},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1079.141, 370.2536)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1071.853515625,"y":352.004241943359},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1071.854, 352.0042)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1068.20947265625,"y":326.455047607422},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1068.209, 326.455)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1046.345703125,"y":249.807525634766},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1046.346, 249.8075)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1039.05786132813,"y":187.759552001953},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1039.058, 187.7596)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1031.77001953125,"y":158.560577392578},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1031.77, 158.5606)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1024.48217773438,"y":143.960968017578},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1024.482, 143.961)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1021.46307373047,"y":137.536224365234},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1021.463, 137.5362)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1011.15631103516,"y":131.111419677734},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1011.156, 131.1114)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":975.341735839844,"y":110.087127685547},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (975.3417, 110.0871)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":971.248474121094,"y":109.458023071289},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (971.2485, 109.458)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":971.659912109375,"y":106.384124755859},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (971.6599, 106.3841)
+11:40:30 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":971.659912109375,"y":106.384124755859},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:30 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (971.6599, 106.3841)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":986.860656738281,"y":158.357391357422},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (986.8607, 158.3574)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1004.45538330078,"y":285.228302001953},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1004.455, 285.2283)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1007.47442626953,"y":368.300628662109},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1007.474, 368.3006)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1006.84942626953,"y":498.821380615234},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1006.849, 498.8214)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1006.22442626953,"y":570.943969726563},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1006.224, 570.944)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1005.22894287109,"y":580.499816894531},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1005.229, 580.4998)
+11:40:31 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1005.22894287109,"y":580.499816894531},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:31 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1005.229, 580.4998)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 963.8583984375, "y": 439.721496582031 }
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 962.6083984375, "y": 433.43896484375 }
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 962.6083984375, "y": 419.841186523438 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":963.8583984375,"y":439.721496582031},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (963.8584, 439.7215)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 966.3583984375, "y": 338.97216796875 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":962.6083984375,"y":433.43896484375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (962.6084, 433.439)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 973.146118164063, "y": 268.717224121094 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":962.6083984375,"y":419.841186523438},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (962.6084, 419.8412)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 979.934204101563, "y": 227.924072265625 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":966.3583984375,"y":338.97216796875},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (966.3584, 338.9722)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 979.934204101563, "y": 223.391479492188 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":973.146118164063,"y":268.717224121094},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (973.1461, 268.7172)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 979.934204101563, "y": 214.326354980469 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":979.934204101563,"y":227.924072265625},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (979.9342, 227.9241)
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":979.934204101563,"y":223.391479492188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (979.9342, 223.3915)
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":979.934204101563,"y":214.326354980469},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (979.9342, 214.3264)
+11:40:32 [Guest] - [Drag Ended] Started for card: Card_379086_245 cat: card
+11:40:32 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 979.934204101563, "y": 214.326354980469 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":979.934204101563,"y":214.326354980469},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (979.9342, 214.3264)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 979.934204101563, "y": 216.592712402344 }
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 964.09619140625, "y": 230.190368652344 }
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 934.68212890625, "y": 252.853271484375 }
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 903.005615234375, "y": 275.51611328125 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":979.934204101563,"y":216.592712402344},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:32 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (979.9342, 216.5927)
+11:40:32 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 855.490905761719, "y": 302.711608886719 }
+11:40:32 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":964.09619140625,"y":230.190368652344},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (964.0962, 230.1904)
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":934.68212890625,"y":252.853271484375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (934.6821, 252.8533)
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 721.996948242188, "y": 400.162109375 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":903.005615234375,"y":275.51611328125},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (903.0056, 275.5161)
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":855.490905761719,"y":302.711608886719},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (855.4909, 302.7116)
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 660.906494140625, "y": 472.683349609375 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":721.996948242188,"y":400.162109375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (721.9969, 400.1621)
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 658.643920898438, "y": 472.683349609375 }
+11:40:33 [Guest] - [Drag Ended] Started for card: Card_379086_245 cat: card
+11:40:33 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_379086_245", "parent_name": "FieldCanvas", "x": 658.643920898438, "y": 472.683349609375 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":660.906494140625,"y":472.683349609375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (660.9065, 472.6833)
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":658.643920898438,"y":472.683349609375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (658.6439, 472.6833)
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_379086_245","parent_name":"FieldCanvas","x":658.643920898438,"y":472.683349609375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_379086_245 parent: FieldCanvas to pos: (658.6439, 472.6833)
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 825.256408691406, "y": -25.1189956665039 }
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 809.222961425781, "y": -63.2602310180664 }
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 759.118713378906, "y": -141.550140380859 }
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 706.978576660156, "y": -204.623184204102 }
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 682.897033691406, "y": -229.554840087891 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":825.256408691406,"y":-25.1189956665039},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (825.2564, -25.119)
+11:40:33 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 561.320922851563, "y": -337.006408691406 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":809.222961425781,"y":-63.2602310180664},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (809.223, -63.26023)
+11:40:33 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":759.118713378906,"y":-141.550140380859},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (759.1187, -141.5501)
+11:40:33 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":706.978576660156,"y":-204.623184204102},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (706.9786, -204.6232)
+11:40:33 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:33 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_692538_824", "parent_name": "HandZone", "x": 539.925109863281, "y": -357.767395019531 }
+11:40:33 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":682.897033691406,"y":-229.554840087891},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:33 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (682.897, -229.5548)
+11:40:34 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":561.320922851563,"y":-337.006408691406},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (561.3209, -337.0064)
+11:40:34 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_692538_824
+11:40:34 [Guest] - [Drag Ended] Started for card: Card_692538_824 cat: card
+11:40:34 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:34 [Guest] - Sending broadcast: card_spawned payload: { "card_name": &"Card_692538_824", "card_path": "e2e90dbd-d8cd-4e3b-818d-23b070e1f55a", "parent_name": "FieldCanvas", "x": 840.0400390625, "y": 211.701354980469, "rot": 180.0 }
+11:40:34 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 1 }
+11:40:34 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม" }
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_692538_824","parent_name":"HandZone","x":539.925109863281,"y":-357.767395019531},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - [Realtime UI] Remote card moved: Card_692538_824 parent: HandZone to pos: (539.9251, -357.7674)
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_692538_824","card_path":"e2e90dbd-d8cd-4e3b-818d-23b070e1f55a","parent_name":"FieldCanvas","rot":180.0,"x":840.0400390625,"y":211.701354980469},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - [Realtime UI] Remote card spawned: Card_692538_824 path: e2e90dbd-d8cd-4e3b-818d-23b070e1f55a parent: FieldCanvas pos: (840.04, 211.7014) rot: 180.0
+11:40:34 [Guest] - [Realtime UI]   Warning: Card already exists on spawn: Card_692538_824
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":1,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 909.264953613281, "y": -5.04465484619141 }
+11:40:34 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 899.243957519531, "y": -25.1189956665039 }
+11:40:34 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 875.193908691406, "y": -55.2305679321289 }
+11:40:34 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 863.168762207031, "y": -77.3123550415039 }
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":909.264953613281,"y":-5.04465484619141},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (909.265, -5.044655)
+11:40:34 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:34 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 758.951721191406, "y": -209.803070068359 }
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":899.243957519531,"y":-25.1189956665039},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:34 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (899.244, -25.119)
+11:40:34 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:34 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":875.193908691406,"y":-55.2305679321289},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (875.1939, -55.23057)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":863.168762207031,"y":-77.3123550415039},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (863.1688, -77.31236)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 649.976867675781, "y": -294.75390625 }
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":758.951721191406,"y":-209.803070068359},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (758.9517, -209.8031)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 576.382446289063, "y": -353.371459960938 }
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 536.298950195313, "y": -381.475463867188 }
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":649.976867675781,"y":-294.75390625},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (649.9769, -294.7539)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 510.244750976563, "y": -395.527587890625 }
+11:40:35 [Guest] - Incoming Raw: {"ref":"84","event":"phx_reply","payload":{"status":"ok","response":{}},"topic":"phoenix"}
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":576.382446289063,"y":-353.371459960938},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (576.3824, -353.3715)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":536.298950195313,"y":-381.475463867188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (536.299, -381.4755)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 500.223754882813, "y": -409.57958984375 }
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":510.244750976563,"y":-395.527587890625},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (510.2448, -395.5276)
+11:40:35 [Guest] - [Realtime UI]   Warning: Card not found for move: Card_173773_735
+11:40:35 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_173773_735", "parent_name": "HandZone", "x": 464.148803710938, "y": -433.668823242188 }
+11:40:35 [Guest] - [Drag Ended] Started for card: Card_173773_735 cat: card
+11:40:35 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:35 [Guest] - Sending broadcast: card_spawned payload: { "card_name": &"Card_173773_735", "card_path": "e2e90dbd-d8cd-4e3b-818d-23b070e1f55a", "parent_name": "FieldCanvas", "x": 950.907958984375, "y": 182.239562988281, "rot": 180.0 }
+11:40:35 [Guest] - Sending broadcast: opponent_hand_updated payload: { "player_name": "Guest_780", "count": 0 }
+11:40:35 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม" }
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":500.223754882813,"y":-409.57958984375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (500.2238, -409.5796)
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_173773_735","parent_name":"HandZone","x":464.148803710938,"y":-433.668823242188},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card moved: Card_173773_735 parent: HandZone to pos: (464.1488, -433.6688)
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_spawned","payload":{"card_name":"Card_173773_735","card_path":"e2e90dbd-d8cd-4e3b-818d-23b070e1f55a","parent_name":"FieldCanvas","rot":180.0,"x":950.907958984375,"y":182.239562988281},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - [Realtime UI] Remote card spawned: Card_173773_735 path: e2e90dbd-d8cd-4e3b-818d-23b070e1f55a parent: FieldCanvas pos: (950.908, 182.2396) rot: 180.0
+11:40:35 [Guest] - [Realtime UI]   Warning: Card already exists on spawn: Card_173773_735
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"opponent_hand_updated","payload":{"count":0,"player_name":"Guest_780"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:35 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 เล่นการ์ด (UntitledCard) ลงสนาม"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:38 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_796195_939", "parent_name": "FieldCanvas", "x": 1013.24560546875, "y": 580.499755859375 }
+11:40:38 [Guest] - [Drag Ended] Started for card: Card_796195_939 cat: card
+11:40:38 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:38 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_796195_939", "parent_name": "FieldCanvas", "x": 1013.24560546875, "y": 580.499755859375 }
+11:40:38 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1013.24560546875,"y":580.499755859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:38 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1013.246, 580.4998)
+11:40:38 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1013.24560546875,"y":580.499755859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:38 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1013.246, 580.4998)
+11:40:38 [Guest] - Sending broadcast: card_tapped payload: { "card_name": "Card_796195_939", "rot": 90.0 }
+11:40:38 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 เอียงการ์ด (Tap)" }
+11:40:38 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_tapped","payload":{"card_name":"Card_796195_939","rot":90.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:38 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 เอียงการ์ด (Tap)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:38 [Guest] - [Drag Ended] Started for card: Card_796195_939 cat: card
+11:40:38 [Guest] - [Drag Ended]   is_test_mode: true from_deck_viewer: false
+11:40:38 [Guest] - Sending broadcast: card_moved payload: { "card_name": "Card_796195_939", "parent_name": "FieldCanvas", "x": 1013.24560546875, "y": 580.499755859375 }
+11:40:39 [Guest] - Sending broadcast: card_tapped payload: { "card_name": "Card_796195_939", "rot": 0.0 }
+11:40:39 [Guest] - Sending broadcast: action_logged payload: { "text": "Guest_780 เอียงการ์ด (Untap)" }
+11:40:39 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_moved","payload":{"card_name":"Card_796195_939","parent_name":"FieldCanvas","x":1013.24560546875,"y":580.499755859375},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:39 [Guest] - [Realtime UI] Remote card moved: Card_796195_939 parent: FieldCanvas to pos: (1013.246, 580.4998)
+11:40:39 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"card_tapped","payload":{"card_name":"Card_796195_939","rot":0.0},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}
+11:40:39 [Guest] - Incoming Raw: {"ref":null,"event":"broadcast","payload":{"event":"action_logged","payload":{"text":"Guest_780 เอียงการ์ด (Untap)"},"type":"broadcast"},"topic":"realtime:room_c5e7f035-6c26-44a8-8500-0aaff52325c4"}

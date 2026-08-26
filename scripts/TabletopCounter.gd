@@ -1,6 +1,9 @@
 extends Control
 
 signal right_clicked
+signal value_changed(new_value: int)
+signal drag_moved
+signal drag_ended
 
 var dragging = false
 var is_dragging_really = false
@@ -29,7 +32,7 @@ var right_hold_time = 0.0
 var amount_popup: ConfirmationDialog
 var amount_spin: SpinBox
 
-@onready var val_label = $MarginContainer/Label
+@onready var val_label = $Label
 @onready var name_label = Label.new()
 
 func _ready():
@@ -76,15 +79,19 @@ func _ready():
 	amount_popup.confirmed.connect(_on_amount_confirmed)
 	amount_popup.custom_action.connect(func(action):
 		if action == "add_val":
-			value += int(amount_spin.value)
-			update_label()
+			set_value(value + int(amount_spin.value))
 			amount_popup.hide()
 	)
 	add_child(amount_popup)
 
 func _on_amount_confirmed():
-	value = int(amount_spin.value)
+	set_value(int(amount_spin.value))
+
+func set_value(new_val: int, emit_sig: bool = true):
+	value = new_val
 	update_label()
+	if emit_sig:
+		value_changed.emit(value)
 
 func _process(delta):
 	if is_pressing and not is_dragging_really:
@@ -99,8 +106,7 @@ func _process(delta):
 		right_hold_time += delta
 		if right_hold_time >= 0.5:
 			is_right_pressing = false
-			value = default_value
-			update_label()
+			set_value(default_value)
 
 func _gui_input(event):
 	if event is InputEventMouseButton:
@@ -117,24 +123,26 @@ func _gui_input(event):
 				start_click_pos = event.position
 				is_dragging_really = false
 				
-				var center = size / 2
+				var g_center = get_global_rect().get_center()
+				var g_mouse = get_global_mouse_position()
 				if is_vertical:
-					if event.position.y < center.y:
-						press_direction = 1 # up = +
+					if g_mouse.y < g_center.y:
+						press_direction = 1 # screen up = +
 					else:
-						press_direction = -1 # down = -
+						press_direction = -1 # screen down = -
 				else:
-					if event.position.x > center.x:
-						press_direction = 1 # right = +
+					if g_mouse.x > g_center.x:
+						press_direction = 1 # screen right = +
 					else:
-						press_direction = -1 # left = -
+						press_direction = -1 # screen left = -
 						
 			else:
+				if is_dragging_really:
+					drag_ended.emit()
 				dragging = false
 				is_pressing = false
 				if not is_dragging_really:
-					value += press_direction
-					update_label()
+					set_value(value + press_direction)
 				is_dragging_really = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			if not locked:
@@ -153,6 +161,7 @@ func _gui_input(event):
 			
 		if is_dragging_really:
 			global_position = get_global_mouse_position() + drag_offset
+			drag_moved.emit()
 
 func update_label():
 	if val_label:
