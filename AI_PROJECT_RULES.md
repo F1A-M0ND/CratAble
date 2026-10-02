@@ -1,5 +1,9 @@
 # AI Assistant Project Rules
 
+## Project concept
+
+Read [PROJECT_CONCEPT.md](PROJECT_CONCEPT.md) before planning or changing product behavior. It records the owner's concept, quality goals, unresolved wording, and authorized workflow. Preserve the platform's freedom: players define game rules, while CratAble provides the tabletop and creation tools.
+
 **CRITICAL DIRECTIVE FROM THE DEVELOPER:**
 
 "ให้นั่งไล่อ่านโค้ดทั้งหมดในโปรเจกต์นี้ก่อนทุกครั้งและหากหลักการที่ผมบอกมันใช้ไม่ได้ให้แจ้งก่อน ผมจะเป็นคนตัดสินใจเปลี่ยนเอง เพื่อป้องกันการเกิดบัคเมื่อเพิ่มระบบหรือ feature ใหม่ๆ"

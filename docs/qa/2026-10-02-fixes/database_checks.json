@@ -1,0 +1,12 @@
+{
+  "migration": "secure_rooms",
+  "closed_approved_rooms": 56,
+  "sql_regression_passed": true,
+  "guest_exit_status": "waiting",
+  "guest_cleared": true,
+  "host_exit_status": "closed",
+  "remaining_qa_rooms": 0,
+  "active_rooms": 0,
+  "plaintext_password_rows": 0,
+  "advisor_public_rpc_warnings_reviewed": 8
+}

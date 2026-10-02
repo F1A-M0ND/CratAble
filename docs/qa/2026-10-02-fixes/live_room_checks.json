@@ -1,0 +1,9 @@
+{
+  "wrong_password_rejected": true,
+  "correct_password_connected": true,
+  "reconnected": true,
+  "deck_count_matches": true,
+  "both_drew_one": true,
+  "host_exit_reset": true,
+  "guest_exit_reset": true
+}

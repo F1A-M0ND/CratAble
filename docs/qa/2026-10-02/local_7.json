@@ -1,0 +1,57 @@
+{
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [
+		{
+			"category": "zone",
+			"id": "Component_0.0",
+			"name": "Component_0_0",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "deck",
+			"deck_confirmed": true,
+			"draw_pile": [
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Maid_Fairy.json"
+			],
+			"id": "QADeck",
+			"name": "QADeck",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"card_atk": 2.0,
+			"card_name": "Maid Fairy",
+			"category": "card",
+			"id": "Card_427376_104",
+			"in_hand": true,
+			"name": "Card_427376_104",
+			"parent": "HandZone",
+			"rotation": 0.0,
+			"x": 919.285705566406,
+			"y": 7.0
+		}
+	],
+	"extra": {
+
+	},
+	"field_rotation": 0.0,
+	"hand_count": 1,
+	"op": "switch_player",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "HostPlayer",
+	"role": "Host",
+	"room_id": "",
+	"scene": "res://SCENE/Main.tscn",
+	"seq": 7
+}

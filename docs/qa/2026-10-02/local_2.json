@@ -1,0 +1,20 @@
+{
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [],
+	"extra": {
+		"actual_custom_stat": 100.0,
+		"reopened_has_texture": false,
+		"reopened_image_path": "",
+		"requested_custom_stat": 250,
+		"saved_image_path": "res://card_images/Blade_Fairy_img.PNG"
+	},
+	"op": "card_roundtrip",
+	"pending_images": 0,
+	"play_mode": false,
+	"player": "HostPlayer",
+	"role": "Host",
+	"room_id": "",
+	"scene": "res://scenes/CardEditor.tscn",
+	"seq": 2
+}

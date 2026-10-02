@@ -1,0 +1,80 @@
+{
+	"action_logs": 5,
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [
+		{
+			"category": "deck",
+			"deck_confirmed": true,
+			"draw_pile": [
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Maid_Fairy.json"
+			],
+			"id": "QADeck",
+			"name": "QADeck",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "counter",
+			"counter_value": 0,
+			"id": "Counter_578796_247",
+			"name": "Counter_578796_247",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"value": 0,
+			"x": 400.0,
+			"y": 100.0
+		},
+		{
+			"category": "dice",
+			"dice": "D6: -",
+			"id": "Dice_395289_341",
+			"name": "Dice_395289_341",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 300.0,
+			"y": 100.0
+		},
+		{
+			"card_atk": -1,
+			"card_name": "",
+			"category": "card",
+			"id": "QACard",
+			"name": "QACard",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 350.0,
+			"y": 250.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_150656_21",
+			"name": "Zone_150656_21",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		}
+	],
+	"connected": true,
+	"extra": {
+
+	},
+	"field_rotation": 180.0,
+	"hand_count": 0,
+	"op": "snapshot",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "Guest_917",
+	"role": "Guest",
+	"room_id": "2584f955-984e-447a-b3fd-b49274459896",
+	"scene": "res://SCENE/Main.tscn",
+	"seq": 4,
+	"socket_state": 1
+}

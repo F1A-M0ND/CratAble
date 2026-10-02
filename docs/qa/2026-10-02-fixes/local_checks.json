@@ -1,0 +1,67 @@
+{
+	"bundled_deck_load": {
+		"group_count": 2,
+		"has_groups": true
+	},
+	"card_roundtrip": {
+		"image": true,
+		"path": "res://card_images/Blade_Fairy_img.PNG",
+		"power": 250.0
+	},
+	"checks": {
+		"card_image": true,
+		"counter_hold": true,
+		"counter_snapshot": true,
+		"custom_stat": true,
+		"deck_snapshot": true,
+		"face_down": true,
+		"field_parent": true,
+		"inspect_uuid": true,
+		"legacy_deck": true,
+		"load_local": true,
+		"nested_restore": true,
+		"new_deck": true,
+		"raw_card": true
+	},
+	"counter_long_press": {
+		"dialog_open": true,
+		"value_after_release": 10,
+		"value_before": 10
+	},
+	"deck_new_format_roundtrip": {
+		"copies": 3.0,
+		"groups": 1
+	},
+	"field_load_button": {
+		"local_file_dialog_visible": true,
+		"open_mode": true
+	},
+	"field_roundtrip": {
+		"components": 4,
+		"counter_default": 10,
+		"nested_card_parent_category": "field"
+	},
+	"game_state_roundtrip": {
+		"counter_after": 27,
+		"counter_before": 27,
+		"deck_cards_after": 2,
+		"deck_cards_before": 2,
+		"deck_confirmed_after": true,
+		"face_down_after": true,
+		"face_down_before": true
+	},
+	"inspect_database_card_by_id": {
+		"opened": true
+	},
+	"nested_test_mode_restore": {
+		"actual_x": 40.0,
+		"actual_y": 50.0,
+		"expected_x": 40,
+		"expected_y": 50
+	},
+	"raw_card_payload": {
+		"atk": 123,
+		"name": "Raw card"
+	},
+	"suite_complete": true
+}

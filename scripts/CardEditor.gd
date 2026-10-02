@@ -36,6 +36,7 @@ var unsaved_dialog: ConfirmationDialog
 var dragging_zoom: bool = false
 
 func _ready():
+	call_deferred("_apply_platform_style")
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	save_btn.pressed.connect(_on_save_button_pressed)
 	delete_btn.pressed.connect(_on_delete_pressed)
@@ -170,6 +171,8 @@ func _load_existing_card():
 	var image_src = ""
 	if data.has("image_url") and data["image_url"] != "":
 		image_src = data["image_url"]
+	elif data.get("image_path", "") != "":
+		image_src = data["image_path"]
 	elif stats_data.has("image_path") and stats_data["image_path"] != "":
 		image_src = stats_data["image_path"]
 		
@@ -182,7 +185,7 @@ func _load_existing_card():
 					preview_image.texture = tex
 					preview_label.hide()
 					current_image_path = image_src
-			)
+			, self)
 		else:
 			_on_file_selected(image_src)
 		
@@ -205,6 +208,8 @@ func _add_custom_stat(stat_name: String, stat_val: int):
 	name_input.custom_minimum_size = Vector2(100, 0)
 	
 	var val_spin = SpinBox.new()
+	val_spin.allow_greater = true
+	val_spin.allow_lesser = true
 	val_spin.value = stat_val
 	
 	var del_btn = Button.new()
@@ -546,3 +551,6 @@ func _on_back_pressed():
 		unsaved_dialog.popup_centered()
 	else:
 		Global.switch_scene("res://scenes/CardSelector.tscn")
+
+func _apply_platform_style():
+	preload("res://scripts/PlatformStyle.gd").apply(self)

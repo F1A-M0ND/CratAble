@@ -22,6 +22,7 @@ func _get_auth_headers(is_json: bool = true) -> PackedStringArray:
 # Generic request function
 func request_supabase(path: String, method: HTTPClient.Method, body_data = null, headers_modifier: Callable = Callable(), callback: Callable = Callable()):
 	var http_request = HTTPRequest.new()
+	http_request.timeout = 20.0
 	add_child(http_request)
 	
 	var url = SUPABASE_URL + path
@@ -71,7 +72,8 @@ func request_supabase(path: String, method: HTTPClient.Method, body_data = null,
 		http_request.queue_free()
 
 # Texture Downloader with Cache
-func get_texture_or_load(url: String, callback: Callable) -> Texture2D:
+func get_texture_or_load(url: String, callback: Callable, callback_owner: Node = null) -> Texture2D:
+	var request = {"callback": callback, "owner": weakref(callback_owner) if callback_owner else null}
 	if url == "":
 		callback.call(null)
 		return null
@@ -81,12 +83,13 @@ func get_texture_or_load(url: String, callback: Callable) -> Texture2D:
 		return texture_cache[url]
 	
 	if pending_requests.has(url):
-		pending_requests[url].append(callback)
+		pending_requests[url].append(request)
 		return null
 		
-	pending_requests[url] = [callback]
+	pending_requests[url] = [request]
 	
 	var http_request = HTTPRequest.new()
+	http_request.timeout = 20.0
 	add_child(http_request)
 	http_request.request_completed.connect(func(result, response_code, headers, body):
 		var texture = null
@@ -119,9 +122,9 @@ func get_texture_or_load(url: String, callback: Callable) -> Texture2D:
 		
 		var list = pending_requests.get(url, [])
 		pending_requests.erase(url)
-		for cb in list:
-			if cb.is_valid():
-				cb.call(texture)
+		for pending in list:
+			if pending.owner != null and pending.owner.get_ref() == null: continue
+			if pending.callback.is_valid(): pending.callback.call(texture)
 				
 		http_request.queue_free()
 	)
@@ -131,9 +134,9 @@ func get_texture_or_load(url: String, callback: Callable) -> Texture2D:
 		print("HTTPRequest error loading URL: ", url, " error: ", err)
 		var list = pending_requests.get(url, [])
 		pending_requests.erase(url)
-		for cb in list:
-			if cb.is_valid():
-				cb.call(null)
+		for pending in list:
+			if pending.owner != null and pending.owner.get_ref() == null: continue
+			if pending.callback.is_valid(): pending.callback.call(null)
 		http_request.queue_free()
 	
 	return null
@@ -285,34 +288,22 @@ func fetch_all_fields(callback: Callable):
 func delete_field(uuid: String, callback: Callable):
 	request_supabase("/rest/v1/fields?id=eq." + uuid.uri_encode(), HTTPClient.METHOD_DELETE, null, Callable(), callback)
 
-# --- ROOMS CRUD ---
+# Room access is validated by server RPCs; there is intentionally no insecure REST fallback.
 func insert_room(room_name: String, description: String, password: String, field_data: Dictionary, deck_data: Dictionary, host_name: String, callback: Callable):
-	var body = {
-		"name": room_name,
-		"description": description,
-		"password": password if password != "" else null,
-		"field_data": field_data,
-		"deck_data": deck_data,
-		"host_player": host_name,
-		"status": "waiting"
-	}
-	var modifier = func(headers: PackedStringArray) -> PackedStringArray:
-		headers.append("Prefer: return=representation")
-		return headers
-	request_supabase("/rest/v1/rooms", HTTPClient.METHOD_POST, body, modifier, callback)
+	request_supabase("/rest/v1/rpc/cratable_create_room", HTTPClient.METHOD_POST,
+		{"p_name": room_name, "p_description": description, "p_password": password,
+		"p_field_data": field_data, "p_deck_data": deck_data, "p_player": host_name}, Callable(), callback)
 
 func fetch_active_rooms(callback: Callable):
-	request_supabase("/rest/v1/rooms?status=eq.waiting&select=*", HTTPClient.METHOD_GET, null, Callable(), callback)
+	request_supabase("/rest/v1/rpc/cratable_list_rooms", HTTPClient.METHOD_POST, {}, Callable(), callback)
 
-func join_room(room_id: String, guest_name: String, callback: Callable):
-	var body = {
-		"guest_player": guest_name,
-		"status": "playing"
-	}
-	request_supabase("/rest/v1/rooms?id=eq." + room_id.uri_encode(), HTTPClient.METHOD_PATCH, body, Callable(), callback)
+func join_room(room_id: String, guest_name: String, callback: Callable, password: String = ""):
+	request_supabase("/rest/v1/rpc/cratable_join_room", HTTPClient.METHOD_POST,
+		{"p_room_id": room_id, "p_player": guest_name, "p_password": password}, Callable(), callback)
+
+func leave_room(room_id: String, _role: String, callback: Callable = Callable()):
+	request_supabase("/rest/v1/rpc/cratable_leave_room", HTTPClient.METHOD_POST,
+		{"p_room_id": room_id, "p_token": Global.online_room_data.get("session_token", "")}, Callable(), callback)
 
 func update_room_status(room_id: String, status: String, callback: Callable = Callable()):
-	var body = {
-		"status": status
-	}
-	request_supabase("/rest/v1/rooms?id=eq." + room_id.uri_encode(), HTTPClient.METHOD_PATCH, body, Callable(), callback)
+	if status == "closed": leave_room(room_id, Global.online_player_role, callback)

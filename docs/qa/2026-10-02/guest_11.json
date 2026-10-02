@@ -1,0 +1,16 @@
+{
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [],
+	"extra": {
+
+	},
+	"op": "exit_button",
+	"pending_images": 0,
+	"play_mode": false,
+	"player": "Guest_917",
+	"role": "Guest",
+	"room_id": "2584f955-984e-447a-b3fd-b49274459896",
+	"scene": "res://scenes/MainMenu.tscn",
+	"seq": 11
+}

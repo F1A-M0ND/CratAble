@@ -63,7 +63,7 @@ func _on_metadata_loaded():
 		SupabaseService.get_texture_or_load(url, func(tex):
 			images_loaded += 1
 			_update_progress()
-		)
+		, self)
 
 func _update_progress():
 	if total_images_to_load > 0:

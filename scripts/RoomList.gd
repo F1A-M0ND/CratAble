@@ -23,6 +23,7 @@ var online_field_list: ItemList
 var online_fields_cache = []
 
 func _ready():
+	call_deferred("_apply_platform_style")
 	$Header/CreateBtn.pressed.connect(_on_create_room_pressed)
 	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.pressed.connect(_on_confirm_create_pressed)
 	$RoomCreatorPanel/VBoxContainer/CancelBtn.pressed.connect(_on_close_creator_pressed)
@@ -65,6 +66,7 @@ func _ready():
 	_init_liquid_auras()
 
 func _on_local_mode_selected():
+	Global.reset_online_session()
 	is_online_mode = false
 	mode_selection_ui.hide()
 	
@@ -128,36 +130,58 @@ func _refresh_online_rooms():
 				$ScrollContainer/VBoxContainer.add_child(btn)
 		else:
 			var err_lbl = Label.new()
-			err_lbl.text = "Error loading rooms from Supabase."
+			err_lbl.text = "Online room server update is required." if status == 404 else "Error loading rooms from Supabase."
 			err_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			$ScrollContainer/VBoxContainer.add_child(err_lbl)
 	)
 
+var joining_room = false
+
 func _on_join_room_clicked(room: Dictionary):
+	if joining_room: return
+	if room.get("has_password", false):
+		var dialog = ConfirmationDialog.new()
+		dialog.title = "Room password"
+		var input = LineEdit.new()
+		input.secret = true
+		input.placeholder_text = "Password"
+		input.custom_minimum_size = Vector2(300, 40)
+		dialog.add_child(input)
+		dialog.confirmed.connect(func():
+			_join_room_with_password(room, input.text)
+			dialog.queue_free()
+		)
+		dialog.canceled.connect(dialog.queue_free)
+		add_child(dialog)
+		dialog.popup_centered()
+		input.grab_focus()
+	else:
+		_join_room_with_password(room, "")
+
+func _join_room_with_password(room: Dictionary, password: String):
+	if joining_room: return
+	joining_room = true
 	var guest_name = "Guest_" + str(randi() % 1000)
-	Global.online_room_id = room.get("id", "")
-	Global.online_room_data = room
-	Global.online_player_role = "Guest"
-	Global.online_player_name = guest_name
-	
-	var fd = room.get("field_data")
-	Global.loaded_field_data = fd if typeof(fd) == TYPE_DICTIONARY else {}
-	
-	var dd = room.get("deck_data")
-	Global.selected_deck_data = dd if typeof(dd) == TYPE_DICTIONARY else {}
-	
-	SupabaseService.join_room(Global.online_room_id, guest_name, func(status, res):
-		if status == 200 or status == 204:
-			print("Joined Room successfully as Guest!")
+	SupabaseService.join_room(room.get("id", ""), guest_name, func(status, res):
+		if not is_instance_valid(self): return
+		joining_room = false
+		if status == 200 and res is Dictionary and res.get("id", "") != "":
+			Global.online_room_id = res["id"]
+			Global.online_room_data = res
+			Global.online_player_role = "Guest"
+			Global.online_player_name = guest_name
+			Global.loaded_field_data = res.get("field_data", {}) if res.get("field_data") is Dictionary else {}
+			Global.selected_deck_data = res.get("deck_data", {}) if res.get("deck_data") is Dictionary else {}
 			Global.play_mode = true
 			Global.switch_scene("res://SCENE/Main.tscn")
 		else:
 			var err = AcceptDialog.new()
 			err.title = "Join Failed"
-			err.dialog_text = "Failed to join room on Supabase."
+			err.dialog_text = "Unable to join: check the password and room availability."
+			if status == 404: err.dialog_text = "Online room server update is required."
 			add_child(err)
 			err.popup_centered()
-	)
+	, password)
 
 func _on_create_room_pressed():
 	# Show creator panel for online room
@@ -297,7 +321,7 @@ func _on_confirm_create_pressed():
 			else:
 				var err_dialog = AcceptDialog.new()
 				err_dialog.title = "Error"
-				err_dialog.dialog_text = "Failed to create room on Supabase. (Status: " + str(status) + ")"
+				err_dialog.dialog_text = "Online room server update is required." if status == 404 else "Failed to create room on Supabase. (Status: " + str(status) + ")"
 				add_child(err_dialog)
 				err_dialog.popup_centered()
 		)
@@ -621,3 +645,6 @@ func _on_player_count_changed(value: float):
 		btn2.add_theme_stylebox_override("normal", inactive_style)
 		btn2.add_theme_stylebox_override("hover", inactive_style)
 		btn2.add_theme_stylebox_override("pressed", inactive_style)
+
+func _apply_platform_style():
+	preload("res://scripts/PlatformStyle.gd").apply(self)

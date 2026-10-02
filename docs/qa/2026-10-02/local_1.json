@@ -1,0 +1,16 @@
+{
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [],
+	"extra": {
+
+	},
+	"op": "boot",
+	"pending_images": 0,
+	"play_mode": false,
+	"player": "HostPlayer",
+	"role": "Host",
+	"room_id": "",
+	"scene": "res://scenes/MainMenu.tscn",
+	"seq": 1
+}

@@ -10,7 +10,7 @@ var is_dragging_really = false
 var locked: bool = false
 var start_click_pos = Vector2()
 var drag_offset = Vector2()
-var drag_threshold = 5.0
+var drag_threshold = 15.0
 
 var value: int = 0
 var is_pressing = false
@@ -89,6 +89,7 @@ func _on_amount_confirmed():
 
 func set_value(new_val: int, emit_sig: bool = true):
 	value = new_val
+	set_meta("counter_value", value)
 	update_label()
 	if emit_sig:
 		value_changed.emit(value)
@@ -123,25 +124,26 @@ func _gui_input(event):
 				start_click_pos = event.position
 				is_dragging_really = false
 				
-				var g_center = get_global_rect().get_center()
-				var g_mouse = get_global_mouse_position()
+				var local_mouse = get_local_mouse_position()
+				var l_center = size / 2.0
 				if is_vertical:
-					if g_mouse.y < g_center.y:
-						press_direction = 1 # screen up = +
+					if local_mouse.y < l_center.y:
+						press_direction = 1 # local up = +
 					else:
-						press_direction = -1 # screen down = -
+						press_direction = -1 # local down = -
 				else:
-					if g_mouse.x > g_center.x:
-						press_direction = 1 # screen right = +
+					if local_mouse.x > l_center.x:
+						press_direction = 1 # local right = +
 					else:
-						press_direction = -1 # screen left = -
+						press_direction = -1 # local left = -
 						
 			else:
+				var was_click = is_pressing and not is_dragging_really
 				if is_dragging_really:
 					drag_ended.emit()
 				dragging = false
 				is_pressing = false
-				if not is_dragging_really:
+				if was_click:
 					set_value(value + press_direction)
 				is_dragging_really = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT:

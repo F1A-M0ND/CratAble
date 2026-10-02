@@ -1,0 +1,154 @@
+{
+	"action_logs": 2,
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [
+		{
+			"category": "deck",
+			"id": "QADeck",
+			"name": "QADeck",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "deck",
+			"id": "QADeck",
+			"name": "QADeck2",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "counter",
+			"counter_value": 0,
+			"id": "Counter_578796_247",
+			"name": "Counter_578796_247",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"value": 0,
+			"x": 400.0,
+			"y": 100.0
+		},
+		{
+			"category": "counter",
+			"counter_value": 0,
+			"id": "Counter_578796_247",
+			"name": "Counter_578796_248",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"value": 0,
+			"x": 400.0,
+			"y": 100.0
+		},
+		{
+			"category": "dice",
+			"dice": "D6: 5",
+			"id": "Dice_395289_341",
+			"name": "Dice_395289_341",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 300.0,
+			"y": 91.6666641235352
+		},
+		{
+			"category": "dice",
+			"dice": "D6: -",
+			"id": "Dice_395289_341",
+			"name": "Dice_395289_342",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 300.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_150656_21",
+			"name": "Zone_150656_21",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_150656_21",
+			"name": "Zone_150656_22",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_686397_309",
+			"name": "Zone_686397_309",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_688099_75",
+			"name": "Zone_688099_75",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_519851_441",
+			"name": "Zone_519851_441",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_522583_4",
+			"name": "Zone_522583_4",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_532152_666",
+			"name": "Zone_532152_666",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_539674_719",
+			"name": "Zone_539674_719",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		}
+	],
+	"connected": true,
+	"extra": {
+
+	},
+	"field_rotation": 180.0,
+	"hand_count": 0,
+	"op": "local_start",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "Guest_917",
+	"role": "Guest",
+	"room_id": "2584f955-984e-447a-b3fd-b49274459896",
+	"scene": "res://SCENE/Main.tscn",
+	"seq": 12,
+	"socket_state": 1
+}

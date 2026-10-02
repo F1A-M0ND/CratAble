@@ -1,17 +1,19 @@
 extends Node
 
+signal component_state(state: Dictionary)
+
 signal card_moved(card_name: String, parent_name: String, position: Vector2)
 signal card_flipped(card_name: String, is_down: bool)
 signal card_tapped(card_name: String, target_rot: float)
-signal deck_shuffled(deck_name: String)
+signal deck_shuffled(deck_name: String, card_array: Array)
 signal connection_established()
 signal connection_closed()
 
-signal card_spawned(card_name: String, card_path: String, parent_name: String, position: Vector2, rot: float)
+signal card_spawned(card_name: String, card_path: String, parent_name: String, position: Vector2, rot: float, card_data: Dictionary)
 signal card_sent_to_hand(card_name: String)
 signal card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool)
 signal deck_drawn(deck_name: String)
-signal zone_shuffled(zone_name: String)
+signal zone_shuffled(zone_name: String, card_array: Array)
 signal opponent_hand_updated(player_name: String, count: int)
 signal action_logged(text: String)
 signal player_joined(player_name: String, role: String)
@@ -33,19 +35,19 @@ var apikey = ""
 var channel_name = ""
 var heartbeat_timer: Timer
 var ref_id = 1
+var join_sent = false
+var join_ref = ""
+var stopped = false
 
 func log_to_file(text: String):
-	print(text)
-	var path = "res://websocket_debug_log_" + Global.online_player_role + ".txt"
-	var f = FileAccess.open(path, FileAccess.READ_WRITE)
-	if not f:
-		f = FileAccess.open(path, FileAccess.WRITE)
-	if f:
-		f.seek_end()
-		f.store_line(str(Time.get_time_string_from_system()) + " [" + Global.online_player_role + "] - " + text)
-		f.close()
+	# Debug details can contain credentials, room snapshots and private cards.
+	pass
 
 func connect_to_room(room_uuid: String, key: String):
+	if stopped: return
+	join_sent = false
+	is_connected = false
+	socket = WebSocketPeer.new()
 	room_id = room_uuid
 	apikey = key
 	channel_name = "realtime:room_" + room_id
@@ -54,19 +56,16 @@ func connect_to_room(room_uuid: String, key: String):
 	log_to_file("Connecting to Supabase Realtime: " + url)
 	var err = socket.connect_to_url(url)
 	if err != OK:
-		log_to_file("Failed to start connection to websocket URL")
+		log_to_file("Failed to start connection to websocket URL. Retrying in 3s...")
+		var t = get_tree().create_timer(3.0)
+		t.timeout.connect(func():
+			if is_inside_tree() and not stopped: connect_to_room(room_id, apikey)
+		)
 		return
 		
 	set_process(true)
 
 func _ready():
-	# Clear previous log file on startup
-	var path = "res://websocket_debug_log_" + Global.online_player_role + ".txt"
-	var f = FileAccess.open(path, FileAccess.WRITE)
-	if f:
-		f.store_line("--- New WebSocket Session Started ---")
-		f.close()
-
 	set_process(false)
 	heartbeat_timer = Timer.new()
 	heartbeat_timer.wait_time = 30.0
@@ -79,12 +78,11 @@ func _process(delta):
 	var state = socket.get_ready_state()
 	
 	if state == WebSocketPeer.STATE_OPEN:
-		if not is_connected:
-			is_connected = true
+		if not join_sent:
+			join_sent = true
 			log_to_file("WebSocket Connected! Joining channel: " + channel_name)
 			_join_channel()
 			heartbeat_timer.start()
-			connection_established.emit()
 			
 		while socket.get_available_packet_count() > 0:
 			var packet = socket.get_packet()
@@ -92,14 +90,22 @@ func _process(delta):
 			_handle_message(text)
 			
 	elif state == WebSocketPeer.STATE_CLOSED:
-		if is_connected:
-			is_connected = false
-			heartbeat_timer.stop()
-			log_to_file("WebSocket Closed!")
+		var was_connected = is_connected
+		is_connected = false
+		heartbeat_timer.stop()
+		log_to_file("WebSocket Closed! Attempting reconnect in 3s...")
+		if was_connected:
 			connection_closed.emit()
-			set_process(false)
+		set_process(false)
+
+		var t = get_tree().create_timer(3.0)
+		t.timeout.connect(func():
+			if is_inside_tree() and not stopped and room_id != "" and apikey != "":
+				connect_to_room(room_id, apikey)
+		)
 
 func _join_channel():
+	join_ref = str(ref_id)
 	var join_msg = {
 		"topic": channel_name,
 		"event": "phx_join",
@@ -108,7 +114,7 @@ func _join_channel():
 			"config": {
 				"broadcast": {
 					"ack": false,
-					"self": true
+					"self": false
 				},
 				"presence": {
 					"key": ""
@@ -173,9 +179,10 @@ func broadcast_card_tapped(card_name: String, target_rot: float):
 		"rot": target_rot
 	})
 
-func broadcast_deck_shuffled(deck_name: String):
+func broadcast_deck_shuffled(deck_name: String, draw_pile: Array):
 	send_broadcast("deck_shuffled", {
-		"deck_name": deck_name
+		"deck_name": deck_name,
+		"draw_pile": draw_pile
 	})
 
 func _handle_message(text: String):
@@ -189,6 +196,13 @@ func _handle_message(text: String):
 	var topic = msg.get("topic", "")
 	
 	if topic != channel_name: return
+	if event == "phx_reply" and str(msg.get("ref", "")) == join_ref:
+		if msg.get("payload", {}).get("status", "") == "ok":
+			is_connected = true
+			connection_established.emit()
+		else:
+			socket.close()
+		return
 	
 	if event == "broadcast":
 		var payload_wrapper = msg.get("payload", {})
@@ -197,6 +211,8 @@ func _handle_message(text: String):
 		print("[Realtime] Received broadcast event: ", broadcast_event)
 		
 		match broadcast_event:
+			"component_state":
+				component_state.emit(inner_payload)
 			"card_moved":
 				var c_name = inner_payload.get("card_name", "")
 				var p_name = inner_payload.get("parent_name", "")
@@ -213,7 +229,8 @@ func _handle_message(text: String):
 				card_tapped.emit(c_name, float(rot))
 			"deck_shuffled":
 				var d_name = inner_payload.get("deck_name", "")
-				deck_shuffled.emit(d_name)
+				var d_pile = inner_payload.get("draw_pile", [])
+				deck_shuffled.emit(d_name, d_pile)
 			"card_spawned":
 				var c_name = inner_payload.get("card_name", "")
 				var c_path = inner_payload.get("card_path", "")
@@ -224,7 +241,7 @@ func _handle_message(text: String):
 				var x = inner_payload.get("x", 0.0)
 				var y = inner_payload.get("y", 0.0)
 				var rot = inner_payload.get("rot", 0.0)
-				card_spawned.emit(c_name, c_path, p_name, Vector2(x, y), float(rot))
+				card_spawned.emit(c_name, c_path, p_name, Vector2(x, y), float(rot), inner_payload.get("card_data", {}))
 			"card_sent_to_hand":
 				var c_name = inner_payload.get("card_name", "")
 				card_sent_to_hand.emit(c_name)
@@ -238,7 +255,8 @@ func _handle_message(text: String):
 				deck_drawn.emit(d_name)
 			"zone_shuffled":
 				var z_name = inner_payload.get("zone_name", "")
-				zone_shuffled.emit(z_name)
+				var z_cards = inner_payload.get("card_names", [])
+				zone_shuffled.emit(z_name, z_cards)
 			"opponent_hand_updated":
 				var p_name = inner_payload.get("player_name", "")
 				var count = inner_payload.get("count", 0)
@@ -266,3 +284,13 @@ func _handle_message(text: String):
 				request_field_state.emit(inner_payload.get("requester_id", ""))
 			"sync_field_state":
 				sync_field_state.emit(inner_payload.get("state", {}))
+
+func disconnect_from_room():
+	stopped = true
+	is_connected = false
+	set_process(false)
+	if is_instance_valid(heartbeat_timer): heartbeat_timer.stop()
+	socket.close()
+
+func _exit_tree():
+	disconnect_from_room()

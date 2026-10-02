@@ -1,0 +1,16 @@
+{
+  "both_subscribed": true,
+  "no_duplicate_objects": true,
+  "one_draw_only": true,
+  "synced_draw_order": true,
+  "guest_dice_broadcast": true,
+  "counter_survives_sync": true,
+  "face_survives_sync": true,
+  "raw_card_data": true,
+  "no_extra_zone_on_sync": true,
+  "host_reconnects": true,
+  "guest_can_draw_after_sync": true,
+  "local_session_reset": true,
+  "host_no_engine_errors": true,
+  "guest_no_engine_errors": true
+}

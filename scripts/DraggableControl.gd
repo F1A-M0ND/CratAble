@@ -79,7 +79,14 @@ func _on_mouse_exited():
 	hover_tween.tween_property(self, "scale", base_scale, 0.1)
 
 func _gui_input(event):
-	if locked: return
+	if locked:
+		# Locking the layout must not disable the dice's play action.
+		if get_meta("component_category", "") == "dice" and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_click_start_pos = event.position
+			elif event.position.distance_to(_click_start_pos) < 15.0:
+				left_clicked.emit()
+		return
 
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -103,7 +110,7 @@ func _gui_input(event):
 					z_index = original_z_index
 					var end_pos = global_position
 					drag_ended.emit()
-					if not _is_double_clicking and end_pos.distance_to(_click_start_pos) < 5.0:
+					if not _is_double_clicking and end_pos.distance_to(_click_start_pos) < 15.0:
 						left_clicked.emit()
 				_is_double_clicking = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT:

@@ -12,6 +12,7 @@ var lobby_home_scene = preload("res://scenes/LobbyHome.tscn")
 var current_page = null
 
 func _ready():
+	call_deferred("_apply_platform_style")
 	play_btn.pressed.connect(_on_play_pressed)
 	custom_btn.pressed.connect(_on_custom_pressed)
 	credit_btn.pressed.connect(_on_credit_pressed)
@@ -156,3 +157,6 @@ func _setup_btn_hover_animations(btn: Button):
 		btn.pivot_offset = btn.size / 2.0
 		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.2)
 	)
+
+func _apply_platform_style():
+	preload("res://scripts/PlatformStyle.gd").apply(self)

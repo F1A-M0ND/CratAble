@@ -1,0 +1,21 @@
+{
+	"action_logs": 2,
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [],
+	"connected": true,
+	"extra": {
+
+	},
+	"field_rotation": 180.0,
+	"hand_count": 0,
+	"op": "join_room",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "Guest_917",
+	"role": "Guest",
+	"room_id": "2584f955-984e-447a-b3fd-b49274459896",
+	"scene": "res://SCENE/Main.tscn",
+	"seq": 1,
+	"socket_state": 1
+}

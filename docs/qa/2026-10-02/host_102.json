@@ -1,0 +1,139 @@
+{
+	"action_logs": 9,
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [
+		{
+			"category": "deck",
+			"deck_confirmed": true,
+			"draw_pile": [
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Gunner_Fairy.json"
+			],
+			"id": "QADeck",
+			"name": "QADeck",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "deck",
+			"deck_confirmed": true,
+			"draw_pile": [
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Blade_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Gunner_Fairy.json",
+				"res://cards/Maid_Fairy.json",
+				"res://cards/Maid_Fairy.json"
+			],
+			"id": "QADeck",
+			"name": "QADeck2",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "counter",
+			"counter_value": 0,
+			"id": "Counter_578796_247",
+			"name": "Counter_578796_247",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"value": 11,
+			"x": 400.0,
+			"y": 100.0
+		},
+		{
+			"category": "counter",
+			"counter_value": 0,
+			"id": "Counter_578796_247",
+			"name": "Counter_578796_248",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"value": 0,
+			"x": 400.0,
+			"y": 100.0
+		},
+		{
+			"category": "dice",
+			"dice": "D6: 5",
+			"id": "Dice_395289_341",
+			"name": "Dice_395289_341",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 300.0,
+			"y": 91.6666641235352
+		},
+		{
+			"category": "dice",
+			"dice": "D6: -",
+			"id": "Dice_395289_341",
+			"name": "Dice_395289_342",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 300.0,
+			"y": 100.0
+		},
+		{
+			"card_atk": 123,
+			"card_name": "QA custom card",
+			"category": "card",
+			"id": "QACard",
+			"name": "QACard",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 350.0,
+			"y": 250.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_150656_21",
+			"name": "Zone_150656_21",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"category": "zone",
+			"id": "Zone_150656_21",
+			"name": "Zone_150656_22",
+			"parent": "FieldCanvas",
+			"rotation": 0.0,
+			"x": 100.0,
+			"y": 100.0
+		},
+		{
+			"card_atk": 2.0,
+			"card_name": "Maid Fairy",
+			"category": "card",
+			"id": "Card_676632_127",
+			"in_hand": true,
+			"name": "Card_676632_127",
+			"parent": "HandZone",
+			"rotation": 0.0,
+			"x": 919.285705566406,
+			"y": 7.0
+		}
+	],
+	"connected": true,
+	"extra": {
+
+	},
+	"field_rotation": 0.0,
+	"hand_count": 1,
+	"op": "snapshot",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "Host_460",
+	"role": "Host",
+	"room_id": "2584f955-984e-447a-b3fd-b49274459896",
+	"scene": "res://SCENE/Main.tscn",
+	"seq": 102,
+	"socket_state": 1
+}

@@ -65,7 +65,7 @@ func _create_card_thumbnail(card_row: Dictionary):
 			SupabaseService.get_texture_or_load(img_url, func(texture):
 				if texture and is_instance_valid(tex):
 					tex.texture = texture
-			)
+			, self)
 		else:
 			var img = Image.new()
 			if img.load(img_url) == OK:

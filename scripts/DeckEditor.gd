@@ -47,6 +47,7 @@ var amount_spin: SpinBox
 var target_path_for_amount: String = ""
 
 func _ready():
+	call_deferred("_apply_platform_style")
 	back_btn.pressed.connect(_on_back_pressed)
 	open_btn.pressed.connect(_on_open_pressed)
 	save_btn.pressed.connect(_on_save_pressed)
@@ -177,7 +178,7 @@ func _create_library_thumbnail(card_row: Dictionary):
 						card_cache[card_uuid]["image_tex"] = texture
 						card_cache[card_uuid]["has_image"] = true
 						_refresh_deck_ui()
-			)
+			, self)
 		else:
 			var img = Image.new()
 			if img.load(img_url) == OK:
@@ -932,7 +933,17 @@ func _load_deck_from_file(path: String):
 		
 	var parsed = json.get_data()
 	if typeof(parsed) == TYPE_DICTIONARY:
-		deck_data = parsed.get("deck_data", {})
+		var candidate = parsed.get("deck_data", parsed)
+		if not candidate is Dictionary or not candidate.get("groups") is Array or candidate["groups"].is_empty():
+			error_dialog.dialog_text = "Invalid deck file: missing groups."
+			error_dialog.popup_centered()
+			return
+		for group in candidate["groups"]:
+			if not group is Dictionary or not group.get("cards") is Dictionary:
+				error_dialog.dialog_text = "Invalid deck group."
+				error_dialog.popup_centered()
+				return
+		deck_data = candidate.duplicate(true)
 		deck_data["deck_name"] = parsed.get("deck_name", "Loaded Deck")
 		deck_data["db_id"] = "" # Clear online ID since it's local
 		
@@ -948,3 +959,6 @@ func _load_deck_from_file(path: String):
 func _on_back_pressed():
 	Global.main_menu_tab = "CUSTOM"
 	Global.switch_scene("res://scenes/MainMenu.tscn")
+
+func _apply_platform_style():
+	preload("res://scripts/PlatformStyle.gd").apply(self)

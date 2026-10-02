@@ -1,0 +1,43 @@
+{
+	"bundled_deck_load": {
+		"group_count": 0,
+		"has_groups": false
+	},
+	"counter_long_press": {
+		"dialog_open": true,
+		"value_after_release": 11,
+		"value_before": 10
+	},
+	"deck_new_format_roundtrip": {
+		"copies": 3.0,
+		"groups": 1
+	},
+	"field_load_button": {
+		"local_file_dialog_visible": false,
+		"online_popup_visible": true
+	},
+	"field_roundtrip": {
+		"components": 4,
+		"counter_default": 10,
+		"nested_card_parent_category": "field"
+	},
+	"game_state_roundtrip": {
+		"counter_after": 0,
+		"counter_before": 27,
+		"deck_cards_after": 0,
+		"deck_cards_before": 2,
+		"deck_confirmed_after": false,
+		"face_down_after": false,
+		"face_down_before": true
+	},
+	"inspect_database_card_by_id": {
+		"opened": false
+	},
+	"nested_test_mode_restore": {
+		"actual_x": 180.0,
+		"actual_y": 190.0,
+		"expected_x": 40,
+		"expected_y": 50
+	},
+	"suite_complete": true
+}

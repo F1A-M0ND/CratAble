@@ -1,0 +1,22 @@
+{
+	"active_player": 0,
+	"cached_cards": 4,
+	"components": [],
+	"extra": {
+		"database": {
+			"guest_present": true,
+			"http_status": 200,
+			"matching_rooms": 1,
+			"plaintext_test_password_readable": true,
+			"room_status": "playing"
+		}
+	},
+	"op": "scene",
+	"pending_images": 0,
+	"play_mode": true,
+	"player": "HostPlayer",
+	"role": "Host",
+	"room_id": "",
+	"scene": "res://qa_db_probe.tscn",
+	"seq": 8
+}

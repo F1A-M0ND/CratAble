@@ -30,6 +30,12 @@ var online_room_data: Dictionary = {}
 var online_player_role: String = "Host" # "Host" or "Guest"
 var online_player_name: String = "HostPlayer"
 
+func reset_online_session():
+	online_room_id = ""
+	online_room_data = {}
+	online_player_role = "Host"
+	online_player_name = "HostPlayer"
+
 
 var inspect_timer: Timer
 var target_inspect_card_data: Variant = null
@@ -50,7 +56,7 @@ func _on_inspect_timer_timeout():
 
 func make_card_inspectable(node: Control, card_data: Variant):
 	node.set_meta("inspect_card_data", card_data)
-	if not node.gui_input.is_connected(_on_card_node_gui_input):
+	if not node.gui_input.is_connected(_on_card_node_gui_input.bind(node)):
 		node.gui_input.connect(_on_card_node_gui_input.bind(node))
 
 func _on_card_node_gui_input(event: InputEvent, node: Control):

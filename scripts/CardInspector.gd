@@ -83,7 +83,9 @@ func show_card(card_data: Variant):
 	if typeof(card_data) == TYPE_DICTIONARY:
 		data = card_data
 	elif typeof(card_data) == TYPE_STRING:
-		if card_data.strip_edges().begins_with("{"):
+		if SupabaseService.card_cache.has(card_data):
+			data = SupabaseService.card_cache[card_data].duplicate(true)
+		elif card_data.strip_edges().begins_with("{"):
 			var json = JSON.new()
 			if json.parse(card_data) == OK:
 				data = json.get_data()
@@ -131,7 +133,7 @@ func show_card(card_data: Variant):
 			SupabaseService.get_texture_or_load(image_src, func(tex):
 				if is_open and card_image:
 					card_image.texture = tex
-			)
+			, self)
 		else:
 			var img = Image.new()
 			if img.load(image_src) == OK:
