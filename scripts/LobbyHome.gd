@@ -1,159 +1,212 @@
 extends Control
 
 signal play_clicked
-
-@onready var play_btn = $MarginContainer/HBoxContainer/InfoCard/MarginContainer/InfoContainer/PlayBtn
-@onready var cover_card = $MarginContainer/HBoxContainer/CoverCard
-@onready var info_card = $MarginContainer/HBoxContainer/InfoCard
+signal create_clicked
+signal help_clicked
+const Style = preload("res://scripts/PlatformStyle.gd")
+const Motion = preload("res://scripts/InteractionMotion.gd")
+var _atmosphere: Control
+var _art: Control
+var _view = Vector2.ZERO
+var _motion_enabled = true
+var _pointer_inside = true
+var _window_focused = true
 
 func _ready():
-	play_btn.pressed.connect(_on_play_pressed)
-	_apply_premium_styles()
-	_init_liquid_auras()
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if OS.has_feature("web"):
+		_motion_enabled = not bool(JavaScriptBridge.eval("window.matchMedia('(prefers-reduced-motion: reduce)').matches"))
+	var atmosphere = preload("res://scripts/HomeSpaceBackground.gd").new()
+	atmosphere.name = "HomeAtmosphere"
+	add_child(atmosphere)
+	_atmosphere = atmosphere
+	atmosphere.set_motion_enabled(_motion_enabled)
+	var art = preload("res://scripts/HomeHeroArt.gd").new()
+	art.name = "SpaceTabletop"
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(art)
+	_art = art
+	art.set_motion_enabled(_motion_enabled)
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	art.anchor_left = 0.45
+	art.anchor_right = 1.02
+	art.anchor_top = 0.015
+	art.anchor_bottom = 0.80
+	get_window().mouse_entered.connect(_on_pointer_entered)
+	get_window().mouse_exited.connect(_on_pointer_exited)
+	visibility_changed.connect(_update_view_processing)
+	_update_view_processing()
+	var margin = MarginContainer.new()
+	add_child(margin)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 100)
+	margin.add_theme_constant_override("margin_right", 100)
+	margin.add_theme_constant_override("margin_top", 48)
+	margin.add_theme_constant_override("margin_bottom", 32)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var layout = VBoxContainer.new()
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.add_theme_constant_override("separation", 28)
+	margin.add_child(layout)
+	var hero_row = HBoxContainer.new()
+	hero_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hero_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.add_child(hero_row)
+	var copy = VBoxContainer.new()
+	copy.custom_minimum_size.x = 770
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.size_flags_stretch_ratio = 0.47
+	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	copy.add_theme_constant_override("separation", 14)
+	copy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_row.add_child(copy)
+	copy.add_child(_label("THE OPEN TABLETOP", 20, Style.ACCENT, true))
+	var headline = _label("YOUR GAME.\nYOUR UNIVERSE.", 86, Color.WHITE, true)
+	headline.add_theme_constant_override("line_spacing", -12)
+	copy.add_child(headline)
+	copy.add_child(_label("ทุกไอเดีย มีพื้นที่ให้เล่น", 34, Color("a9dcff")))
+	var description = _label("ออกแบบการ์ด จัดเด็ค สร้างสนาม แล้วชวนเพื่อนมาเล่น\nโต๊ะนี้เป็นของคุณ กติกาก็เช่นกัน", 23, Color("a6b6cc"))
+	description.add_theme_constant_override("line_spacing", 6)
+	copy.add_child(description)
+	var gap = Control.new()
+	gap.custom_minimum_size.y = 12
+	copy.add_child(gap)
+	var actions = HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 16)
+	copy.add_child(actions)
+	var play = _button("เริ่มเล่น  →", true)
+	play.name = "PlayBtn"
+	play.pressed.connect(func(): play_clicked.emit())
+	actions.add_child(play)
+	var create = _button("สร้างเกมของคุณ", false)
+	create.name = "CreateBtn"
+	create.pressed.connect(func(): create_clicked.emit())
+	actions.add_child(create)
+	var tiny = _label("LOCAL  /  ONLINE 2 PLAYERS", 17, Color("7d91b0"), true)
+	copy.add_child(tiny)
+	var visual_space = Control.new()
+	visual_space.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual_space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	visual_space.size_flags_stretch_ratio = 0.53
+	hero_row.add_child(visual_space)
+	var divider = HSeparator.new()
+	divider.modulate = Color(0.6, 0.75, 1, 0.20)
+	layout.add_child(divider)
+	var paths = HBoxContainer.new()
+	paths.add_theme_constant_override("separation", 32)
+	layout.add_child(paths)
+	_add_path(paths, "01", "MAKE IT YOURS", "ภาพการ์ดของคุณ สนามในแบบคุณ", create_clicked)
+	_add_path(paths, "02", "BRING YOUR FRIENDS", "เล่นในเครื่อง หรือออนไลน์ 2 คน", play_clicked)
+	_add_path(paths, "03", "LEARN BY PLAYING", "ลองลาก พลิก และทอยไปด้วยกัน", help_clicked)
+	var footer = HBoxContainer.new()
+	layout.add_child(footer)
+	footer.add_child(_label("CRATABLE  /  A TABLE FOR EVERY IDEA", 15, Color("71829d"), true))
+	var fill = Control.new()
+	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(fill)
+	footer.add_child(_label("CREATE. PLAY. REPEAT.", 15, Color("71829d"), true))
 
-func _on_play_pressed():
-	emit_signal("play_clicked")
+# One camera drives both foreground and background, so their depth stays coherent.
+# Polling the viewport leaves buttons, keyboard focus and drag gestures untouched.
+func _process(delta: float):
+	var viewport_rect = get_viewport().get_visible_rect()
+	var point = get_viewport().get_mouse_position()
+	var target = Vector2.ZERO
+	if _pointer_inside and viewport_rect.has_point(point) and viewport_rect.size.x > 0 and viewport_rect.size.y > 0:
+		target = ((point - viewport_rect.position) / viewport_rect.size - Vector2(0.5, 0.5)) * 2.0
+	_view = _view.lerp(target, 1.0 - exp(-4.0 * minf(delta, 0.05)))
+	_apply_view()
 
-func _apply_premium_styles():
-	# Orange Liquid Glass styles for Get Started button
-	var btn_normal = StyleBoxFlat.new()
-	btn_normal.bg_color = Color(0.98, 0.45, 0.08, 0.85) # Vibrant orange semi-transparent
-	btn_normal.set_border_width_all(1)
-	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.2)
-	btn_normal.set_corner_radius_all(12)
-	btn_normal.shadow_color = Color(0.98, 0.45, 0.08, 0.25)
-	btn_normal.shadow_size = 12
-	btn_normal.shadow_offset = Vector2(0, 4)
-	
-	var btn_hover = StyleBoxFlat.new()
-	btn_hover.bg_color = Color(1.0, 0.55, 0.15, 0.95) # Brighter glow orange
-	btn_hover.set_border_width_all(2)
-	btn_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
-	btn_hover.set_corner_radius_all(12)
-	btn_hover.shadow_color = Color(1.0, 0.55, 0.15, 0.5)
-	btn_hover.shadow_size = 20
-	btn_hover.shadow_offset = Vector2(0, 6)
-	
-	var btn_pressed = StyleBoxFlat.new()
-	btn_pressed.bg_color = Color(0.85, 0.35, 0.05, 0.9)
-	btn_pressed.set_border_width_all(1)
-	btn_pressed.border_color = Color(1.0, 1.0, 1.0, 0.15)
-	btn_pressed.set_corner_radius_all(12)
-	btn_pressed.shadow_color = Color(0.85, 0.35, 0.05, 0.2)
-	btn_pressed.shadow_size = 8
-	btn_pressed.shadow_offset = Vector2(0, 2)
-	
-	play_btn.add_theme_stylebox_override("normal", btn_normal)
-	play_btn.add_theme_stylebox_override("hover", btn_hover)
-	play_btn.add_theme_stylebox_override("pressed", btn_pressed)
-	play_btn.add_theme_stylebox_override("focus", btn_hover)
-	
-	# Add custom text color
-	play_btn.add_theme_color_override("font_color", Color(1, 1, 1))
-	play_btn.add_theme_color_override("font_hover_color", Color(1, 1, 1))
-	play_btn.add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9))
-	
-	# Apply glassmorphic styles to CoverCard and InfoCard
-	var card_style = StyleBoxFlat.new()
-	card_style.bg_color = Color(0.08, 0.08, 0.08, 0.45) # Dark semi-transparent glass
-	card_style.set_border_width_all(1)
-	card_style.border_color = Color(1.0, 1.0, 1.0, 0.14) # Clean reflection edge
-	card_style.set_corner_radius_all(24)
-	card_style.shadow_color = Color(0, 0, 0, 0.3)
-	card_style.shadow_size = 12
-	card_style.shadow_offset = Vector2(0, 8)
-	
-	cover_card.add_theme_stylebox_override("panel", card_style)
-	info_card.add_theme_stylebox_override("panel", card_style)
-	
-	# Connect hover animations for cards and button
-	_setup_card_hover_animations(cover_card)
-	_setup_card_hover_animations(info_card)
-	_setup_btn_hover_animations(play_btn)
+func _apply_view():
+	if is_instance_valid(_atmosphere): _atmosphere.set_view(_view)
+	if is_instance_valid(_art): _art.set_view(_view)
 
-func _setup_card_hover_animations(card: Control):
-	card.mouse_entered.connect(func():
-		var tween = create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		card.pivot_offset = card.size / 2.0
-		tween.tween_property(card, "scale", Vector2(1.015, 1.015), 0.3)
-		var hover_style = card.get_theme_stylebox("panel").duplicate()
-		hover_style.border_color = Color(0.98, 0.45, 0.08, 0.4) # Soft orange border glow
-		hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
-		card.add_theme_stylebox_override("panel", hover_style)
-	)
-	
-	card.mouse_exited.connect(func():
-		var tween = create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		card.pivot_offset = card.size / 2.0
-		tween.tween_property(card, "scale", Vector2(1.0, 1.0), 0.3)
-		var normal_style = card.get_theme_stylebox("panel").duplicate()
-		normal_style.border_color = Color(1.0, 1.0, 1.0, 0.14)
-		normal_style.shadow_color = Color(0, 0, 0, 0.3)
-		card.add_theme_stylebox_override("panel", normal_style)
-	)
+func _on_pointer_entered():
+	_pointer_inside = true
 
-func _setup_btn_hover_animations(btn: Button):
-	btn.mouse_entered.connect(func():
-		var tween = create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		btn.pivot_offset = btn.size / 2.0
-		tween.tween_property(btn, "scale", Vector2(1.04, 1.04), 0.2)
-	)
-	btn.mouse_exited.connect(func():
-		var tween = create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		btn.pivot_offset = btn.size / 2.0
-		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.2)
-	)
+func _on_pointer_exited():
+	_pointer_inside = false
 
-func _init_liquid_auras():
-	# Container for radial background glows
-	var aura_container = Control.new()
-	aura_container.name = "AuraContainer"
-	aura_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	aura_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(aura_container)
-	move_child(aura_container, 0)
-	
-	var grad = Gradient.new()
-	grad.colors = PackedColorArray([
-		Color(0.98, 0.42, 0.05, 0.16),
-		Color(0.98, 0.35, 0.05, 0.05),
-		Color(0.98, 0.3, 0.05, 0.0)
-	])
-	grad.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
-	
-	var tex = GradientTexture2D.new()
-	tex.gradient = grad
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	tex.width = 512
-	tex.height = 512
-	
-	# Left Blob (behind CoverCard)
-	var blob_left = TextureRect.new()
-	blob_left.texture = tex
-	blob_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	blob_left.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	blob_left.custom_minimum_size = Vector2(700, 700)
-	blob_left.size = Vector2(700, 700)
-	blob_left.position = Vector2(-150, -50)
-	blob_left.pivot_offset = Vector2(350, 350)
-	aura_container.add_child(blob_left)
-	
-	# Right Blob (behind InfoCard)
-	var blob_right = TextureRect.new()
-	blob_right.texture = tex
-	blob_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	blob_right.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	blob_right.custom_minimum_size = Vector2(700, 700)
-	blob_right.size = Vector2(700, 700)
-	blob_right.position = Vector2(900, 150)
-	blob_right.pivot_offset = Vector2(350, 350)
-	aura_container.add_child(blob_right)
-	
-	# Soft float animation for blobs
-	var tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(blob_left, "scale", Vector2(1.06, 1.06), 4.0)
-	tween.parallel().tween_property(blob_right, "scale", Vector2(0.94, 0.94), 4.0)
-	tween.tween_property(blob_left, "scale", Vector2(0.94, 0.94), 4.0)
-	tween.parallel().tween_property(blob_right, "scale", Vector2(1.06, 1.06), 4.0)
+func _notification(what: int):
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_window_focused = false
+		_view = Vector2.ZERO
+		_apply_view()
+		_update_view_processing()
+	elif what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		_window_focused = true
+		_update_view_processing()
+
+func _update_view_processing():
+	set_process(_motion_enabled and _window_focused and is_visible_in_tree())
+
+func _label(text: String, font_size: int, color: Color, display: bool = false) -> Label:
+	var label = Label.new()
+	label.text = text
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	if display: label.add_theme_font_override("font", Style.display_font())
+	return label
+
+func _button(text: String, primary: bool) -> Button:
+	var button = Button.new()
+	button.text = text
+	button.set_meta("style_owned", true)
+	button.custom_minimum_size = Vector2(242, 70)
+	button.add_theme_font_size_override("font_size", 24)
+	var normal = Style.glass(Color("a1deff") if primary else Color(0.08, 0.13, 0.22, 0.75), 18)
+	normal.border_color = Color("c4ecff") if primary else Color(0.62, 0.79, 1.0, 0.25)
+	normal.shadow_color = Color(0.23, 0.55, 1.0, 0.18)
+	normal.shadow_size = 14 if primary else 0
+	var hover = normal.duplicate()
+	hover.bg_color = Color("d5efff") if primary else Color("203754")
+	hover.border_color = Style.ACCENT
+	var focus = Style.glass(Color.TRANSPARENT, 18)
+	focus.border_color = Color.WHITE
+	focus.set_border_width_all(2)
+	for state in ["normal", "pressed"]: button.add_theme_stylebox_override(state, normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("focus", focus)
+	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
+		button.add_theme_color_override(state, Color("071322") if primary else Color.WHITE)
+	Motion.button(button)
+	return button
+
+func _add_path(parent: HBoxContainer, number: String, title: String, description: String, action: Signal):
+	var button = Button.new()
+	button.set_meta("style_owned", true)
+	button.custom_minimum_size.y = 112
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var normal = Style.glass(Color.TRANSPARENT, 16)
+	normal.border_color = Color.TRANSPARENT
+	normal.shadow_size = 0
+	var hover = Style.glass(Color(0.32, 0.52, 0.82, 0.09), 16)
+	hover.shadow_size = 0
+	var focus = Style.glass(Color.TRANSPARENT, 16)
+	focus.border_color = Style.ACCENT
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
+	button.add_theme_stylebox_override("focus", focus)
+	button.pressed.connect(func(): action.emit())
+	parent.add_child(button)
+	var row = HBoxContainer.new()
+	button.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 14
+	row.offset_right = -14
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 22)
+	var index = _label(number, 23, Style.ACCENT, true)
+	index.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(index)
+	var info = VBoxContainer.new()
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(info)
+	info.add_child(_label(title, 26, Color("eff6ff"), true))
+	info.add_child(_label(description, 20, Color("96aac4")))
+	row.add_child(_label("↗", 28, Style.ACCENT))
+	Motion.button(button)

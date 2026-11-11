@@ -28,6 +28,7 @@ func _ready():
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	original_z_index = z_index
+	pivot_offset = size / 2.0
 	base_scale = scale  # บันทึกครั้งเดียว ไม่อัปเดตใหม่อีก
 
 func update_base_scale(new_scale: Vector2):
@@ -40,13 +41,12 @@ func force_exit_hover():
 	if DraggableControl._hovered_instance == self:
 		DraggableControl._hovered_instance = null
 	z_index = original_z_index
-	pivot_offset = size / 2.0
 	if hover_tween: hover_tween.kill()
 	hover_tween = create_tween()
 	hover_tween.tween_property(self, "scale", base_scale, 0.1)
 
 func _on_mouse_entered():
-	if locked: return
+	if locked or dragging: return
 	if is_hovering: return
 	# บังคับให้ instance ก่อนหน้า exit ก่อน → มีแค่ใบเดียวที่ hover ได้ในเวลาเดียวกัน
 	if DraggableControl._hovered_instance and DraggableControl._hovered_instance != self:
@@ -55,13 +55,13 @@ func _on_mouse_entered():
 	is_hovering = true
 	original_z_index = z_index
 	z_index = 200 if has_meta("in_hand") and get_meta("in_hand") else 100
-	pivot_offset = size / 2.0
 	if hover_tween: hover_tween.kill()
 	hover_tween = create_tween()
 	var factor = 1.3 if has_meta("in_hand") and get_meta("in_hand") else 1.05
 	hover_tween.tween_property(self, "scale", base_scale * factor, 0.1)
 
 func _on_mouse_exited():
+	if dragging: return
 	if not is_hovering: return
 	# ตรวจว่าเมาส์ยังอยู่ใน bounds ของ control นี้หรือเปล่า
 	# (กรณีชี้ไป child node เช่น label, overlay ข้างใน deck)
@@ -73,19 +73,21 @@ func _on_mouse_exited():
 	if DraggableControl._hovered_instance == self:
 		DraggableControl._hovered_instance = null
 	z_index = original_z_index
-	pivot_offset = size / 2.0
 	if hover_tween: hover_tween.kill()
 	hover_tween = create_tween()
 	hover_tween.tween_property(self, "scale", base_scale, 0.1)
 
 func _gui_input(event):
 	if locked:
-		# Locking the layout must not disable the dice's play action.
-		if get_meta("component_category", "") == "dice" and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				_click_start_pos = event.position
-			elif event.position.distance_to(_click_start_pos) < 15.0:
-				left_clicked.emit()
+		var category = get_meta("component_category", "")
+		if event is InputEventMouseButton and category in ["dice", "deck"]:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				if event.pressed:
+					_click_start_pos = event.position
+				elif event.position.distance_to(_click_start_pos) < 15.0:
+					left_clicked.emit()
+			elif category == "deck" and event.button_index == MOUSE_BUTTON_RIGHT and not event.pressed:
+				right_clicked.emit()
 		return
 
 	if event is InputEventMouseButton:
@@ -97,7 +99,11 @@ func _gui_input(event):
 					double_clicked.emit()
 					return
 				_is_double_clicking = false
+				force_exit_hover()
+				if hover_tween: hover_tween.kill()
+				scale = base_scale
 				dragging = true
+				queue_redraw()
 				_click_start_pos = global_position
 				pivot_offset = size / 2.0
 				z_index = 1000
@@ -107,6 +113,7 @@ func _gui_input(event):
 			else:
 				if dragging:
 					dragging = false
+					queue_redraw()
 					z_index = original_z_index
 					var end_pos = global_position
 					drag_ended.emit()
@@ -123,3 +130,15 @@ func _gui_input(event):
 	if event is InputEventMouseMotion and dragging:
 		global_position = get_global_mouse_position() + drag_offset
 		drag_moved.emit()
+
+func _draw():
+	if not dragging: return
+	var shadow = StyleBoxFlat.new()
+	shadow.bg_color = Color.TRANSPARENT
+	shadow.set_border_width_all(2)
+	shadow.border_color = Color("73ceff")
+	shadow.set_corner_radius_all(6)
+	shadow.shadow_color = Color(0, 0, 0, 0.5)
+	shadow.shadow_size = 12
+	shadow.shadow_offset = Vector2(0, 7)
+	draw_style_box(shadow, Rect2(Vector2.ZERO, size))

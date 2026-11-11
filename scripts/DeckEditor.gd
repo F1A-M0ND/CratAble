@@ -628,7 +628,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
 	panel_style.set_corner_radius_all(12)
-	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 	panel_style.shadow_size = 12
 	dialog.add_theme_stylebox_override("panel", panel_style)
 	
@@ -658,11 +658,11 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	var btn_hover = StyleBoxFlat.new()
 	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
 	btn_hover.set_border_width_all(1)
-	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.border_color = Color(0.45, 0.81, 1.0, 0.8)
 	btn_hover.set_corner_radius_all(6)
 	btn_hover.content_margin_left = 12
 	btn_hover.content_margin_right = 12
-	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.15)
 	btn_hover.shadow_size = 4
 	
 	var local_btn = Button.new()
@@ -677,7 +677,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	hbox.add_child(local_btn)
 	
 	var online_style_normal = StyleBoxFlat.new()
-	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.bg_color = Color(0.22, 0.30, 0.62, 0.90)
 	online_style_normal.set_corner_radius_all(6)
 	online_style_normal.set_border_width_all(1)
 	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
@@ -685,13 +685,13 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	online_style_normal.content_margin_right = 12
 	
 	var online_style_hover = StyleBoxFlat.new()
-	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 	online_style_hover.set_corner_radius_all(6)
 	online_style_hover.set_border_width_all(1)
 	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
 	online_style_hover.content_margin_left = 12
 	online_style_hover.content_margin_right = 12
-	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.3)
 	online_style_hover.shadow_size = 8
 
 	var online_btn = Button.new()
@@ -760,7 +760,7 @@ func _show_open_destination_dialog(on_local: Callable, on_online: Callable):
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
 	panel_style.set_corner_radius_all(12)
-	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 	panel_style.shadow_size = 12
 	dialog.add_theme_stylebox_override("panel", panel_style)
 	
@@ -790,11 +790,11 @@ func _show_open_destination_dialog(on_local: Callable, on_online: Callable):
 	var btn_hover = StyleBoxFlat.new()
 	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
 	btn_hover.set_border_width_all(1)
-	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.border_color = Color(0.45, 0.81, 1.0, 0.8)
 	btn_hover.set_corner_radius_all(6)
 	btn_hover.content_margin_left = 12
 	btn_hover.content_margin_right = 12
-	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.15)
 	btn_hover.shadow_size = 4
 	
 	var local_btn = Button.new()
@@ -809,7 +809,7 @@ func _show_open_destination_dialog(on_local: Callable, on_online: Callable):
 	hbox.add_child(local_btn)
 	
 	var online_style_normal = StyleBoxFlat.new()
-	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.bg_color = Color(0.22, 0.30, 0.62, 0.90)
 	online_style_normal.set_corner_radius_all(6)
 	online_style_normal.set_border_width_all(1)
 	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
@@ -817,13 +817,13 @@ func _show_open_destination_dialog(on_local: Callable, on_online: Callable):
 	online_style_normal.content_margin_right = 12
 	
 	var online_style_hover = StyleBoxFlat.new()
-	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 	online_style_hover.set_corner_radius_all(6)
 	online_style_hover.set_border_width_all(1)
 	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
 	online_style_hover.content_margin_left = 12
 	online_style_hover.content_margin_right = 12
-	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.3)
 	online_style_hover.shadow_size = 8
 
 	var online_btn = Button.new()

@@ -6,6 +6,7 @@ signal card_moved(card_name: String, parent_name: String, position: Vector2)
 signal card_flipped(card_name: String, is_down: bool)
 signal card_tapped(card_name: String, target_rot: float)
 signal deck_shuffled(deck_name: String, card_array: Array)
+signal deck_flipped(deck_name: String, card_array: Array, face_down: bool)
 signal connection_established()
 signal connection_closed()
 
@@ -13,6 +14,9 @@ signal card_spawned(card_name: String, card_path: String, parent_name: String, p
 signal card_sent_to_hand(card_name: String)
 signal card_inserted_into_deck(card_name: String, deck_name: String, to_top: bool)
 signal deck_drawn(deck_name: String)
+signal draw_requested(deck_name: String, request_id: String)
+signal draw_delivered(request_id: String, card_data: Dictionary)
+signal draw_acknowledged(request_id: String)
 signal zone_shuffled(zone_name: String, card_array: Array)
 signal opponent_hand_updated(player_name: String, count: int)
 signal action_logged(text: String)
@@ -20,7 +24,7 @@ signal player_joined(player_name: String, role: String)
 
 # --- New Sync Signals ---
 signal zone_spawned(zone_type: String, zone_name: String, position: Vector2, size: Vector2)
-signal deck_spawned(deck_name: String, deck_data: Dictionary, position: Vector2)
+signal deck_spawned(deck_name: String, deck_data: Dictionary, position: Vector2, zone_id: String)
 signal dice_spawned(dice_name: String, position: Vector2)
 signal dice_rolled(dice_name: String, result: int)
 signal counter_spawned(counter_name: String, position: Vector2)
@@ -227,6 +231,8 @@ func _handle_message(text: String):
 				var c_name = inner_payload.get("card_name", "")
 				var rot = inner_payload.get("rot", 90.0 if inner_payload.get("tapped", false) else 0.0)
 				card_tapped.emit(c_name, float(rot))
+			"deck_flipped":
+				deck_flipped.emit(str(inner_payload.get("deck_name", "")), inner_payload.get("draw_pile", []), bool(inner_payload.get("face_down", false)))
 			"deck_shuffled":
 				var d_name = inner_payload.get("deck_name", "")
 				var d_pile = inner_payload.get("draw_pile", [])
@@ -253,6 +259,12 @@ func _handle_message(text: String):
 			"deck_draw":
 				var d_name = inner_payload.get("deck_name", "")
 				deck_drawn.emit(d_name)
+			"draw_request":
+				draw_requested.emit(inner_payload.get("deck_name", ""), inner_payload.get("request_id", ""))
+			"draw_delivery":
+				draw_delivered.emit(inner_payload.get("request_id", ""), inner_payload.get("card_data", {}))
+			"draw_ack":
+				draw_acknowledged.emit(inner_payload.get("request_id", ""))
 			"zone_shuffled":
 				var z_name = inner_payload.get("zone_name", "")
 				var z_cards = inner_payload.get("card_names", [])
@@ -271,7 +283,7 @@ func _handle_message(text: String):
 			"zone_spawned":
 				zone_spawned.emit(inner_payload.get("zone_type", ""), inner_payload.get("zone_name", ""), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)), Vector2(inner_payload.get("w", 150), inner_payload.get("h", 210)))
 			"deck_spawned":
-				deck_spawned.emit(inner_payload.get("deck_name", ""), inner_payload.get("deck_data", {}), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)))
+				deck_spawned.emit(inner_payload.get("deck_name", ""), inner_payload.get("deck_data", {}), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)), inner_payload.get("zone_id", ""))
 			"dice_spawned":
 				dice_spawned.emit(inner_payload.get("dice_name", ""), Vector2(inner_payload.get("x", 0), inner_payload.get("y", 0)))
 			"dice_rolled":

@@ -7,6 +7,10 @@ var total_images_to_load = 0
 var images_loaded = 0
 
 func _ready():
+	# Web trial must open even when the database is unavailable. Libraries load on demand.
+	if OS.has_feature("web"):
+		Global.switch_scene.call_deferred("res://scenes/MainMenu.tscn")
+		return
 	status_label.text = "Connecting to database..."
 	progress_bar.value = 0
 	

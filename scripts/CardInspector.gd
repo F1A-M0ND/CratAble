@@ -16,6 +16,7 @@ extends CanvasLayer
 var tween: Tween
 var is_open: bool = false
 var dragging_zoom: bool = false
+var image_request_id: int = 0
 
 func _ready():
 	visible = false
@@ -112,6 +113,13 @@ func show_card(card_data: Variant):
 	if data.has("image_path"): final_data["image_path"] = data["image_path"]
 	if data.has("card_type"): final_data["card_type"] = data["card_type"]
 	
+	# Cached textures invoke their callback synchronously. Open before requesting.
+	is_open = true
+	image_request_id += 1
+	var request_id = image_request_id
+	fullscreen_viewer.hide()
+	zoom_image.texture = null
+	dragging_zoom = false
 	# Clear old data
 	name_label.text = final_data.get("name", "Unknown Card")
 	card_image.texture = null
@@ -131,9 +139,11 @@ func show_card(card_data: Variant):
 	if image_src != "":
 		if image_src.begins_with("http"):
 			SupabaseService.get_texture_or_load(image_src, func(tex):
-				if is_open and card_image:
+				if is_open and request_id == image_request_id and is_instance_valid(card_image):
 					card_image.texture = tex
 			, self)
+		elif image_src.begins_with("res://") and ResourceLoader.exists(image_src):
+			card_image.texture = load(image_src) as Texture2D
 		else:
 			var img = Image.new()
 			if img.load(image_src) == OK:
@@ -211,6 +221,9 @@ func _add_tag(tag: String):
 func hide_card():
 	if not is_open: return
 	is_open = false
+	image_request_id += 1
+	fullscreen_viewer.hide()
+	dragging_zoom = false
 	
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	main_layout.mouse_filter = Control.MOUSE_FILTER_IGNORE

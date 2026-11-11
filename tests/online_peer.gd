@@ -29,7 +29,9 @@ func _process(delta):
 	elapsed += delta
 	if busy or elapsed < 0.1: return
 	elapsed = 0
-	var path = result_dir.path_join(qa_id + "_command.json")
+	var path = result_dir.path_join(qa_id + "_command_" + str(maxi(1, last_seq + 1)) + ".json")
+	if not FileAccess.file_exists(path):
+		path = result_dir.path_join(qa_id + "_command.json") # Manual commands and shutdown.
 	if not FileAccess.file_exists(path): return
 	var c = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not c is Dictionary or int(c.get("seq", -1)) <= last_seq: return
@@ -44,7 +46,9 @@ func _process(delta):
 	s["seq"] = last_seq
 	s["op"] = current_op
 	s["extra"] = extra
-	write_json(qa_id + "_" + str(last_seq) + ".json", s)
+	var reply = qa_id + "_" + str(last_seq) + ".json"
+	write_json(reply + ".tmp", s)
+	DirAccess.rename_absolute(result_dir.path_join(reply + ".tmp"), result_dir.path_join(reply))
 	write_json(qa_id + "_latest.json", s)
 	print("QA_END ", qa_id, " ", last_seq, " ", current_op)
 	busy = false
@@ -67,6 +71,27 @@ func execute(c: Dictionary):
 	var s = get_tree().current_scene
 	match c.op:
 		"snapshot": pass
+		"nested_fixture":
+			var board = s._spawn_sub_field(false)
+			board.name = "QANestedField"
+			board.set_meta("component_id", "QANestedField")
+			board.position = Vector2(500, 300)
+			board.rotation = 0.3
+			var zone = s._spawn_zone("Card Zone", false)
+			zone.name = "QANestedZone"
+			zone.set_meta("component_id", "QANestedZone")
+			zone.reparent(board, false)
+			zone.position = Vector2(80, 80)
+		"nested_drop":
+			var card = s.spawn_card_object({"name": "Nested QA", "image_path": "res://card_images/Blade_Fairy_img.PNG"})
+			card.name = "QANestedCard"
+			card.set_meta("component_id", "QANestedCard")
+			var zone = get_component("QANestedZone")
+			var point = zone.get_global_transform() * (zone.size / 2)
+			card.global_position = point - card.size / 2
+			s._on_card_drag_ended(card, point)
+		"reconnect":
+			s.realtime_client.socket.close()
 		"scene":
 			await change(c.path)
 		"boot":
@@ -143,13 +168,39 @@ func execute(c: Dictionary):
 			handle.gui_input.emit(press)
 		"deck":
 			var dd = {"deck_name": "QA six cards", "groups": [{"name": "QA", "cards": {"res://cards/Blade_Fairy.json": 2, "res://cards/Gunner_Fairy.json": 2, "res://cards/Maid_Fairy.json": 2}}]}
+			if c.get("missing_card", false):
+				dd.groups[0].cards = {"00000000-0000-0000-0000-000000000000": 1}
 			var d = s.spawn_deck_object(dd)
 			d.name = c.get("id", "QADeck")
 			d.set_meta("component_id", str(d.name))
-			d.position = Vector2(100, 100)
+			d.position = Vector2(890, 370) if c.get("missing_card", false) else Vector2(550, 330)
 			s._confirm_deck_programmatically(d)
 		"draw":
-			s._on_deck_left_clicked(get_component(c.id))
+			var deck = get_component(c.id)
+			var delay = float(c.get("at", 0)) - Time.get_unix_time_from_system()
+			if delay > 0:
+				get_tree().create_timer(delay).timeout.connect(click_deck.bind(deck))
+			else:
+				click_deck(deck)
+		"locked_selector":
+			var zone = s._spawn_zone("Deck Zone", false)
+			zone.name = "QALockedSelector"
+			zone.set_meta("component_id", str(zone.name))
+			zone.set_meta("zone_settings", {"purpose": 0, "allow_move": false, "face": 1})
+			zone.rotation_degrees = -180
+			zone.position = Vector2(710, 370)
+		"select_locked_deck":
+			var zone = get_component("QALockedSelector")
+			click_deck(zone)
+			await get_tree().process_frame
+			extra["selector_opened"] = s.asset_selector.visible and s.current_target_zone == zone
+			if not extra.selector_opened: return
+			var row = {"name":"Click fixture", "cards_data":{"groups":[{"cards":{"res://cards/Blade_Fairy.json":1,"res://cards/Maid_Fairy.json":1,"res://cards/Gunner_Fairy.json":1}}]}}
+			s._create_online_selector_button(row, "deck")
+			s.asset_grid.get_child(-1).pressed.emit()
+			for node in s.field_canvas.get_children():
+				if node.get_meta("deck_data", {}).get("deck_name") == "Click fixture":
+					extra["deck_id"] = str(node.get_meta("component_id"))
 		"counter":
 			var n = get_component(c.id)
 			n.set_value(int(c.value))
@@ -159,6 +210,10 @@ func execute(c: Dictionary):
 		"add_dice":
 			var n = s._on_add_dice_pressed()
 			extra["created_id"] = str(n.get_meta("component_id", n.name))
+		"flip_deck":
+			s._on_deck_right_clicked(get_component(c.id))
+			s._on_tabletop_popup_menu_id_pressed(24)
+			s.tabletop_popup_menu.hide()
 		"roll":
 			get_component(c.id).left_clicked.emit()
 		"add_zone":
@@ -234,13 +289,35 @@ func execute(c: Dictionary):
 			get_tree().quit()
 		_: extra["error"] = "Unknown command"
 
+func click_deck(deck: Control):
+	var point = deck.get_global_transform_with_canvas() * (deck.size / 2)
+	var motion = InputEventMouseMotion.new()
+	motion.position = point
+	get_viewport().push_input(motion, true)
+	for pressed in [true, false]:
+		var click = InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = pressed
+		click.position = point
+		click.global_position = point
+		get_viewport().push_input(click, true)
+
 func walk(n: Node, out: Array):
 	if n.has_meta("component_category"):
 		var item = {"name": str(n.name), "id": str(n.get_meta("component_id", n.name)), "category": n.get_meta("component_category"), "parent": str(n.get_parent().name), "x": n.position.x, "y": n.position.y, "rotation": n.rotation_degrees}
+		if n.get_meta("component_category") == "zone":
+			item["label_upright"] = is_zero_approx(angle_difference(n.get_node("VBoxContainer/Label").get_global_transform_with_canvas().get_rotation(), 0.0))
 		for k in ["draw_pile", "deck_confirmed", "is_face_down", "in_hand", "counter_value"]:
 			if n.has_meta(k): item[k] = n.get_meta(k)
+		if n.has_meta("deck_data"):
+			item["locked"] = n.locked
+			item["top_texture"] = n.get_node("DeckCover").texture != null
+			item["top"] = str(n.get_node("DeckCover").get_meta("top_card", ""))
+			item["pile_face_down"] = n.get_meta("deck_data").get("pile_face_down", false)
+			item["deck_back_visible"] = n.has_node("DeckBack") and n.get_node("DeckBack").visible
 		if n.has_meta("card_data"):
 			var cd = n.get_meta("card_data")
+			item["card_ref"] = cd.get("file_path", "")
 			item["card_name"] = cd.get("name", "")
 			item["card_atk"] = cd.get("atk", -1)
 		if n.has_method("set_value"): item["value"] = n.value
@@ -261,5 +338,7 @@ func snapshot():
 	if "hand_zone" in s and is_instance_valid(s.hand_zone): data["hand_count"] = s.hand_zone.get_child_count()
 	if "field_canvas" in s and is_instance_valid(s.field_canvas): data["field_rotation"] = s.field_canvas.rotation_degrees
 	if "status_label" in s: data["loading_text"] = s.status_label.text
-	if "action_log_vbox" in s and is_instance_valid(s.action_log_vbox): data["action_logs"] = s.action_log_vbox.get_child_count()
+	if "action_log_vbox" in s and is_instance_valid(s.action_log_vbox):
+		data["action_logs"] = s.action_log_vbox.get_child_count()
+		if data.action_logs > 0: data["last_action"] = s.action_log_vbox.get_child(-1).text
 	return data

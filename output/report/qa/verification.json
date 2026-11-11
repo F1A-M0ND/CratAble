@@ -1,0 +1,20 @@
+{
+  "pages": 15,
+  "chapters": [
+    2,
+    3,
+    3
+  ],
+  "references_and_appendices": 5,
+  "font": "Angsana New 16 pt",
+  "paper": "A4",
+  "margins_inches": [
+    1.5,
+    1,
+    1,
+    1
+  ],
+  "visual_review": "All 15 pages reviewed; changed pages reviewed after final export",
+  "renderer": "Microsoft Word",
+  "status": "verified"
+}

@@ -48,9 +48,18 @@ text = "+ Create New Card"
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Label" type="Label" parent="VBoxContainer"]
+[node name="LibraryStatus" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-text = "Existing Custom Cards:"
+
+[node name="Status" type="Label" parent="VBoxContainer/LibraryStatus"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "กำลังโหลดการ์ดออนไลน์…"
+
+[node name="Retry" type="Button" parent="VBoxContainer/LibraryStatus"]
+visible = false
+layout_mode = 2
+text = "ลองอีกครั้ง"
 
 [node name="SearchArea" type="VBoxContainer" parent="VBoxContainer"]
 layout_mode = 2

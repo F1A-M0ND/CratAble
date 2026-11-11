@@ -19,11 +19,17 @@ func _get_auth_headers(is_json: bool = true) -> PackedStringArray:
 		headers.append("Content-Type: application/json")
 	return headers
 
+func _new_http_request() -> HTTPRequest:
+	var request = HTTPRequest.new()
+	# Browser Fetch delivers decoded bytes even when Content-Encoding is still visible.
+	request.accept_gzip = not OS.has_feature("web")
+	request.timeout = 20.0
+	add_child(request)
+	return request
+
 # Generic request function
 func request_supabase(path: String, method: HTTPClient.Method, body_data = null, headers_modifier: Callable = Callable(), callback: Callable = Callable()):
-	var http_request = HTTPRequest.new()
-	http_request.timeout = 20.0
-	add_child(http_request)
+	var http_request = _new_http_request()
 	
 	var url = SUPABASE_URL + path
 	var is_json = true
@@ -45,7 +51,13 @@ func request_supabase(path: String, method: HTTPClient.Method, body_data = null,
 		else:
 			request_body = JSON.stringify(body_data)
 			
-	http_request.request_completed.connect(func(result, response_code, response_headers, response_body):
+	http_request.request_completed.connect(func(result, response_code, _response_headers, response_body):
+		if result != HTTPRequest.RESULT_SUCCESS:
+			push_warning("Supabase request failed for %s (transport %d, HTTP %d)" % [path.get_slice("?", 0), result, response_code])
+			if callback.is_valid():
+				callback.call(0, null)
+			http_request.queue_free()
+			return
 		var response_str = response_body.get_string_from_utf8()
 		var json = JSON.new()
 		var parsed_data = null
@@ -88,12 +100,10 @@ func get_texture_or_load(url: String, callback: Callable, callback_owner: Node =
 		
 	pending_requests[url] = [request]
 	
-	var http_request = HTTPRequest.new()
-	http_request.timeout = 20.0
-	add_child(http_request)
+	var http_request = _new_http_request()
 	http_request.request_completed.connect(func(result, response_code, headers, body):
 		var texture = null
-		if response_code == 200:
+		if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
 			var img = Image.new()
 			var err = OK
 			var ext = url.get_extension().to_lower()

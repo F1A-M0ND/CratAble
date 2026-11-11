@@ -20,13 +20,17 @@ function Send-QA([string]$Client, [hashtable]$Command) {
     if (-not $sequences.ContainsKey($Client)) { $sequences[$Client] = 0 }
     $sequences[$Client]++
     $Command.seq = $sequences[$Client]
-    $path = Join-Path $Results ($Client + '_command.json')
+    # Each command is published once. Windows readers can keep the previous file open.
+    $path = Join-Path $Results ($Client + '_command_' + $Command.seq + '.json')
     [IO.File]::WriteAllText($path + '.tmp', ($Command | ConvertTo-Json -Depth 30), [Text.UTF8Encoding]::new($false))
-    Move-Item -LiteralPath ($path + '.tmp') -Destination $path -Force
+    [IO.File]::Move($path + '.tmp', $path)
     $response = Join-Path $Results ($Client + '_' + $Command.seq + '.json')
     $deadline = [DateTime]::UtcNow.AddSeconds(25)
     while ([DateTime]::UtcNow -lt $deadline) {
-        if (Test-Path -LiteralPath $response) { return Get-Content -LiteralPath $response -Raw | ConvertFrom-Json }
+        if (Test-Path -LiteralPath $response) {
+            try { return [IO.File]::ReadAllText($response) | ConvertFrom-Json }
+            catch [IO.IOException] { if ([DateTime]::UtcNow -ge $deadline) { throw } }
+        }
         Start-Sleep -Milliseconds 100
     }
     throw "Timeout: $Client $($Command.op)"
@@ -98,6 +102,55 @@ try {
     $h = Send-QA $hostId @{op='snapshot'}
     $g = Send-QA $guestId @{op='snapshot'}
     Check 'private_card_return_updates_pile' ((Component $h QADeck).draw_pile.Count -eq 5 -and (Component $g QADeck).draw_pile.Count -eq 5)
+    $null = Send-QA $guestId @{op='flip_deck';id='QADeck'}
+    $h = Send-QA $hostId @{op='snapshot'}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'guest_flip_syncs_back' ((Component $h QADeck).pile_face_down -and (Component $g QADeck).pile_face_down -and (Component $h QADeck).deck_back_visible -and (Component $g QADeck).deck_back_visible)
+    $null = Send-QA $guestId @{op='request_sync';settle=2}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'flip_survives_resync' ((Component $g QADeck).pile_face_down -and (Component $g QADeck).deck_back_visible)
+    $null = Send-QA $hostId @{op='flip_deck';id='QADeck'}
+    $h = Send-QA $hostId @{op='snapshot'}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'host_flip_restores_faces' (-not (Component $h QADeck).pile_face_down -and -not (Component $g QADeck).pile_face_down -and -not (Component $g QADeck).deck_back_visible)
+    $null = Send-QA $hostId @{op='locked_selector'}
+    $null = Send-QA $guestId @{op='request_sync';settle=2}
+    $g = Send-QA $guestId @{op='select_locked_deck'}
+    $deckId = $g.extra.deck_id
+    $h = Send-QA $hostId @{op='snapshot'}
+    Check 'rotated_zone_caption_upright_on_both' ((Component $h 'QALockedSelector').label_upright -and (Component $g 'QALockedSelector').label_upright)
+    Check 'guest_selected_locked_deck_on_both' ($g.extra.selector_opened -and (Component $g $deckId).locked -and (Component $h $deckId).locked -and (Component $g $deckId).deck_back_visible -and (Component $h $deckId).deck_back_visible)
+    $null = Send-QA $guestId @{op='flip_deck';id=$deckId}
+    $null = Send-QA $guestId @{op='request_sync';settle=2}
+    $h = Send-QA $hostId @{op='snapshot'}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'locked_face_up_after_resync' ((Component $g $deckId).locked -and (Component $h $deckId).top_texture -and (Component $g $deckId).top_texture -and (Component $g $deckId).top -eq (Component $h $deckId).top)
+    $handsBefore = @($h.hand_count, $g.hand_count)
+    $pileBefore = @((Component $h $deckId).draw_pile)
+    $drawTime = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() / 1000.0 + 3
+    $null = Send-QA $hostId @{op='draw';id=$deckId;at=$drawTime;settle=0.1}
+    $g = Send-QA $guestId @{op='draw';id=$deckId;at=$drawTime;settle=4}
+    $h = Send-QA $hostId @{op='snapshot'}
+    Check 'both_click_locked_deck' ($h.hand_count -eq $handsBefore[0] + 1 -and $g.hand_count -eq $handsBefore[1] + 1)
+    $drawn = @(@($h.components | Where-Object in_hand)[-1].card_ref, @($g.components | Where-Object in_hand)[-1].card_ref)
+    Check 'different_cards_dealt' ($pileBefore[-1] -in $drawn -and $pileBefore[-2] -in $drawn -and $drawn[0] -ne $drawn[1])
+    Check 'shared_next_card_after_simultaneous_draw' ((Component $h $deckId).draw_pile.Count -eq 1 -and (Component $g $deckId).draw_pile.Count -eq 1 -and (Component $h $deckId).top -eq $pileBefore[0] -and (Component $g $deckId).top -eq (Component $h $deckId).top -and (Component $h $deckId).top_texture -and (Component $g $deckId).top_texture)
+    $null = Send-QA $hostId @{op='deck';id='MissingCardDeck';missing_card=$true}
+    $null = Send-QA $guestId @{op='draw';id='MissingCardDeck';settle=2}
+    $h = Send-QA $hostId @{op='snapshot'}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'failed_lookup_preserves_pile_and_hand' ($g.last_action -like 'จั่วไม่ได้*' -and (Component $h MissingCardDeck).draw_pile.Count -eq 1 -and (Component $g MissingCardDeck).draw_pile.Count -eq 1 -and $g.hand_count -eq $handsBefore[1] + 1)
+    $null = Send-QA $hostId @{op='nested_fixture'}
+    $null = Send-QA $guestId @{op='request_sync';settle=2}
+    $null = Send-QA $guestId @{op='nested_drop'}
+    $h = Send-QA $hostId @{op='snapshot'}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'nested_drop_replicates' ($null -ne (Component $h QANestedCard) -and $null -ne (Component $g QANestedCard))
+    Check 'nested_drop_position_matches' ((Component $h QANestedCard).x -eq (Component $g QANestedCard).x -and (Component $h QANestedCard).y -eq (Component $g QANestedCard).y)
+    $null = Send-QA $guestId @{op='reconnect';settle=6}
+    $g = Send-QA $guestId @{op='snapshot'}
+    Check 'reconnect_recovers_session' ($g.connected -and $null -ne (Component $g QANestedCard))
+    Check 'reconnect_no_duplicates' (@($g.components.id | Select-Object -Unique).Count -eq $g.components.Count)
     $null = Send-QA $guestId @{op='exit_button'}
     $g = Send-QA $guestId @{op='local_start'}
     Check 'local_session_reset' ($g.room_id -eq '' -and $g.role -eq 'Host' -and $g.field_rotation -eq 0 -and -not $g.connected)
@@ -110,7 +163,9 @@ try {
     [IO.File]::WriteAllText((Join-Path $Results 'online_checks.json'), ($checks | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
     foreach ($client in @($hostId, $guestId)) {
         $seq = 1 + $sequences[$client]
-        [IO.File]::WriteAllText((Join-Path $Results ($client + '_command.json')), ('{"op":"quit","seq":' + $seq + '}'))
+        $path = Join-Path $Results ($client + '_command_' + $seq + '.json')
+        [IO.File]::WriteAllText($path + '.tmp', ('{"op":"quit","seq":' + $seq + '}'))
+        [IO.File]::Move($path + '.tmp', $path)
     }
     foreach ($process in $processes) {
         if (-not $process.WaitForExit(5000)) { $process.Kill() }

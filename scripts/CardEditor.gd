@@ -41,6 +41,7 @@ func _ready():
 	save_btn.pressed.connect(_on_save_button_pressed)
 	delete_btn.pressed.connect(_on_delete_pressed)
 	$VBoxContainer/BottomSection/CardPictureBtn.pressed.connect(_on_upload_pressed)
+	$VBoxContainer/BottomSection/CardPictureBtn.text = "Import picture (PNG / JPG / WebP)"
 	
 	atk_spin.editable = atk_check.button_pressed
 	def_spin.editable = def_check.button_pressed
@@ -54,7 +55,7 @@ func _ready():
 	file_dialog = FileDialog.new()
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = PackedStringArray(["*.png, *.jpg, *.jpeg ; Supported Images"])
+	file_dialog.filters = PackedStringArray(["*.png, *.jpg, *.jpeg, *.webp ; Supported Images"])
 	file_dialog.file_selected.connect(_on_file_selected)
 	file_dialog.size = Vector2(600, 400)
 	file_dialog.use_native_dialog = true
@@ -87,6 +88,8 @@ func _ready():
 	
 	if not Global.current_card_data.is_empty():
 		_load_existing_card()
+		if not Global.current_card_data.has("id"):
+			delete_btn.hide()
 	else:
 		delete_btn.hide()
 		
@@ -251,6 +254,14 @@ func _add_custom_tag(tag_str: String):
 	custom_tags_container.add_child(hb)
 
 func _on_upload_pressed():
+	if OS.has_feature("web"):
+		BrowserFiles.pick_image(self, func(path, error):
+			if error != "":
+				BrowserFiles.show_error(self, error)
+			elif path != "":
+				_on_file_selected(path)
+		)
+		return
 	file_dialog.popup_centered()
 
 func _on_file_selected(path: String):
@@ -271,6 +282,13 @@ func _on_save_button_pressed():
 		error_dialog.popup_centered()
 		return
 	var on_local = func(): 
+		if OS.has_feature("web"):
+			DirAccess.make_dir_recursive_absolute("user://cards")
+			var local_path = Global.current_card_data.get("_local_path", "")
+			if local_path == "":
+				local_path = "user://cards/card_%s_%s.json" % [Time.get_ticks_usec(), randi()]
+			_save_card_to_file(local_path)
+			return
 		var card_name_str = card_name.text.strip_edges()
 		if card_name_str == "":
 			card_name_str = "UntitledCard"
@@ -290,7 +308,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
 	panel_style.set_corner_radius_all(12)
-	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 	panel_style.shadow_size = 12
 	dialog.add_theme_stylebox_override("panel", panel_style)
 	
@@ -320,15 +338,17 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	var btn_hover = StyleBoxFlat.new()
 	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
 	btn_hover.set_border_width_all(1)
-	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.border_color = Color(0.45, 0.81, 1.0, 0.8)
 	btn_hover.set_corner_radius_all(6)
 	btn_hover.content_margin_left = 12
 	btn_hover.content_margin_right = 12
-	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.15)
 	btn_hover.shadow_size = 4
 	
 	var local_btn = Button.new()
 	local_btn.text = "Save Local (File)"
+	if OS.has_feature("web"):
+		local_btn.text = "Save in this browser"
 	local_btn.focus_mode = Control.FOCUS_NONE
 	local_btn.add_theme_stylebox_override("normal", btn_normal)
 	local_btn.add_theme_stylebox_override("hover", btn_hover)
@@ -339,7 +359,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	hbox.add_child(local_btn)
 	
 	var online_style_normal = StyleBoxFlat.new()
-	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.bg_color = Color(0.22, 0.30, 0.62, 0.90)
 	online_style_normal.set_corner_radius_all(6)
 	online_style_normal.set_border_width_all(1)
 	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
@@ -347,13 +367,13 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	online_style_normal.content_margin_right = 12
 	
 	var online_style_hover = StyleBoxFlat.new()
-	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 	online_style_hover.set_corner_radius_all(6)
 	online_style_hover.set_border_width_all(1)
 	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
 	online_style_hover.content_margin_left = 12
 	online_style_hover.content_margin_right = 12
-	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.3)
 	online_style_hover.shadow_size = 8
 
 	var online_btn = Button.new()
@@ -432,10 +452,15 @@ func _save_card_to_file(path: String):
 		file.close()
 		print("Card saved locally successfully to: ", path)
 		_reset_unsaved()
+		if OS.has_feature("web"):
+			Global.current_card_data = card_data.duplicate(true)
+			Global.current_card_data["_local_path"] = path
 		
 		var success_dialog = AcceptDialog.new()
 		success_dialog.title = "Save Successful"
 		success_dialog.dialog_text = "Card saved locally to: " + path.get_file()
+		if OS.has_feature("web"):
+			success_dialog.dialog_text = "Saved in this browser. Find it in your card list.\nClearing website data will remove local cards and images."
 		add_child(success_dialog)
 		success_dialog.popup_centered()
 	else:
@@ -520,7 +545,7 @@ func _do_save_card():
 		)
 
 func _save_card_data_to_db(c_name: String, img_url: String, stats: Dictionary, callback: Callable):
-	var is_edit = not Global.current_card_data.is_empty()
+	var is_edit = str(Global.current_card_data.get("id", "")) != ""
 	if is_edit:
 		var uuid = Global.current_card_data.get("id", "")
 		SupabaseService.update_card(uuid, c_name, img_url, "custom", stats, callback)

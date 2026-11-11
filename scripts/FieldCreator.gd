@@ -59,6 +59,9 @@ var context_template_meta: Dictionary
 var template_action_menu: PopupMenu
 
 var is_test_mode: bool = false
+var editor_selection: Control
+var editor_document: Node
+var build_document_snapshot: Dictionary = {}
 var test_mode_btn: Button
 var pre_test_state: Array = []
 var test_spawned_nodes: Array = []
@@ -122,6 +125,7 @@ var _save_dest_is_local: bool = false
 
 
 func _ready():
+	call_deferred("_init_editor_selection")
 	call_deferred("_apply_platform_style")
 	$Header/BackBtn.pressed.connect(_on_back_pressed)
 	$HBoxContainer/LeftSide/SaveFieldBtn.pressed.connect(_on_save_field_pressed)
@@ -131,7 +135,7 @@ func _ready():
 	# Setup Load Button programmatically right after Save Button
 	var load_btn = Button.new()
 	load_btn.name = "LoadFieldBtn"
-	load_btn.text = "Load Field"
+	load_btn.text = "เปิดสนาม"
 	$HBoxContainer/LeftSide.add_child(load_btn)
 	$HBoxContainer/LeftSide.move_child(load_btn, $HBoxContainer/LeftSide/SaveFieldBtn.get_index() + 1)
 	load_btn.pressed.connect(_on_load_field_pressed)
@@ -175,7 +179,7 @@ func _ready():
 	resize_handle.z_index = 2
 	
 	var rh_bg = ColorRect.new()
-	rh_bg.color = Color(1.0, 0.42, 0.12, 0.45)
+	rh_bg.color = Color(0.45, 0.81, 1.0, 0.45)
 	rh_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	rh_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	resize_handle.add_child(rh_bg)
@@ -282,7 +286,7 @@ func _ready():
 	add_child(drag_layer)
 	
 	test_mode_btn = Button.new()
-	test_mode_btn.text = "Switch to Test Mode"
+	test_mode_btn.text = "▶ ทดลองเล่น"
 	test_mode_btn.custom_minimum_size = Vector2(150, 40)
 	test_mode_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	test_mode_btn.offset_right = -10
@@ -313,14 +317,14 @@ func _ready():
 	$HBoxContainer/LeftSide.move_child(sep1, 1)
 	
 	var lbl_temp_ui = Label.new()
-	lbl_temp_ui.text = "Templates"
+	lbl_temp_ui.text = "แม่แบบอุปกรณ์"
 	lbl_temp_ui.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_temp_ui.add_theme_font_size_override("font_size", 18)
 	$HBoxContainer/LeftSide.add_child(lbl_temp_ui)
 	$HBoxContainer/LeftSide.move_child(lbl_temp_ui, 2)
 	
 	var btn_browse_temp = Button.new()
-	btn_browse_temp.text = "Browse Templates"
+	btn_browse_temp.text = "เลือกแม่แบบ"
 	$HBoxContainer/LeftSide.add_child(btn_browse_temp)
 	$HBoxContainer/LeftSide.move_child(btn_browse_temp, 3)
 	btn_browse_temp.pressed.connect(func(): 
@@ -361,7 +365,7 @@ func _ready():
 	field_canvas.add_child(border)
 	
 	var f_settings_btn = Button.new()
-	f_settings_btn.text = "⚙ Field"
+	f_settings_btn.text = "⚙ สนาม"
 	f_settings_btn.custom_minimum_size = Vector2(60, 30)
 	f_settings_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	f_settings_btn.offset_left = 10
@@ -489,13 +493,13 @@ func _setup_local_multiplayer_ui():
 		
 		# Styles
 		var active_style = StyleBoxFlat.new()
-		active_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		active_style.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 		active_style.set_corner_radius_all(5)
 		active_style.set_border_width_all(1)
 		active_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
 		active_style.content_margin_left = 10
 		active_style.content_margin_right = 10
-		active_style.shadow_color = Color(0.98, 0.45, 0.08, 0.45)
+		active_style.shadow_color = Color(0.25, 0.60, 1.0, 0.45)
 		active_style.shadow_size = 8
 		
 		var normal_style = StyleBoxFlat.new()
@@ -510,14 +514,14 @@ func _setup_local_multiplayer_ui():
 		hover_style.bg_color = Color(0.18, 0.18, 0.22, 0.85)
 		hover_style.set_corner_radius_all(5)
 		hover_style.set_border_width_all(1)
-		hover_style.border_color = Color(0.98, 0.45, 0.08, 0.8)
+		hover_style.border_color = Color(0.45, 0.81, 1.0, 0.8)
 		hover_style.content_margin_left = 10
 		hover_style.content_margin_right = 10
-		hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+		hover_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 		hover_style.shadow_size = 5
 
 		var pressed_style = StyleBoxFlat.new()
-		pressed_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		pressed_style.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 		pressed_style.set_corner_radius_all(5)
 		pressed_style.set_border_width_all(1)
 		pressed_style.border_color = Color(1.0, 1.0, 1.0, 0.3)
@@ -584,13 +588,13 @@ func _switch_active_player(target_idx: int):
 	var p_switch = hand_scroll.get_node_or_null("PlayerSwitchContainer")
 	if p_switch:
 		var active_style = StyleBoxFlat.new()
-		active_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		active_style.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 		active_style.set_corner_radius_all(5)
 		active_style.set_border_width_all(1)
 		active_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
 		active_style.content_margin_left = 10
 		active_style.content_margin_right = 10
-		active_style.shadow_color = Color(0.98, 0.45, 0.08, 0.45)
+		active_style.shadow_color = Color(0.25, 0.60, 1.0, 0.45)
 		active_style.shadow_size = 8
 		
 		var normal_style = StyleBoxFlat.new()
@@ -605,14 +609,14 @@ func _switch_active_player(target_idx: int):
 		hover_style.bg_color = Color(0.18, 0.18, 0.22, 0.85)
 		hover_style.set_corner_radius_all(5)
 		hover_style.set_border_width_all(1)
-		hover_style.border_color = Color(0.98, 0.45, 0.08, 0.8)
+		hover_style.border_color = Color(0.45, 0.81, 1.0, 0.8)
 		hover_style.content_margin_left = 10
 		hover_style.content_margin_right = 10
-		hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+		hover_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 		hover_style.shadow_size = 5
 
 		var pressed_style = StyleBoxFlat.new()
-		pressed_style.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+		pressed_style.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 		pressed_style.set_corner_radius_all(5)
 		pressed_style.set_border_width_all(1)
 		pressed_style.border_color = Color(1.0, 1.0, 1.0, 0.3)
@@ -647,6 +651,9 @@ func _exit_tree():
 
 
 func _input(event):
+	if is_instance_valid(editor_selection) and editor_selection.handle_event(event):
+		get_viewport().set_input_as_handled()
+		return
 	if deck_viewer_dragging_index != -1:
 		if event is InputEventMouseMotion:
 			_on_dv_card_drag_moved(event.global_position)
@@ -970,7 +977,7 @@ func _on_opponent_hand_updated(player_name: String, count: int):
 		var card_back = Panel.new()
 		card_back.custom_minimum_size = Vector2(50, 70)
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.15, 0.15, 0.25, 1.0)
+		style.bg_color = Color("141d32")
 		style.border_width_left = 2
 		style.border_width_top = 2
 		style.border_width_right = 2
@@ -1021,9 +1028,9 @@ func _on_zone_settings_confirmed():
 		
 		current_editing_zone.set_meta("zone_type", new_type)
 		if new_type == "Card Zone":
-			current_editing_zone.color = Color(0.6, 0.28, 0.1, 0.20)
+			current_editing_zone.color = Color(0.12, 0.32, 0.55, 0.20)
 		elif new_type == "Deck Zone":
-			current_editing_zone.color = Color(0.8, 0.4, 0.1, 0.3)
+			current_editing_zone.color = Color(0.24, 0.30, 0.62, 0.3)
 			
 		var settings = {
 			"purpose": opt_purpose.selected,
@@ -1295,19 +1302,24 @@ func _create_online_selector_button(row: Dictionary, type: String):
 			var g = data["groups"][0]
 			if g.has("cards") and g["cards"].keys().size() > 0:
 				var first_card_uuid = g["cards"].keys()[0]
-				SupabaseService.request_supabase("/rest/v1/cards?id=eq." + first_card_uuid.uri_encode(), HTTPClient.METHOD_GET, null, Callable(), func(status, res):
-					if status == 200 and typeof(res) == TYPE_ARRAY and res.size() > 0:
-						var c_row = res[0]
-						var c_stats = c_row.get("stats", {})
-						var c_img = c_row.get("image_url", "")
-						if c_img == "" and c_stats.has("image_path"):
-							c_img = c_stats["image_path"]
-						if c_img != "":
-							SupabaseService.get_texture_or_load(c_img, func(texture):
-								if texture and is_instance_valid(tex):
-									tex.texture = texture
-							, self)
-				)
+				if FileAccess.file_exists(first_card_uuid):
+					var local_card = _load_card_data_from_path(first_card_uuid)
+					var image_path = str(local_card.get("image_path", ""))
+					if not image_path.is_empty(): _load_texture_async_for_rect(image_path, tex)
+				else:
+					SupabaseService.request_supabase("/rest/v1/cards?id=eq." + first_card_uuid.uri_encode(), HTTPClient.METHOD_GET, null, Callable(), func(status, res):
+						if status == 200 and typeof(res) == TYPE_ARRAY and res.size() > 0:
+							var c_row = res[0]
+							var c_stats = c_row.get("stats", {})
+							var c_img = c_row.get("image_url", "")
+							if c_img == "" and c_stats.has("image_path"):
+								c_img = c_stats["image_path"]
+							if c_img != "":
+								SupabaseService.get_texture_or_load(c_img, func(texture):
+									if texture and is_instance_valid(tex):
+										tex.texture = texture
+								, self)
+					)
 				
 	vbox.add_child(tex)
 	vbox.add_child(lbl)
@@ -1358,7 +1370,9 @@ func _create_online_selector_button(row: Dictionary, type: String):
 				spawned_obj.position = current_target_zone.position + (current_target_zone.size / 2.0) - ((spawned_obj.size * spawned_obj.scale) / 2.0)
 				
 				var face = settings.get("face", 0)
-				if face == 1:
+				if type == "deck":
+					spawned_obj.get_meta("deck_data")["pile_face_down"] = face == 1
+				elif face == 1:
 					_set_card_face_down(spawned_obj, true)
 				
 				var allow_move = settings.get("allow_move", true)
@@ -1387,7 +1401,7 @@ func _setup_changeling(obj: Control, asset_type: String):
 	obj.set_meta("is_changeling", true)
 	
 	if asset_type == "deck":
-		_setup_deck_changeling(obj)
+		_confirm_deck_programmatically(obj)
 		return
 	
 	# card: click to reselect
@@ -1539,7 +1553,19 @@ func _setup_deck_changeling(deck_obj: Control):
 		_confirm_deck_programmatically(deck_obj)
 	)
 
+func _hide_deck_selector(deck_obj: Control):
+	var origin = deck_obj.get_meta("origin_zone") if deck_obj.has_meta("origin_zone") else null
+	if is_instance_valid(origin):
+		origin.hide()
+		return
+	# Remote decks arrive with board coordinates, without a local origin reference.
+	var center = deck_obj.position + deck_obj.size * deck_obj.scale / 2.0
+	for zone in field_canvas.get_children():
+		if zone is Control and zone.get_meta("zone_type", "") == "Deck Zone" and zone.get_meta("zone_settings", {}).get("purpose", 0) == 1:
+			if Rect2(zone.position, zone.size).has_point(center): zone.hide()
+
 func _confirm_deck_programmatically(deck_obj: Control, broadcast: bool = true):
+	_hide_deck_selector(deck_obj)
 	deck_obj.set_meta("deck_confirmed", true)
 	var deck_data = deck_obj.get_meta("deck_data", {})
 	
@@ -1604,6 +1630,12 @@ func _confirm_deck_programmatically(deck_obj: Control, broadcast: bool = true):
 		})
 
 func _show_other_import_dialog():
+	if OS.has_feature("web"):
+		BrowserFiles.pick_image(self, func(path, error):
+			if error != "": BrowserFiles.show_error(self, error)
+			elif path != "": _spawn_other_object(path)
+		)
+		return
 	var file_dialog = FileDialog.new()
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -1666,12 +1698,12 @@ func spawn_deck_object(deck_data: Dictionary):
 	var bg = Panel.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.3, 0.2, 0.1, 1.0)
+	style.bg_color = Color(0.08, 0.12, 0.22, 1.0)
 	style.border_width_left = 4
 	style.border_width_top = 4
 	style.border_width_right = 4
 	style.border_width_bottom = 4
-	style.border_color = Color(0.8, 0.7, 0.5, 1.0)
+	style.border_color = Color(0.45, 0.66, 0.86, 1.0)
 	style.corner_radius_top_left = 8
 	style.corner_radius_top_right = 8
 	style.corner_radius_bottom_right = 8
@@ -1682,6 +1714,7 @@ func spawn_deck_object(deck_data: Dictionary):
 	
 	var tex_rect = TextureRect.new()
 	tex_rect.name = "DeckCover"
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -1692,30 +1725,12 @@ func spawn_deck_object(deck_data: Dictionary):
 	tex_rect.offset_bottom = -4
 	root_obj.add_child(tex_rect)
 	
-	if deck_data.has("groups") and deck_data["groups"].size() > 0:
-		var g = deck_data["groups"][0]
-		if g.has("cards") and g["cards"].keys().size() > 0:
-			var first_card_key = g["cards"].keys()[0]
-			if first_card_key.begins_with("http") or first_card_key.begins_with("res://") or FileAccess.file_exists(first_card_key):
-				_load_texture_async_for_rect(first_card_key, tex_rect)
-			else:
-				SupabaseService.request_supabase("/rest/v1/cards?id=eq." + first_card_key.uri_encode(), HTTPClient.METHOD_GET, null, Callable(), func(status, res_data):
-					if status == 200 and typeof(res_data) == TYPE_ARRAY and res_data.size() > 0:
-						var card_row = res_data[0]
-						var stats_data = card_row.get("stats", {})
-						var img_url = card_row.get("image_url", "")
-						if img_url == "" and stats_data.has("image_path"):
-							img_url = stats_data["image_path"]
-						if img_url != "":
-							_load_texture_async_for_rect(img_url, tex_rect)
-				)
-	
 	# (ชื่อและจำนวนการ์ดแสดงผ่าน overlay ใน _setup_deck_changeling เท่านั้น)
 	
 	var highlight = ReferenceRect.new()
 	highlight.name = "DragHighlight"
 	highlight.set_anchors_preset(Control.PRESET_FULL_RECT)
-	highlight.border_color = Color(1.0, 0.48, 0.16, 1.0)
+	highlight.border_color = Color(0.45, 0.81, 1.0, 1.0)
 	highlight.border_width = 4
 	highlight.editor_only = false
 	highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1739,6 +1754,7 @@ func spawn_deck_object(deck_data: Dictionary):
 	_add_delete_button(root_obj)
 	_apply_card_size(root_obj, field_canvas, null)
 	field_canvas.add_child(root_obj)
+	preload("res://scripts/DeckTopPreview.gd").refresh(root_obj)
 	return root_obj
 
 func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
@@ -1817,7 +1833,7 @@ func spawn_card_object(card_data: Dictionary, auto_add: bool = true) -> Control:
 	var highlight = ReferenceRect.new()
 	highlight.name = "DragHighlight"
 	highlight.set_anchors_preset(Control.PRESET_FULL_RECT)
-	highlight.border_color = Color(1.0, 0.48, 0.16, 1.0)
+	highlight.border_color = Color(0.45, 0.81, 1.0, 1.0)
 	highlight.border_width = 4
 	highlight.editor_only = false
 	highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1882,6 +1898,7 @@ func _add_delete_button(target_node: Control):
 
 func _add_resize_handle(target_node: Control, min_size: Vector2):
 	var handle = ColorRect.new()
+	handle.name = "ResizeHandle"
 	handle.color = Color(1, 1, 1, 0.5)
 	handle.custom_minimum_size = Vector2(16, 16)
 	handle.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -1918,7 +1935,7 @@ func _add_resize_handle(target_node: Control, min_size: Vector2):
 func _add_rotate_handle(target_node: Control):
 	var handle = ColorRect.new()
 	handle.name = "RotateHandle"
-	handle.color = Color(1.0, 0.48, 0.16, 0.9)
+	handle.color = Color(0.45, 0.81, 1.0, 0.9)
 	handle.tooltip_text = "Drag to rotate · Shift: 15° steps"
 	handle.custom_minimum_size = Vector2(16, 16)
 	handle.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -1978,7 +1995,7 @@ func _add_rotate_handle(target_node: Control):
 					handle.accept_event()
 				else:
 					state["rotating"] = false
-					handle.color = Color(1.0, 0.48, 0.16, 0.6) # Reset color
+					handle.color = Color(0.45, 0.81, 1.0, 0.6) # Reset color
 					if is_test_mode:
 						var local = target_node.get_local_mouse_position()
 						if not Rect2(Vector2.ZERO, target_node.size).has_point(local):
@@ -2029,7 +2046,7 @@ func _add_rotate_handle(target_node: Control):
 			if is_snapped:
 				handle.color = Color(1.0, 1.0, 0.2, 0.9) # สีเหลืองสว่างเวลาลงล็อค
 			else:
-				handle.color = Color(1.0, 0.48, 0.16, 0.6) # สีเขียวปกติ
+				handle.color = Color(0.45, 0.81, 1.0, 0.6) # สีฟ้าปกติ
 				
 			handle.accept_event()
 	)
@@ -2040,9 +2057,9 @@ func _spawn_zone(zone_type: String, broadcast: bool = true) -> Control:
 	zone.name = "Zone_" + str(Time.get_ticks_usec() % 1000000) + "_" + str(randi() % 1000)
 	zone.set_meta("component_id", zone.name)
 	if zone_type == "Card Zone":
-		zone.color = Color(0.6, 0.28, 0.1, 0.20)
+		zone.color = Color(0.12, 0.32, 0.55, 0.20)
 	elif zone_type == "Deck Zone":
-		zone.color = Color(0.8, 0.4, 0.1, 0.3)
+		zone.color = Color(0.24, 0.30, 0.62, 0.3)
 	
 	zone.size = Vector2(150, 210) # ขนาดการ์ดมาตรฐาน
 	zone.position = Vector2(100, 100)
@@ -2084,8 +2101,8 @@ func _spawn_zone(zone_type: String, broadcast: bool = true) -> Control:
 	surface.name = "ZoneSurface"
 	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var surface_style = preload("res://scripts/PlatformStyle.gd").glass(Color(0.12, 0.075, 0.06, 0.90), 14)
-	surface_style.border_color = Color(1.0, 0.48, 0.20, 0.65)
+	var surface_style = preload("res://scripts/PlatformStyle.gd").glass(Color(0.06, 0.10, 0.19, 0.90), 14)
+	surface_style.border_color = Color(0.45, 0.81, 1.0, 0.65)
 	surface_style.shadow_size = 0
 	surface.add_theme_stylebox_override("panel", surface_style)
 	zone.add_child(surface)
@@ -2100,7 +2117,7 @@ func _spawn_zone(zone_type: String, broadcast: bool = true) -> Control:
 	vbox.add_child(label)
 	
 	var select_btn = Button.new()
-	select_btn.text = "Settings ⚙"
+	select_btn.text = "ตั้งค่า ⚙"
 	select_btn.custom_minimum_size = Vector2(100, 30)
 	select_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	select_btn.pressed.connect(func():
@@ -2126,6 +2143,7 @@ func _spawn_zone(zone_type: String, broadcast: bool = true) -> Control:
 			"h": zone.size.y
 		})
 		
+	preload("res://scripts/ZonePresentation.gd").apply(zone, is_test_mode)
 	return zone
 
 func _on_add_dice_pressed(broadcast: bool = true) -> Control:
@@ -2174,16 +2192,14 @@ func _on_add_dice_pressed(broadcast: bool = true) -> Control:
 					"dice_name": d_id,
 					"result": result
 				})
-			var tween = get_tree().create_tween()
-			tween.tween_property(root_obj, "position", root_obj.position + Vector2(0, -10), 0.1)
-			tween.tween_property(root_obj, "position", root_obj.position, 0.1)
+			preload("res://scripts/InteractionMotion.gd").dice(root_obj, result)
 		)
 	
 	root_obj.set_meta("component_category", "dice")
 	root_obj.tooltip_text = "Click to roll D6"
-	style.bg_color = Color("40251c")
-	style.border_color = Color("ff8a3d")
-	dice_lbl.add_theme_color_override("font_color", Color("fff1e7"))
+	style.bg_color = Color.WHITE
+	style.border_color = Color.BLACK
+	dice_lbl.add_theme_color_override("font_color", Color.BLACK)
 	_add_rotate_handle(root_obj)
 	_add_delete_button(root_obj)
 	
@@ -2232,8 +2248,8 @@ func _on_add_counter_pressed(broadcast: bool = true) -> Control:
 	style.corner_radius_top_right = 8
 	style.corner_radius_bottom_right = 8
 	style.corner_radius_bottom_left = 8
-	style.bg_color = Color("2e2423")
-	style.border_color = Color("ffa563")
+	style.bg_color = Color("18243b")
+	style.border_color = Color("73ceff")
 	bg.add_theme_stylebox_override("panel", style)
 	root_obj.add_child(bg)
 	
@@ -2257,7 +2273,7 @@ func _on_add_counter_pressed(broadcast: bool = true) -> Control:
 	settings_btn.offset_bottom = 12
 	settings_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	var s_style = StyleBoxFlat.new()
-	s_style.bg_color = Color(0.75, 0.30, 0.1, 0.9)
+	s_style.bg_color = Color(0.24, 0.33, 0.68, 0.9)
 	s_style.corner_radius_top_left = 12
 	s_style.corner_radius_top_right = 12
 	s_style.corner_radius_bottom_right = 12
@@ -2301,6 +2317,7 @@ func _load_texture_async_for_rect(path_or_url: String, rect: TextureRect):
 
 func _gather_components(node: Node, list: Array):
 	for child in node.get_children():
+		if child.is_queued_for_deletion(): continue
 		if child is Control and child.has_meta("component_category"):
 			list.append(child)
 		_gather_components(child, list)
@@ -2449,7 +2466,11 @@ func _do_save_field_online(f_name: String):
 			"position_y": node.position.y,
 			"size_x": node.size.x,
 			"size_y": node.size.y,
-			"rotation_degrees": node.rotation_degrees
+			"rotation_degrees": node.rotation_degrees,
+			"scale_x": node.base_scale.x if "base_scale" in node else node.scale.x,
+			"scale_y": node.base_scale.y if "base_scale" in node else node.scale.y,
+			"pivot_x": node.pivot_offset.x, "pivot_y": node.pivot_offset.y,
+			"visible": node.visible
 		}
 		
 		if cat == "zone":
@@ -2469,7 +2490,7 @@ func _do_save_field_online(f_name: String):
 			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
 		elif cat == "dice":
 			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
-			if dice_btn and dice_btn is Button:
+			if dice_btn is Label or dice_btn is Button:
 				comp_data["dice_text"] = dice_btn.text
 			else:
 				comp_data["dice_text"] = "D6: -"
@@ -2483,8 +2504,10 @@ func _do_save_field_online(f_name: String):
 			
 		components_layout.append(comp_data)
 		
+	var saved_document = editor_selection.history.capture() if is_instance_valid(editor_selection) else {}
 	var on_save_complete = func(status, response):
 		if status == 200 or status == 201 or status == 204:
+			if is_instance_valid(editor_document): editor_document.mark_saved(saved_document)
 			if typeof(response) == TYPE_ARRAY and response.size() > 0:
 				field_canvas.set_meta("db_id", response[0].get("id", ""))
 			elif typeof(response) == TYPE_DICTIONARY:
@@ -2510,6 +2533,7 @@ func _do_save_field_online(f_name: String):
 func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	var dialog = ConfirmationDialog.new()
 	dialog.title = "Choose Save Destination"
+	if is_instance_valid(editor_document): dialog.canceled.connect(editor_document.cancel_exit)
 	dialog.size = Vector2(320, 160)
 	
 	var panel_style = StyleBoxFlat.new()
@@ -2517,7 +2541,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18)
 	panel_style.set_corner_radius_all(12)
-	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.2)
+	panel_style.shadow_color = Color(0.25, 0.60, 1.0, 0.2)
 	panel_style.shadow_size = 12
 	dialog.add_theme_stylebox_override("panel", panel_style)
 	
@@ -2547,11 +2571,11 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	var btn_hover = StyleBoxFlat.new()
 	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
 	btn_hover.set_border_width_all(1)
-	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
+	btn_hover.border_color = Color(0.45, 0.81, 1.0, 0.8)
 	btn_hover.set_corner_radius_all(6)
 	btn_hover.content_margin_left = 12
 	btn_hover.content_margin_right = 12
-	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
+	btn_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.15)
 	btn_hover.shadow_size = 4
 	
 	var local_btn = Button.new()
@@ -2566,7 +2590,7 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	hbox.add_child(local_btn)
 	
 	var online_style_normal = StyleBoxFlat.new()
-	online_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
+	online_style_normal.bg_color = Color(0.22, 0.30, 0.62, 0.90)
 	online_style_normal.set_corner_radius_all(6)
 	online_style_normal.set_border_width_all(1)
 	online_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
@@ -2574,13 +2598,13 @@ func _show_save_destination_dialog(on_local: Callable, on_online: Callable):
 	online_style_normal.content_margin_right = 12
 	
 	var online_style_hover = StyleBoxFlat.new()
-	online_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
+	online_style_hover.bg_color = Color(0.24, 0.33, 0.68, 0.95)
 	online_style_hover.set_corner_radius_all(6)
 	online_style_hover.set_border_width_all(1)
 	online_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.3)
 	online_style_hover.content_margin_left = 12
 	online_style_hover.content_margin_right = 12
-	online_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.3)
+	online_style_hover.shadow_color = Color(0.25, 0.60, 1.0, 0.3)
 	online_style_hover.shadow_size = 8
 
 	var online_btn = Button.new()
@@ -2649,15 +2673,19 @@ func _on_online_field_load_confirmed():
 			"components": field_row.get("components_layout", [])
 		}
 		
-		_load_field_from_dict(layout_data)
-		field_canvas.set_meta("db_id", field_row.get("id", ""))
-		print("Field Layout Loaded successfully from Supabase: ", field_row.get("name"))
+		var load_document = func():
+			_load_field_from_dict(layout_data)
+			field_canvas.set_meta("db_id", field_row.get("id", ""))
+		if is_instance_valid(editor_document): editor_document.request_exit(load_document)
+		else: load_document.call()
 
 func _on_field_file_selected(path: String):
 	if field_file_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
 		_save_field_to_file(path)
 	else:
-		_load_field_from_file(path)
+		if is_instance_valid(editor_document):
+			editor_document.request_exit(func(): _load_field_from_file(path))
+		else: _load_field_from_file(path)
 
 func _save_field_to_file(path: String):
 	var f_name = field_canvas.get_meta("field_name", "Main Field")
@@ -2695,7 +2723,11 @@ func _save_field_to_file(path: String):
 			"position_y": node.position.y,
 			"size_x": node.size.x,
 			"size_y": node.size.y,
-			"rotation_degrees": node.rotation_degrees
+			"rotation_degrees": node.rotation_degrees,
+			"scale_x": node.base_scale.x if "base_scale" in node else node.scale.x,
+			"scale_y": node.base_scale.y if "base_scale" in node else node.scale.y,
+			"pivot_x": node.pivot_offset.x, "pivot_y": node.pivot_offset.y,
+			"visible": node.visible
 		}
 		
 		if cat == "zone":
@@ -2715,7 +2747,7 @@ func _save_field_to_file(path: String):
 			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
 		elif cat == "dice":
 			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
-			if dice_btn and dice_btn is Button:
+			if dice_btn is Label or dice_btn is Button:
 				comp_data["dice_text"] = dice_btn.text
 			else:
 				comp_data["dice_text"] = "D6: -"
@@ -2747,6 +2779,7 @@ func _save_field_to_file(path: String):
 		file.store_string(JSON.stringify(layout_data, "\t"))
 		file.close()
 		print("Field Layout saved locally successfully to: ", path)
+		if is_instance_valid(editor_document): editor_document.mark_saved()
 		
 		var success_dialog = AcceptDialog.new()
 		success_dialog.title = "Save Successful"
@@ -2775,7 +2808,8 @@ func _load_field_from_file(path: String):
 	_load_field_from_dict(layout_data)
 	print("Field Layout Loaded successfully from: ", path)
 
-func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = false):
+func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = false, append_components: bool = false):
+	if not restore_snapshot and is_instance_valid(editor_selection): editor_selection.history.reset()
 	if typeof(layout_data) != TYPE_DICTIONARY:
 		return
 		
@@ -2801,21 +2835,22 @@ func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = fal
 		
 	layout_data = working_data
 		
-	# 1. Apply Canvas Properties
-	var canvas_data = layout_data["canvas"]
-	field_canvas.set_meta("field_name", canvas_data.get("field_name", "Main Field"))
-	field_canvas.size = Vector2(canvas_data.get("size_x", 1500), canvas_data.get("size_y", 1000))
-	field_canvas.custom_minimum_size = field_canvas.size
-	field_canvas.rotation_degrees = canvas_data.get("rotation_degrees", 0.0)
-	if Global.online_player_role == "Guest":
-		field_canvas.rotation_degrees += 180.0
-		field_canvas.pivot_offset = field_canvas.size / 2.0
-	field_canvas.set_meta("card_custom_width", canvas_data.get("card_custom_width", 0))
-	field_canvas.set_meta("card_custom_height", canvas_data.get("card_custom_height", 0))
-	field_canvas.set_meta("field_perms", canvas_data.get("field_perms", {"move": true, "play": true}))
+	if not append_components:
+		# 1. Apply Canvas Properties
+		var canvas_data = layout_data["canvas"]
+		field_canvas.set_meta("field_name", canvas_data.get("field_name", "Main Field"))
+		field_canvas.size = Vector2(canvas_data.get("size_x", 1500), canvas_data.get("size_y", 1000))
+		field_canvas.custom_minimum_size = field_canvas.size
+		field_canvas.rotation_degrees = canvas_data.get("rotation_degrees", 0.0)
+		if Global.online_player_role == "Guest":
+			field_canvas.rotation_degrees += 180.0
+			field_canvas.pivot_offset = field_canvas.size / 2.0
+		field_canvas.set_meta("card_custom_width", canvas_data.get("card_custom_width", 0))
+		field_canvas.set_meta("card_custom_height", canvas_data.get("card_custom_height", 0))
+		field_canvas.set_meta("field_perms", canvas_data.get("field_perms", {"move": true, "play": true}))
 	
-	# 2. Clear Existing Components
-	_clear_all_components(field_canvas)
+		# 2. Clear Existing Components
+		_clear_all_components(field_canvas)
 	
 	# 3. First Pass: Instantiate all components and map their IDs
 	var components_data = layout_data["components"]
@@ -2888,10 +2923,12 @@ func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = fal
 					_update_deck_count_label(node)
 			
 		if node:
+			node.custom_minimum_size = Vector2.ZERO
 			node.size = Vector2(comp_data.get("size_x", node.size.x), comp_data.get("size_y", node.size.y))
 			node.custom_minimum_size = node.size
 			node.position = Vector2(comp_data.get("position_x", node.position.x), comp_data.get("position_y", node.position.y))
 			node.rotation_degrees = comp_data.get("rotation_degrees", 0.0)
+			if restore_snapshot: node.visible = comp_data.get("visible", true)
 			
 			var cid = comp_data.get("component_id", "Component_" + str(comp_data.get("id")))
 			node.name = cid
@@ -2912,8 +2949,20 @@ func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = fal
 			parent_node.add_child(node)
 			node.position = Vector2(comp_data.get("position_x", 0.0), comp_data.get("position_y", 0.0))
 			
-	_update_all_cards_size(field_canvas, field_canvas)
-	
+	if not append_components:
+		_update_all_cards_size(field_canvas, field_canvas)
+
+	# Restore saved geometry after category defaults and hierarchy have been applied.
+	for data in components_data:
+		var node = id_to_node.get(data.get("id"))
+		if not is_instance_valid(node) or not data.has("scale_x"): continue
+		node.custom_minimum_size = Vector2.ZERO
+		node.size = Vector2(data.size_x, data.size_y)
+		node.pivot_offset = Vector2(data.get("pivot_x", node.size.x / 2), data.get("pivot_y", node.size.y / 2))
+		node.scale = Vector2(data.scale_x, data.scale_y)
+		node.position = Vector2(data.position_x, data.position_y)
+		if node.has_method("update_base_scale"): node.update_base_scale(node.scale)
+
 	# 5. Play Mode Automatic Deck Spawning
 	var deck_data_to_spawn = {}
 	var has_deck = false
@@ -2965,7 +3014,16 @@ func _load_field_from_dict(layout_data: Dictionary, restore_snapshot: bool = fal
 		if node is Control:
 			node.visible = not is_test_mode
 
+	if not restore_snapshot and is_instance_valid(editor_document):
+		editor_selection.history.record()
+		editor_document.mark_saved()
+
 func _on_back_pressed():
+	if is_instance_valid(editor_document):
+		editor_document.request_exit(_leave_creator)
+	else: _leave_creator()
+
+func _leave_creator():
 	if Global.online_room_id != "":
 		if Global.online_player_role == "Host":
 			SupabaseService.update_room_status(Global.online_room_id, "closed")
@@ -3077,6 +3135,7 @@ func _apply_card_size(card_obj: Control, field: Control, target_zone: Control = 
 	card_obj.scale = Vector2.ONE
 
 func _update_all_cards_size(node: Node, field: Control):
+	if node is Control and node.get_meta("component_category", "") == "field": field = node
 	for child in node.get_children():
 		if child is Control and child.has_meta("component_category") and child.get_meta("component_category") in ["card", "deck"]:
 			var p = child.get_parent()
@@ -3119,6 +3178,8 @@ func _on_field_settings_confirmed():
 
 func _spawn_sub_field(broadcast: bool = true) -> Control:
 	var sub_field = ColorRect.new()
+	sub_field.name = "Field_" + str(Time.get_ticks_usec()) + "_" + str(randi() % 10000)
+	sub_field.set_meta("component_id", sub_field.name)
 	sub_field.color = Color(0.15, 0.3, 0.2, 0.5)
 	sub_field.size = Vector2(600, 400)
 	sub_field.custom_minimum_size = Vector2(600, 400)
@@ -3145,7 +3206,7 @@ func _spawn_sub_field(broadcast: bool = true) -> Control:
 	sub_field.add_child(border)
 	
 	var f_settings_btn = Button.new()
-	f_settings_btn.text = "⚙ Field"
+	f_settings_btn.text = "⚙ สนาม"
 	f_settings_btn.custom_minimum_size = Vector2(60, 30)
 	f_settings_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	f_settings_btn.offset_left = 10
@@ -3161,6 +3222,7 @@ func _spawn_sub_field(broadcast: bool = true) -> Control:
 	_add_rotate_handle(sub_field)
 	
 	field_canvas.add_child(sub_field)
+	_connect_draggable_signals(sub_field)
 	
 	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
 		var canvas_pos = field_canvas.get_global_transform().affine_inverse() * sub_field.global_position
@@ -3173,6 +3235,7 @@ func _spawn_sub_field(broadcast: bool = true) -> Control:
 			"h": sub_field.size.y
 		})
 
+	preload("res://scripts/PlatformStyle.gd").decorate_board(sub_field)
 	return sub_field
 
 func _on_component_right_clicked(node: Control):
@@ -3351,10 +3414,14 @@ func _capture_build_nodes(parent: Node):
 		_capture_build_nodes(child)
 
 func _toggle_test_mode():
+	if not is_test_mode and is_instance_valid(editor_selection):
+		editor_selection.history.record()
+		build_document_snapshot = editor_selection.history.capture()
+		if is_instance_valid(editor_document): editor_document.save_draft()
 	is_test_mode = not is_test_mode
 	
 	if is_test_mode:
-		test_mode_btn.text = "Switch to Build Mode"
+		test_mode_btn.text = "← กลับไปแก้ไข"
 		test_mode_btn.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
 		
 		if hand_scroll: hand_scroll.show()
@@ -3363,7 +3430,7 @@ func _toggle_test_mode():
 		test_spawned_nodes.clear()
 		_capture_build_nodes(field_canvas)
 	else:
-		test_mode_btn.text = "Switch to Test Mode"
+		test_mode_btn.text = "▶ ทดลองเล่น"
 		test_mode_btn.remove_theme_color_override("font_color")
 		
 		if hand_scroll: hand_scroll.hide()
@@ -3426,7 +3493,15 @@ func _toggle_test_mode():
 	# ปรับสถานะ Lock ของ Component ต่างๆ แบบ recursive
 	_set_components_locked(field_canvas, is_test_mode)
 
+	if not is_test_mode and not build_document_snapshot.is_empty() and is_instance_valid(editor_selection):
+		if editor_selection.history.capture() != build_document_snapshot:
+			editor_selection.selected.clear()
+			editor_selection.history.restore(build_document_snapshot)
+		build_document_snapshot.clear()
+
 func _set_components_locked(node: Node, locked: bool):
+	if node is Control and node.get_meta("component_category", "") == "zone":
+		preload("res://scripts/ZonePresentation.gd").apply(node, locked)
 	for child in node.get_children():
 		if child is Control and child.has_meta("component_category"):
 			if "locked" in child:
@@ -3552,6 +3627,7 @@ func _on_card_drag_ended(card: Control, drop_position: Variant = null):
 		card.global_position = g_pos
 		
 	if was_in_hand:
+		card.position = field_canvas.get_global_transform().affine_inverse() * drop_point - card.size / 2.0
 		_update_hand_zone_sizing.call_deferred()
 	
 	# รีเซ็ต hover state หลัง reparent
@@ -3581,27 +3657,8 @@ func _on_card_drag_ended(card: Control, drop_position: Variant = null):
 		_insert_card_into_deck(card, dropped_on_deck, put_to_top)
 		return
 	
-	# เช็คว่าวางบน zone หรือเปล่า
-	var handled = false
-	for child in field_canvas.get_children():
-		if child == card: continue
-		if child.has_meta("component_category") and child.get_meta("component_category") == "zone":
-			if not child.visible: continue
-			var zone_local_rect = Rect2(child.position, child.size)
-			if zone_local_rect.has_point(card_local_center):
-				_handle_card_dropped_on_zone(card, child)
-				handled = true
-				break
-				
-	if not handled:
-		# ถ้าวางบนสนามเปล่าๆ ให้การ์ดมีขนาดการ์ดมาตรฐาน (หรือ custom size ของ field)
-		_apply_card_size(card, field_canvas, null)
-		# Clamp position within field_canvas bounds
-		var local_pos = card.position
-		local_pos.x = clamp(local_pos.x, 0.0, field_canvas.size.x - card.size.x)
-		local_pos.y = clamp(local_pos.y, 0.0, field_canvas.size.y - card.size.y)
-		card.position = local_pos
-			
+	preload("res://scripts/TabletopPlacement.gd").place_card(self, card, drop_point)
+
 	var prev_zone = null
 	if card.has_meta("current_hovered_zone"):
 		prev_zone = card.get_meta("current_hovered_zone")
@@ -3697,17 +3754,9 @@ func _on_card_drag_moved(card: Control):
 			_hovered_deck_node = null
 			_hover_deck_time = 0.0
 	
-	var target_zone = null
-	for child in field_canvas.get_children():
-		if child == card: continue
-		if child.has_meta("component_category") and child.get_meta("component_category") == "zone":
-			if not child.visible: continue
-			var zone_rect = Rect2(child.global_position, child.size * child.scale)
-			if zone_rect.has_point(card_center):
-				if _will_zone_accept_card(child, card):
-					target_zone = child
-				break
-				
+	var target_zone = preload("res://scripts/TabletopPlacement.gd").surface_at(field_canvas, get_global_mouse_position(), [card])
+	if target_zone.get_meta("component_category", "") != "zone" or not _will_zone_accept_card(target_zone, card): target_zone = null
+
 	var prev_zone = card.get_meta("current_hovered_zone", null)
 	if prev_zone != target_zone:
 		if prev_zone:
@@ -3727,7 +3776,9 @@ func _on_card_drag_started(card: Control):
 	Global.play_sfx("res://SFX/Draw sfx.ogg")
 
 func _add_card_to_hand(card: Control):
+	var source_position = card.global_position
 	card.set_meta("in_hand", true)
+	_orient_card_in_hand(card)
 	
 	if is_instance_valid(realtime_client) and realtime_client.is_connected:
 		realtime_client.send_broadcast("card_sent_to_hand", {
@@ -3754,6 +3805,7 @@ func _add_card_to_hand(card: Control):
 			card.scale = Vector2.ONE
 		if hand_zone:
 			hand_zone.add_child(card)
+			card.global_position = source_position
 			
 	_update_hand_zone_sizing.call_deferred()
 	update_local_hand_count()
@@ -3786,7 +3838,16 @@ func _handle_hand_reorder(dragged_card: Control):
 		hand_zone.move_child(dragged_card, target_idx)
 		_update_hand_zone_sizing()
 
+func _orient_card_in_hand(card: Control):
+	# The hand is screen-space UI for its holder, independent of board rotation.
+	var rotation_tween = card.get_meta("rotation_tween") if card.has_meta("rotation_tween") else null
+	if rotation_tween is Tween and rotation_tween.is_valid(): rotation_tween.kill()
+	card.rotation = 0.0
+
 func _update_hand_zone_sizing():
+	# Also normalize cards inserted directly by deck/viewer paths while collapsed.
+	for card in hand_zone.get_children():
+		if card is Control: _orient_card_in_hand(card)
 	if _hand_collapsed or not hand_scroll.visible: return
 	
 	# Total height available for hand zone
@@ -3861,7 +3922,7 @@ func _update_hand_zone_sizing():
 		# Tween position smoothly instead of snapping (Create Room style!)
 		var tween = get_tree().create_tween()
 		card.set_meta("hand_tween", tween)
-		tween.tween_property(card, "position", target_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(card, "position", target_pos, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _will_zone_accept_card(zone: Control, card: Control) -> bool:
 	var settings = zone.get_meta("zone_settings", {})
@@ -3879,7 +3940,7 @@ func _will_zone_accept_card(zone: Control, card: Control) -> bool:
 func _highlight_zone(zone: Control):
 	if not zone.has_meta("base_color"):
 		zone.set_meta("base_color", zone.color)
-	zone.color = Color(1.0, 0.48, 0.16, 0.6)
+	zone.color = Color(0.45, 0.81, 1.0, 0.6)
 
 func _clear_zone_highlight(zone: Control):
 	if is_instance_valid(zone) and zone.has_meta("base_color"):
@@ -3896,7 +3957,9 @@ func _handle_card_dropped_on_zone(card: Control, zone: Control):
 	
 	if purpose == 0: # Place
 		# ปรับขนาดการ์ดให้เท่ากับขนาดของโซนที่วาง
-		_apply_card_size(card, field_canvas, zone)
+		var surface = zone.get_parent()
+		while surface != field_canvas and surface.get_meta("component_category", "") != "field": surface = surface.get_parent()
+		_apply_card_size(card, surface, zone)
 		
 		var current_cards = 0
 		for child in zone.get_children():
@@ -3953,7 +4016,7 @@ func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
 		if not card.has_node("CardBack"):
 			var back = ColorRect.new()
 			back.name = "CardBack"
-			back.color = Color(0.15, 0.15, 0.25, 1.0)
+			back.color = Color("141d32")
 			back.set_anchors_preset(Control.PRESET_FULL_RECT)
 			back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var style = StyleBoxFlat.new()
@@ -3975,7 +4038,7 @@ func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
 			back.add_child(panel)
 			
 			var lbl = Label.new()
-			lbl.text = "CratAble"
+			lbl.text = "✦\nCRATABLE"
 			lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -3987,7 +4050,10 @@ func _set_card_face_down(card: Control, is_down: bool, broadcast: bool = true):
 		if card.has_node("CardBack"):
 			card.get_node("CardBack").hide()
 
+	preload("res://scripts/InteractionMotion.gd").flip_visual(card)
+
 func _update_deck_count_label(deck_obj: Control):
+	preload("res://scripts/DeckTopPreview.gd").refresh(deck_obj)
 	var draw_pile = deck_obj.get_meta("draw_pile")
 	if typeof(draw_pile) != TYPE_ARRAY: draw_pile = []
 	var is_out = draw_pile.is_empty()
@@ -4198,7 +4264,7 @@ func _init_tabletop_viewers():
 	dv_style.border_width_top = 2
 	dv_style.border_width_right = 2
 	dv_style.border_width_bottom = 2
-	dv_style.border_color = Color(1.0, 0.48, 0.16, 0.8)
+	dv_style.border_color = Color(0.45, 0.81, 1.0, 0.8)
 	dv_style.corner_radius_top_left = 8
 	dv_style.corner_radius_top_right = 8
 	dv_style.corner_radius_bottom_left = 8
@@ -4325,6 +4391,8 @@ func _show_tabletop_context_menu(node: Control, type: String):
 		tabletop_popup_menu.add_item("Shuffle Deck", 21)
 		tabletop_popup_menu.add_item("Look at Top Cards...", 22)
 		tabletop_popup_menu.add_item("View All Cards in Deck", 23)
+		var down = node.get_meta("deck_data", {}).get("pile_face_down", false)
+		tabletop_popup_menu.add_item("Flip Deck Face Up" if down else "Flip Deck Face Down", 24)
 		
 	elif type == "zone":
 		var settings = node.get_meta("zone_settings", {})
@@ -4373,6 +4441,8 @@ func _on_tabletop_popup_menu_id_pressed(id: int):
 		23: # View All Cards
 			_open_deck_viewer(context_tabletop_node)
 			
+		24: # Flip the entire stack, including its order.
+			_flip_deck_programmatically(context_tabletop_node)
 		30: # View Cards
 			_open_zone_viewer(context_tabletop_node)
 		31: # Shuffle Zone Pile
@@ -4394,7 +4464,7 @@ func _toggle_card_tap(card: Control, broadcast: bool = true):
 	
 	Global.play_sfx("res://SFX/Draw sfx.ogg", -5.0, 1.6)
 	card.pivot_offset = card.size / 2.0
-	var tween = create_tween()
+	var tween = preload("res://scripts/InteractionMotion.gd").tween(card, "rotation_tween")
 	tween.tween_property(card, "rotation_degrees", target_rot, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
 	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
@@ -4458,11 +4528,37 @@ func _play_shuffle_sfx():
 	await get_tree().create_timer(0.08).timeout
 	Global.play_sfx("res://SFX/Draw sfx.ogg", 0.0, 1.1)
 
+func _flip_deck_programmatically(deck: Control, broadcast: bool = true):
+	var pile = deck.get_meta("draw_pile", []).duplicate()
+	pile.reverse()
+	var data = deck.get_meta("deck_data", {}).duplicate(true)
+	data["pile_face_down"] = not data.get("pile_face_down", false)
+	deck.set_meta("deck_data", data)
+	deck.set_meta("draw_pile", pile)
+	_update_deck_count_label(deck)
+	preload("res://scripts/InteractionMotion.gd").flip_visual(deck)
+	if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
+		realtime_client.send_broadcast("deck_flipped", {
+			"deck_name": str(deck.get_meta("component_id", deck.name)),
+			"draw_pile": pile, "face_down": data["pile_face_down"]
+		})
+
+func _on_remote_deck_flipped(deck_name: String, pile: Array, face_down: bool):
+	var deck = _find_component(deck_name)
+	if not is_instance_valid(deck): return
+	var data = deck.get_meta("deck_data", {}).duplicate(true)
+	data["pile_face_down"] = face_down
+	deck.set_meta("deck_data", data)
+	deck.set_meta("draw_pile", pile.duplicate())
+	_update_deck_count_label(deck)
+	preload("res://scripts/InteractionMotion.gd").flip_visual(deck)
+
 func _shuffle_deck_programmatically(deck: Control, broadcast: bool = true):
 	var draw_pile = deck.get_meta("draw_pile", [])
 	if draw_pile.size() > 1:
 		draw_pile.shuffle()
 		deck.set_meta("draw_pile", draw_pile)
+		_update_deck_count_label(deck)
 		_play_shuffle_sfx()
 		
 		if broadcast and is_instance_valid(realtime_client) and realtime_client.is_connected:
@@ -4506,7 +4602,7 @@ func _shuffle_zone_pile(zone: Control, broadcast: bool = true):
 			
 		var original_color = zone.color
 		var tween = create_tween()
-		tween.tween_property(zone, "color", Color(1.0, 0.48, 0.16, 0.6), 0.1)
+		tween.tween_property(zone, "color", Color(0.45, 0.81, 1.0, 0.6), 0.1)
 		tween.tween_property(zone, "color", original_color, 0.1)
 
 func _open_deck_peeker(deck: Control):
@@ -4936,12 +5032,12 @@ func _create_deck_viewer_card_node(card_path: String, index: int, is_inserting: 
 	
 	if is_inserting or index == deck_viewer_selected_index:
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.25, 0.25, 0.1, 0.8) # Goldish tint
+		style.bg_color = Color(0.12, 0.20, 0.40, 0.8) # Indigo selection tint
 		style.border_width_left = 3
 		style.border_width_top = 3
 		style.border_width_right = 3
 		style.border_width_bottom = 3
-		style.border_color = Color(1.0, 0.85, 0.2, 1.0) # Gold border
+		style.border_color = Color(0.45, 0.81, 1.0, 1.0) # Sky-blue selection border
 		style.corner_radius_top_left = 6
 		style.corner_radius_top_right = 6
 		style.corner_radius_bottom_left = 6
@@ -5256,7 +5352,8 @@ func _set_mouse_filter_ignore_recursive(node: Node):
 		_set_mouse_filter_ignore_recursive(child)
 
 func _notification(what: int):
-	pass
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and is_instance_valid(editor_document):
+		editor_document.request_exit(func(): get_tree().quit())
 
 
 func _pull_deck_viewer_card_to_hand(index: int):
@@ -5423,7 +5520,7 @@ func _on_remote_card_tapped(card_name: String, target_rot: float):
 	var node = _find_component(card_name)
 	if is_instance_valid(node):
 		node.pivot_offset = node.size / 2.0
-		var tween = create_tween()
+		var tween = preload("res://scripts/InteractionMotion.gd").tween(node, "rotation_tween")
 		tween.tween_property(node, "rotation_degrees", target_rot, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _on_remote_deck_shuffled(deck_name: String):
@@ -5551,9 +5648,7 @@ func _on_remote_dice_rolled(dice_name: String, result: int):
 					break
 		if lbl:
 			lbl.text = "D6: " + str(result)
-		var tween = get_tree().create_tween()
-		tween.tween_property(dice, "position", dice.position + Vector2(0, -10), 0.1)
-		tween.tween_property(dice, "position", dice.position, 0.1)
+		preload("res://scripts/InteractionMotion.gd").dice(dice, result)
 
 func _on_remote_counter_spawned(counter_name: String, pos: Vector2):
 	if is_instance_valid(_find_component(counter_name)): return
@@ -5607,7 +5702,11 @@ func _capture_current_field_state() -> Dictionary:
 			"position_y": node.position.y,
 			"size_x": node.size.x,
 			"size_y": node.size.y,
-			"rotation_degrees": node.rotation_degrees
+			"rotation_degrees": node.rotation_degrees,
+			"scale_x": node.base_scale.x if "base_scale" in node else node.scale.x,
+			"scale_y": node.base_scale.y if "base_scale" in node else node.scale.y,
+			"pivot_x": node.pivot_offset.x, "pivot_y": node.pivot_offset.y,
+			"visible": node.visible
 		}
 		
 		if cat == "zone":
@@ -5628,7 +5727,7 @@ func _capture_current_field_state() -> Dictionary:
 			comp_data["card_custom_height"] = node.get_meta("card_custom_height", 0)
 		elif cat == "dice":
 			var dice_btn = node.get_child(1) if node.get_child_count() > 1 else null
-			if dice_btn and dice_btn is Button:
+			if dice_btn is Label or dice_btn is Button:
 				comp_data["dice_text"] = dice_btn.text
 			else:
 				comp_data["dice_text"] = "D6: -"
@@ -5790,7 +5889,7 @@ func _on_rotated_control_resized(control: Control):
 	control.pivot_offset = control.size / 2.0
 
 func _find_component(comp_id_or_name: String) -> Control:
-	if comp_id_or_name == "" or comp_id_or_name == "FieldCanvas" or (is_instance_valid(field_canvas) and comp_id_or_name == field_canvas.name) or comp_id_or_name.begins_with("@ColorRect"):
+	if comp_id_or_name == "" or comp_id_or_name == "FieldCanvas" or (is_instance_valid(field_canvas) and comp_id_or_name == field_canvas.name):
 		return field_canvas
 	if not is_instance_valid(field_canvas):
 		return null
@@ -5842,3 +5941,13 @@ func dict_with_draw_pile(data: Dictionary, pile: Array) -> Dictionary:
 
 func _apply_platform_style():
 	preload("res://scripts/PlatformStyle.gd").apply(self)
+
+func _init_editor_selection():
+	editor_selection = preload("res://scripts/EditorSelection.gd").new()
+	editor_selection.editor = self
+	add_child(editor_selection)
+	if not Global.play_mode:
+		editor_document = preload("res://scripts/EditorDocument.gd").new()
+		editor_document.editor = self
+		editor_document.history = editor_selection.history
+		add_child(editor_document)

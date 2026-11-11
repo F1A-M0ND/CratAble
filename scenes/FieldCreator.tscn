@@ -20,12 +20,12 @@ grow_horizontal = 2
 
 [node name="BackBtn" type="Button" parent="Header"]
 layout_mode = 2
-text = "< Back"
+text = "← กลับ"
 
 [node name="Title" type="Label" parent="Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "(Field Creator & Tabletop Simulator)"
+text = "FIELD STUDIO  /  สร้างสนาม"
 horizontal_alignment = 1
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
@@ -41,11 +41,11 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.3
-theme_override_constants/separation = 0
+theme_override_constants/separation = 8
 
 [node name="Label" type="Label" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Assets Toolbox"
+text = "อุปกรณ์บนโต๊ะ"
 
 [node name="AssetContainer" type="Panel" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
@@ -61,31 +61,31 @@ grow_vertical = 2
 
 [node name="AddFieldZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Add Field Zone"
+text = "+ สนามย่อย"
 
 [node name="ImportAssetBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Import Asset + Spawn"
+text = "นำเข้าภาพหรืออุปกรณ์"
 
 [node name="AddZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Add Card Zone"
+text = "+ พื้นที่วางการ์ด"
 
 [node name="AddDeckZoneBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Add Deck Zone"
+text = "+ พื้นที่วางเด็ค"
 
 [node name="AddDiceBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Add Dice (D6)"
+text = "+ ลูกเต๋า D6"
 
 [node name="AddCounterBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Add Counter"
+text = "+ ตัวนับ"
 
 [node name="SaveFieldBtn" type="Button" parent="HBoxContainer/LeftSide"]
 layout_mode = 2
-text = "Save Field"
+text = "บันทึกสนาม"
 
 [node name="RightSide" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2

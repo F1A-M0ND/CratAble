@@ -3,6 +3,8 @@ extends Control
 @onready var card_list = $VBoxContainer/ScrollContainer/CardList
 @onready var create_new_btn = $VBoxContainer/CreateNewBtn
 @onready var back_btn = $Header/BackBtn
+@onready var library_status: Label = $VBoxContainer/LibraryStatus/Status
+@onready var retry_btn: Button = $VBoxContainer/LibraryStatus/Retry
 
 @onready var name_search = $VBoxContainer/SearchArea/NameSearch
 @onready var tag_search_input = $VBoxContainer/SearchArea/TagSearchRow/TagSearchInput
@@ -15,6 +17,7 @@ var active_filter_tags = []
 func _ready():
 	back_btn.pressed.connect(_on_back_pressed)
 	create_new_btn.pressed.connect(_on_create_new_pressed)
+	retry_btn.pressed.connect(_load_cloud_cards)
 	
 	name_search.text_changed.connect(_on_search_text_changed)
 	add_tag_btn.pressed.connect(_on_add_tag_pressed)
@@ -26,14 +29,39 @@ func _load_existing_cards():
 	loaded_cards.clear()
 	for child in card_list.get_children():
 		child.queue_free()
+	if OS.has_feature("web"):
+		var directory = DirAccess.open("user://cards")
+		if directory:
+			for filename in directory.get_files():
+				if filename.ends_with(".json"):
+					var path = "user://cards/" + filename
+					var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+					if data is Dictionary:
+						data["_local_path"] = path
+						_create_card_thumbnail(data)
 		
-	SupabaseService.fetch_all_cards(func(status, data):
-		if status == 200 and typeof(data) == TYPE_ARRAY:
-			for card_row in data:
-				_create_card_thumbnail(card_row)
+	_load_cloud_cards()
+
+func _load_cloud_cards():
+	retry_btn.hide()
+	library_status.text = "กำลังโหลดการ์ดออนไลน์…"
+	SupabaseService.fetch_all_cards(_on_cloud_cards_loaded)
+
+func _on_cloud_cards_loaded(status, data):
+	if status == 200 and data is Array:
+		var local_count = loaded_cards.size()
+		for card_row in data:
+			_create_card_thumbnail(card_row)
+		library_status.text = "การ์ดออนไลน์ %d ใบ" % data.size()
+		if OS.has_feature("web"):
+			library_status.text += "   ·   บนเบราว์เซอร์นี้ %d ใบ" % local_count
+		_filter_cards()
+	else:
+		if status == 0:
+			library_status.text = "โหลดการ์ดออนไลน์ไม่สำเร็จ กรุณาตรวจการเชื่อมต่อแล้วลองอีกครั้ง"
 		else:
-			print("Failed to fetch cards: ", status)
-	)
+			library_status.text = "โหลดการ์ดออนไลน์ไม่สำเร็จ (HTTP %d)" % status
+		retry_btn.show()
 
 func _create_card_thumbnail(card_row: Dictionary):
 	var stats_data = {}
@@ -56,7 +84,7 @@ func _create_card_thumbnail(card_row: Dictionary):
 	tex.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	# Load image asynchronously
-	var img_url = card_row.get("image_url", "")
+	var img_url = card_row.get("image_url", card_row.get("image_path", ""))
 	if img_url == "" and stats_data.has("image_path"):
 		img_url = stats_data["image_path"]
 		

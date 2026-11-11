@@ -25,6 +25,22 @@ var online_fields_cache = []
 func _ready():
 	call_deferred("_apply_platform_style")
 	$Header/CreateBtn.pressed.connect(_on_create_room_pressed)
+	var back_button := Button.new()
+	back_button.text = "← เลือกโหมด"
+	back_button.pressed.connect(func():
+		header.hide()
+		scroll_container.hide()
+		creator_panel.hide()
+		mode_selection_ui.show()
+	)
+	header.add_child(back_button)
+	header.move_child(back_button, 0)
+	var refresh_button := Button.new()
+	refresh_button.text = "รีเฟรช"
+	refresh_button.pressed.connect(_refresh_online_rooms)
+	header.add_child(refresh_button)
+	header.add_theme_constant_override("separation", 18)
+	$ScrollContainer/VBoxContainer.add_theme_constant_override("separation", 14)
 	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.pressed.connect(_on_confirm_create_pressed)
 	$RoomCreatorPanel/VBoxContainer/CancelBtn.pressed.connect(_on_close_creator_pressed)
 	
@@ -62,8 +78,7 @@ func _ready():
 	_apply_card_styles()
 	_apply_creator_panel_styles()
 	
-	# Initialize the floating orange liquid auras
-	_init_liquid_auras()
+	preload("res://scripts/ChooserDesign.gd").heading(mode_selection_ui, "PLAY YOUR WAY", "YOUR TABLE. YOUR RULES.", "ทดลองไอเดียในเครื่อง หรือชวนเพื่อนมาเล่นด้วยกันออนไลน์")
 
 func _on_local_mode_selected():
 	Global.reset_online_session()
@@ -71,9 +86,11 @@ func _on_local_mode_selected():
 	mode_selection_ui.hide()
 	
 	# Reset/Setup creator panel for local play
-	$RoomCreatorPanel/VBoxContainer/Title.text = "Local Play Setup"
-	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Start Local Game"
-	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "Select Local Field"
+	$RoomCreatorPanel/VBoxContainer/Title.text = "LOCAL PLAY"
+	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "เริ่มเล่น"
+	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "เลือกสนามในเครื่อง"
+	creator_panel.offset_top = -240
+	creator_panel.offset_bottom = 240
 	
 	# Hide Password, Desc, and RoomName for local mode
 	$RoomCreatorPanel/VBoxContainer/Password.hide()
@@ -98,7 +115,7 @@ func _refresh_online_rooms():
 		child.queue_free()
 		
 	var loading_lbl = Label.new()
-	loading_lbl.text = "Loading active rooms..."
+	loading_lbl.text = "กำลังค้นหาห้องออนไลน์…"
 	loading_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	$ScrollContainer/VBoxContainer.add_child(loading_lbl)
 	
@@ -110,20 +127,26 @@ func _refresh_online_rooms():
 		if status == 200 and typeof(data) == TYPE_ARRAY:
 			if data.is_empty():
 				var no_rooms_lbl = Label.new()
-				no_rooms_lbl.text = "No active rooms found. Create one!"
+				no_rooms_lbl.text = "ยังไม่มีห้องเปิดอยู่\nสร้างห้อง แล้วชวนเพื่อนเข้ามาเล่นได้เลย"
 				no_rooms_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				$ScrollContainer/VBoxContainer.add_child(no_rooms_lbl)
 				return
 				
 			for room in data:
 				var btn = Button.new()
-				btn.text = "Room: %s  |  Host: %s  |  Status: %s  [Join]" % [room.get("name", "Untitled"), room.get("host_player", "Unknown"), room.get("status", "waiting")]
+				btn.text = "%s    /    %s    → เข้าห้อง" % [room.get("name", "Untitled"), room.get("status", "waiting")]
+				btn.custom_minimum_size.y = 80
+				btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+				btn.add_theme_font_size_override("font_size", 24)
 				
 				var btn_style = StyleBoxFlat.new()
-				btn_style.bg_color = Color(0.1, 0.1, 0.12, 0.7)
-				btn_style.set_corner_radius_all(8)
+				btn_style.bg_color = Color("131f39")
+				btn_style.set_corner_radius_all(18)
 				btn_style.set_border_width_all(1)
-				btn_style.border_color = Color(1.0, 1.0, 1.0, 0.1)
+				btn_style.border_color = Color(0.5, 0.75, 1.0, 0.22)
+				btn_style.content_margin_left = 28
+				btn_style.content_margin_right = 28
+				preload("res://scripts/PlatformStyle.gd")._style_controls(btn)
 				btn.add_theme_stylebox_override("normal", btn_style)
 				
 				btn.pressed.connect(func(): _on_join_room_clicked(room))
@@ -185,9 +208,11 @@ func _join_room_with_password(room: Dictionary, password: String):
 
 func _on_create_room_pressed():
 	# Show creator panel for online room
-	$RoomCreatorPanel/VBoxContainer/Title.text = "Room Creator"
-	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "Create!"
-	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "Select Field"
+	$RoomCreatorPanel/VBoxContainer/Title.text = "CREATE A ROOM"
+	$RoomCreatorPanel/VBoxContainer/ConfirmBtn.text = "สร้างห้อง"
+	$RoomCreatorPanel/VBoxContainer/FieldBtn.text = "เลือกสนาม"
+	creator_panel.offset_top = -335
+	creator_panel.offset_bottom = 335
 	
 	# Show inputs for online mode
 	$RoomCreatorPanel/VBoxContainer/Password.show()
@@ -344,307 +369,36 @@ func _on_confirm_create_pressed():
 		Global.switch_scene("res://SCENE/Main.tscn")
 
 func _apply_card_styles():
-	var cards = [local_card, online_card]
-	
-	# Premium Glassmorphic normal style (semi-transparent dark glass with light white border)
-	var normal_style = StyleBoxFlat.new()
-	normal_style.bg_color = Color(0.08, 0.08, 0.08, 0.45) # Dark semi-transparent glass
-	normal_style.set_border_width_all(1)
-	normal_style.border_color = Color(1.0, 1.0, 1.0, 0.14) # Clean reflection edge
-	normal_style.set_corner_radius_all(20)
-	normal_style.shadow_color = Color(0, 0, 0, 0.35)
-	normal_style.shadow_size = 8
-	normal_style.shadow_offset = Vector2(0, 8)
-	
-	# Premium Glassmorphic hover style (brighter glass with orange aura glowing border and shadow)
-	var hover_style = StyleBoxFlat.new()
-	hover_style.bg_color = Color(0.12, 0.12, 0.12, 0.6) # Brighter glass
-	hover_style.set_border_width_all(2)
-	hover_style.border_color = Color(0.98, 0.45, 0.08, 0.95) # Vibrant orange border
-	hover_style.set_corner_radius_all(20)
-	hover_style.shadow_color = Color(0.98, 0.45, 0.08, 0.35) # Orange aura glow
-	hover_style.shadow_size = 20
-	hover_style.shadow_offset = Vector2(0, 8)
-	
-	# Pressed style (deeper dark glass with thin orange border)
-	var pressed_style = StyleBoxFlat.new()
-	pressed_style.bg_color = Color(0.06, 0.06, 0.06, 0.5)
-	pressed_style.set_border_width_all(2)
-	pressed_style.border_color = Color(0.85, 0.35, 0.05, 0.95)
-	pressed_style.set_corner_radius_all(20)
-	pressed_style.shadow_color = Color(0.85, 0.35, 0.05, 0.25)
-	pressed_style.shadow_size = 12
-	pressed_style.shadow_offset = Vector2(0, 4)
-	
-	for card in cards:
-		card.add_theme_stylebox_override("normal", normal_style)
-		card.add_theme_stylebox_override("hover", hover_style)
-		card.add_theme_stylebox_override("pressed", pressed_style)
-		card.add_theme_stylebox_override("focus", hover_style)
-		
-		# Connect scale animations
-		card.mouse_entered.connect(func(): _animate_card_scale(card, Vector2(1.03, 1.03)))
-		card.mouse_exited.connect(func(): _animate_card_scale(card, Vector2(1.0, 1.0)))
-
-func _animate_card_scale(card: Control, target_scale: Vector2):
-	var tween = create_tween().set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-	card.pivot_offset = card.size / 2.0
-	tween.tween_property(card, "scale", target_scale, 0.25)
-
-func _init_liquid_auras():
-	# Create a container for the background aura effects
-	var aura_container = Control.new()
-	aura_container.name = "AuraContainer"
-	aura_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	aura_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# Add it at the back (index 0) so it renders behind the cards
-	mode_selection_ui.add_child(aura_container)
-	mode_selection_ui.move_child(aura_container, 0)
-	
-	# Create a soft orange radial gradient texture
-	var grad = Gradient.new()
-	grad.colors = PackedColorArray([
-		Color(0.98, 0.42, 0.05, 0.22), # Vibrant soft orange in center
-		Color(0.98, 0.35, 0.05, 0.08), # Dimmer orange midpoint
-		Color(0.98, 0.3, 0.05, 0.0)    # Fully transparent at edge
-	])
-	grad.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
-	
-	var tex = GradientTexture2D.new()
-	tex.gradient = grad
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	tex.width = 512
-	tex.height = 512
-	
-	# Blob 1 (Behind Local Card)
-	var blob1 = TextureRect.new()
-	blob1.name = "Blob1"
-	blob1.texture = tex
-	blob1.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	blob1.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	blob1.custom_minimum_size = Vector2(600, 600)
-	blob1.size = Vector2(600, 600)
-	blob1.position = Vector2(80, 40)
-	blob1.pivot_offset = Vector2(300, 300)
-	aura_container.add_child(blob1)
-	
-	# Blob 2 (Behind Online Card)
-	var blob2 = TextureRect.new()
-	blob2.name = "Blob2"
-	blob2.texture = tex
-	blob2.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	blob2.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	blob2.custom_minimum_size = Vector2(600, 600)
-	blob2.size = Vector2(600, 600)
-	blob2.position = Vector2(480, 140)
-	blob2.pivot_offset = Vector2(300, 300)
-	aura_container.add_child(blob2)
-	
-	# Start floating animations
-	_animate_liquid_auras(blob1, blob2)
-
-func _animate_liquid_auras(blob1: Control, blob2: Control):
-	var base_pos1 = blob1.position
-	var base_pos2 = blob2.position
-	
-	# Animate Blob 1: Slow floating in a rounded path, gentle scaling
-	var t1 = create_tween().set_loops().set_parallel(true)
-	t1.tween_property(blob1, "position", base_pos1 + Vector2(45, -35), 5.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t1.tween_property(blob1, "scale", Vector2(1.18, 1.18), 4.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	t1.chain().tween_property(blob1, "position", base_pos1 + Vector2(-35, 25), 6.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t1.tween_property(blob1, "scale", Vector2(0.88, 0.88), 5.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	t1.chain().tween_property(blob1, "position", base_pos1, 6.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t1.tween_property(blob1, "scale", Vector2(1.0, 1.0), 5.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	# Animate Blob 2: Slow counter-floating and out-of-sync scaling
-	var t2 = create_tween().set_loops().set_parallel(true)
-	t2.tween_property(blob2, "position", base_pos2 + Vector2(-45, 40), 6.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t2.tween_property(blob2, "scale", Vector2(0.85, 0.85), 5.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	t2.chain().tween_property(blob2, "position", base_pos2 + Vector2(35, -30), 5.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t2.tween_property(blob2, "scale", Vector2(1.12, 1.12), 6.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	t2.chain().tween_property(blob2, "position", base_pos2, 6.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	t2.tween_property(blob2, "scale", Vector2(1.0, 1.0), 4.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var design = preload("res://scripts/ChooserDesign.gd")
+	design.card(local_card, "01 / SAME DEVICE", "LOCAL PLAY", "เล่นคนเดียว หรือผลัดกันเล่นในเครื่องเดียว\nเลือกสนามที่บันทึกไว้ แล้วเริ่มได้เลย", "เปิดโต๊ะในเครื่อง", "local")
+	design.card(online_card, "02 / TWO PLAYERS", "PLAY ONLINE", "ชวนเพื่อนมาเล่นจากคนละเครื่อง\nสร้างห้องหรือเข้าห้องสำหรับผู้เล่น 2 คน", "ค้นหาห้องออนไลน์", "online", true)
 
 func _apply_creator_panel_styles():
-	# 1. Style RoomCreatorPanel itself as a premium liquid glass panel
-	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.75) # Dark semi-transparent glass
-	panel_style.set_border_width_all(1)
-	panel_style.border_color = Color(1.0, 1.0, 1.0, 0.18) # Clean reflection edge
-	panel_style.set_corner_radius_all(20)
-	panel_style.shadow_color = Color(0.98, 0.45, 0.08, 0.15) # Soft orange glow
-	panel_style.shadow_size = 15
-	panel_style.shadow_offset = Vector2(0, 8)
-	creator_panel.add_theme_stylebox_override("panel", panel_style)
-
-	# 2. Style creator panel title
-	var title = $RoomCreatorPanel/VBoxContainer/Title
-	title.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
-	title.add_theme_font_size_override("font_size", 20)
-	
-	# Set spacing of VBoxContainer to look spacious and premium
-	$RoomCreatorPanel/VBoxContainer.add_theme_constant_override("separation", 12)
-
-	# 3. Style LineEdits (RoomName, Password) and TextEdit (Desc)
-	var input_normal = StyleBoxFlat.new()
-	input_normal.bg_color = Color(0.04, 0.04, 0.06, 0.6)
-	input_normal.set_border_width_all(1)
-	input_normal.border_color = Color(1.0, 1.0, 1.0, 0.08)
-	input_normal.set_corner_radius_all(8)
-	
-	var input_focus = StyleBoxFlat.new()
-	input_focus.bg_color = Color(0.06, 0.06, 0.08, 0.75)
-	input_focus.set_border_width_all(1)
-	input_focus.border_color = Color(0.98, 0.45, 0.08, 0.8) # Orange border on focus
-	input_focus.set_corner_radius_all(8)
-	input_focus.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
-	input_focus.shadow_size = 6
-
-	var line_edits = [$RoomCreatorPanel/VBoxContainer/RoomName, $RoomCreatorPanel/VBoxContainer/Password]
-	for le in line_edits:
-		le.add_theme_stylebox_override("normal", input_normal)
-		le.add_theme_stylebox_override("focus", input_focus)
-		le.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-		le.add_theme_color_override("placeholder_color", Color(0.5, 0.5, 0.5))
-
-	var desc = $RoomCreatorPanel/VBoxContainer/Desc
-	desc.add_theme_stylebox_override("normal", input_normal)
-	desc.add_theme_stylebox_override("focus", input_focus)
-	desc.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-
-	# 4. Style AssetBtn and FieldBtn
-	var btn_normal = StyleBoxFlat.new()
-	btn_normal.bg_color = Color(0.12, 0.12, 0.16, 0.6)
-	btn_normal.set_border_width_all(1)
-	btn_normal.border_color = Color(1.0, 1.0, 1.0, 0.1)
-	btn_normal.set_corner_radius_all(8)
-	
-	var btn_hover = StyleBoxFlat.new()
-	btn_hover.bg_color = Color(0.16, 0.16, 0.22, 0.8)
-	btn_hover.set_border_width_all(1)
-	btn_hover.border_color = Color(0.98, 0.45, 0.08, 0.8)
-	btn_hover.set_corner_radius_all(8)
-	btn_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.15)
-	btn_hover.shadow_size = 5
-
-	var btn_pressed = StyleBoxFlat.new()
-	btn_pressed.bg_color = Color(0.98, 0.45, 0.08, 0.95)
-	btn_pressed.set_border_width_all(1)
-	btn_pressed.border_color = Color(1.0, 1.0, 1.0, 0.3)
-	btn_pressed.set_corner_radius_all(8)
-
-	var selection_btns = [$RoomCreatorPanel/VBoxContainer/FieldBtn]
-	for btn in selection_btns:
-		btn.add_theme_stylebox_override("normal", btn_normal)
-		btn.add_theme_stylebox_override("hover", btn_hover)
-		btn.add_theme_stylebox_override("pressed", btn_pressed)
-		btn.add_theme_stylebox_override("focus", btn_hover)
-
-	# 5. Style ConfirmBtn (Primary action)
-	var confirm_style_normal = StyleBoxFlat.new()
-	confirm_style_normal.bg_color = Color(0.98, 0.45, 0.08, 0.75)
-	confirm_style_normal.set_corner_radius_all(8)
-	confirm_style_normal.set_border_width_all(1)
-	confirm_style_normal.border_color = Color(1.0, 1.0, 1.0, 0.15)
-
-	var confirm_style_hover = StyleBoxFlat.new()
-	confirm_style_hover.bg_color = Color(0.98, 0.45, 0.08, 0.95)
-	confirm_style_hover.set_corner_radius_all(8)
-	confirm_style_hover.set_border_width_all(1)
-	confirm_style_hover.border_color = Color(1.0, 1.0, 1.0, 0.35)
-	confirm_style_hover.shadow_color = Color(0.98, 0.45, 0.08, 0.35)
-	confirm_style_hover.shadow_size = 10
-
-	var confirm_style_pressed = StyleBoxFlat.new()
-	confirm_style_pressed.bg_color = Color(0.85, 0.35, 0.05, 0.95)
-	confirm_style_pressed.set_corner_radius_all(8)
-	confirm_style_pressed.set_border_width_all(1)
-	confirm_style_pressed.border_color = Color(1.0, 1.0, 1.0, 0.25)
-
-	var confirm_btn = $RoomCreatorPanel/VBoxContainer/ConfirmBtn
-	confirm_btn.add_theme_stylebox_override("normal", confirm_style_normal)
-	confirm_btn.add_theme_stylebox_override("hover", confirm_style_hover)
-	confirm_btn.add_theme_stylebox_override("pressed", confirm_style_pressed)
-	confirm_btn.add_theme_stylebox_override("focus", confirm_style_hover)
-
-	# 6. Style CancelBtn (Secondary action)
-	var cancel_btn = $RoomCreatorPanel/VBoxContainer/CancelBtn
-	cancel_btn.add_theme_stylebox_override("normal", btn_normal)
-	cancel_btn.add_theme_stylebox_override("hover", btn_hover)
-	cancel_btn.add_theme_stylebox_override("pressed", btn_pressed)
-	cancel_btn.add_theme_stylebox_override("focus", btn_hover)
-
-	# 7. Style PlayerCount quick buttons (Btn1, Btn2)
+	var style = preload("res://scripts/PlatformStyle.gd")
+	var panel = style.glass(Color("10192f"), 24)
+	panel.border_color = Color(0.5, 0.76, 1.0, 0.35)
+	creator_panel.add_theme_stylebox_override("panel", panel)
+	$RoomCreatorPanel/VBoxContainer.add_theme_constant_override("separation", 14)
+	$RoomCreatorPanel/VBoxContainer/Title.add_theme_font_override("font", style.display_font())
+	$RoomCreatorPanel/VBoxContainer/Title.add_theme_font_size_override("font_size", 36)
+	$RoomCreatorPanel/VBoxContainer/PlayerCountContainer/Label.add_theme_font_size_override("font_size", 22)
+	for button in [btn1, btn2]:
+		button.set_meta("style_owned", true)
+		preload("res://scripts/InteractionMotion.gd").button(button)
 	_on_player_count_changed(count_spin.value)
 
-	# 8. Style SpinBox LineEdit
-	var spin_edit = count_spin.get_line_edit()
-	if spin_edit:
-		spin_edit.add_theme_stylebox_override("normal", input_normal)
-		spin_edit.add_theme_stylebox_override("focus", input_focus)
-		spin_edit.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-		spin_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	# 9. Style player count label
-	$RoomCreatorPanel/VBoxContainer/PlayerCountContainer/Label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-	$RoomCreatorPanel/VBoxContainer/PlayerCountContainer/Label.add_theme_font_size_override("font_size", 14)
-
-	# 10. Connect hover scale micro-animations for all buttons
-	var all_btns = [
-		$RoomCreatorPanel/VBoxContainer/FieldBtn,
-		$RoomCreatorPanel/VBoxContainer/ConfirmBtn,
-		$RoomCreatorPanel/VBoxContainer/CancelBtn,
-		btn1,
-		btn2
-	]
-	for btn in all_btns:
-		btn.mouse_entered.connect(func(): _animate_card_scale(btn, Vector2(1.02, 1.02)))
-		btn.mouse_exited.connect(func(): _animate_card_scale(btn, Vector2(1.0, 1.0)))
-
 func _on_player_count_changed(value: float):
-	var active_style = StyleBoxFlat.new()
-	active_style.bg_color = Color(0.98, 0.45, 0.08, 0.95) # Glowing orange
-	active_style.set_corner_radius_all(6)
-	active_style.set_border_width_all(1)
-	active_style.border_color = Color(1.0, 1.0, 1.0, 0.35)
-	
-	var inactive_style = StyleBoxFlat.new()
-	inactive_style.bg_color = Color(0.12, 0.12, 0.16, 0.6) # Dark transparent
-	inactive_style.set_corner_radius_all(6)
-	inactive_style.set_border_width_all(1)
-	inactive_style.border_color = Color(1.0, 1.0, 1.0, 0.1)
-
-	var val_int = int(value)
-	if val_int == 1:
-		btn1.add_theme_stylebox_override("normal", active_style)
-		btn1.add_theme_stylebox_override("hover", active_style)
-		btn1.add_theme_stylebox_override("pressed", active_style)
-		
-		btn2.add_theme_stylebox_override("normal", inactive_style)
-		btn2.add_theme_stylebox_override("hover", inactive_style)
-		btn2.add_theme_stylebox_override("pressed", inactive_style)
-	elif val_int == 2:
-		btn1.add_theme_stylebox_override("normal", inactive_style)
-		btn1.add_theme_stylebox_override("hover", inactive_style)
-		btn1.add_theme_stylebox_override("pressed", inactive_style)
-		
-		btn2.add_theme_stylebox_override("normal", active_style)
-		btn2.add_theme_stylebox_override("hover", active_style)
-		btn2.add_theme_stylebox_override("pressed", active_style)
-	else:
-		btn1.add_theme_stylebox_override("normal", inactive_style)
-		btn1.add_theme_stylebox_override("hover", inactive_style)
-		btn1.add_theme_stylebox_override("pressed", inactive_style)
-		
-		btn2.add_theme_stylebox_override("normal", inactive_style)
-		btn2.add_theme_stylebox_override("hover", inactive_style)
-		btn2.add_theme_stylebox_override("pressed", inactive_style)
+	var style = preload("res://scripts/PlatformStyle.gd")
+	for button in [btn1, btn2]:
+		var selected: bool = int(value) == (1 if button == btn1 else 2)
+		var box = style.glass(Color("4158ba") if selected else Color("18233e"), 10)
+		box.border_color = Color("81d4ff") if selected else Color(0.6, 0.7, 1.0, 0.2)
+		for state in ["normal", "hover", "pressed", "focus"]:
+			button.add_theme_stylebox_override(state, box)
 
 func _apply_platform_style():
-	preload("res://scripts/PlatformStyle.gd").apply(self)
+	# The menu shell owns the backdrop; this page only styles its controls.
+	preload("res://scripts/PlatformStyle.gd")._style_controls(self)
+	_apply_creator_panel_styles()
+	$Header/Title.add_theme_font_override("font", preload("res://scripts/PlatformStyle.gd").display_font())
+	$Header/Title.add_theme_font_size_override("font_size", 42)
